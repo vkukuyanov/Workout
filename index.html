@@ -6,38 +6,31 @@
 <title>Тренировка</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Тренировка">
-<link rel="apple-touch-icon" href="icon-180.png?v=2">
+<link rel="apple-touch-icon" href="icon-180.png?v=3">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@300;400;500;600;700&family=Sofia+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f7f6f3;
-    --card:#ffffff;
-    --ink:#16181c;
-    --ink-2:#4c5159;
-    --muted:#9a9ea6;
-    --line:#e6e4df;
-    --line-2:#efedE8;
-    --work:#c4501e;
-    --rest:#3d6f72;
-    --accent:var(--ink);
-    --radius:20px;
+    --bg:#f7f6f3; --card:#ffffff; --card-2:#f1efea; --ink:#16181c; --ink-2:#4c5159;
+    --muted:#8d9198; --line:#e6e4df; --line-2:#efede8;
+    --gold:#b8860b; --g1:#d4ad5a; --g2:#b8860b; --on-gold:#ffffff;
+    --work:var(--gold); --rest:#8d9198; --accent:var(--gold); --radius:22px;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --bg:#0f1012; --card:#17191c; --ink:#f0efec; --ink-2:#b4b7bc;
-      --muted:#72767d; --line:#26282c; --line-2:#1f2125;
-      --work:#e0703c; --rest:#6fa6a8;
+      --bg:#0e0f11; --card:#17191c; --card-2:#1f2125; --ink:#f2f1ee; --ink-2:#b9bcc2;
+      --muted:#71757c; --line:#26282c; --line-2:#1f2125;
+      --gold:#c9a04a; --g1:#d4ad5a; --g2:#b8860b; --rest:#7d8189;
     }
   }
   :root[data-theme="dark"]{
-    --bg:#0f1012; --card:#17191c; --ink:#f0efec; --ink-2:#b4b7bc;
-    --muted:#72767d; --line:#26282c; --line-2:#1f2125;
-    --work:#e0703c; --rest:#6fa6a8;
+    --bg:#0e0f11; --card:#17191c; --card-2:#1f2125; --ink:#f2f1ee; --ink-2:#b9bcc2;
+    --muted:#71757c; --line:#26282c; --line-2:#1f2125;
+    --gold:#c9a04a; --g1:#d4ad5a; --g2:#b8860b; --rest:#7d8189;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html,body{background:var(--bg);color:var(--ink);
@@ -177,20 +170,77 @@
     padding:13px 0;border-bottom:1px solid var(--line-2);}
   .warmrow:last-of-type{border-bottom:none;}
   .warmrow span{font-size:12px;color:var(--muted);flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;}
+
+  /* ---- home + workout shell ---- */
+  .card{border:none;}
+  .b-main{background:linear-gradient(160deg,var(--g1),var(--g2));color:var(--on-gold);font-weight:800;font-size:17px;padding:17px 0;border-radius:16px;}
+  .b-alt{border-radius:16px;background:var(--card-2);border:none;}
+  .ring-fg{stroke-width:2.4;} .ring-bg{stroke-width:2.4;}
+  .pd.cur{background:var(--gold);} .exrow.cur .n{color:var(--gold);}
+  .sw.on{background:var(--gold);}
+  #home .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  #home .date{font-size:14px;color:var(--muted);font-weight:500}
+  #home .streak{font-size:14px;font-weight:600;color:var(--ink-2)}
+  #home h1.hh{font-size:34px;font-weight:800;letter-spacing:-.01em;margin-bottom:18px}
+  .hero{background:var(--card);border-radius:24px;padding:20px}
+  .hero .k{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .hero .t{font-size:36px;font-weight:800;margin:3px 0 2px;letter-spacing:-.01em}
+  .hero .m{font-size:15px;color:var(--ink-2);font-weight:500}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 18px}
+  .chip{font-size:12.5px;font-weight:600;background:var(--card-2);color:var(--ink-2);padding:6px 10px;border-radius:20px}
+  .tg{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .tg:last-child{border-bottom:none}
+  .tg .n{font-size:15px;font-weight:600}.tg .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .tg .r{font-size:15px;font-weight:700;text-align:right;white-space:nowrap}.tg .r small{display:block;font-size:12px;color:var(--muted);font-weight:500}
+  .tg .r.up{color:var(--gold)}
+  .hlbl{display:flex;justify-content:space-between;align-items:baseline;margin:26px 0 10px}
+  .hlbl .l{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .hlbl .v{font-size:13px;font-weight:700;color:var(--ink-2)}
+  .hweek{display:flex;gap:6px}
+  .hweek .d{flex:1;background:var(--card);border-radius:14px;padding:10px 0 9px;text-align:center}
+  .hweek .n{font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:7px}
+  .hweek .c{width:22px;height:22px;border-radius:50%;margin:0 auto;border:1.5px solid var(--line);position:relative}
+  .hweek .done .c{border-color:var(--gold)}
+  .hweek .done .c:after{content:'';position:absolute;left:6.5px;top:3px;width:5px;height:10px;border:solid var(--gold);border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .hweek .today{box-shadow:inset 0 0 0 1.5px var(--gold)} .hweek .today .n{color:var(--ink)}
+  .mrow{display:flex;gap:10px}
+  .mc{flex:1;background:var(--card);border-radius:18px;padding:15px 16px;text-align:left;border:none;font-family:inherit;color:var(--ink);width:auto}
+  .mc .t{font-size:17px;font-weight:700}.mc .s{font-size:12.5px;color:var(--muted);margin-top:3px;font-weight:500}
+  .set-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--line-2)}
+  .set-row:last-child{border-bottom:none}
+  .set-row .n{font-size:14.5px;font-weight:500}.set-row .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .lnk{background:none;border:none;color:var(--gold);font:600 14px 'Sofia Sans',sans-serif;padding:4px 0;flex:none;width:auto}
+  #work{display:none} body.in-work #work{display:block} body.in-work #home{display:none}
+  .wbar{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 18px;min-height:30px}
+  .back{background:none;border:none;color:var(--ink-2);font:600 16px 'Sofia Sans',sans-serif;padding:4px 0;flex:none;width:auto}
+  #awake-status{font-size:12.5px;color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="head"><h1>Тренировка</h1><div class="clock" id="clock"></div></div>
-  <div class="daybar"><div id="dayhint"></div><div class="streak" id="streak"></div></div>
-  <div class="tools"><span id="awake-status"></span><div class="tools-r"><button class="link" id="voice-btn">Глас</button><button class="link" id="test-snd">Тест звук</button></div></div>
-
-  <div class="tabs">
-    <div class="tab active" data-tab="core">Ядро</div>
-    <div class="tab" data-tab="strength">Сила</div>
-    <div class="tab" data-tab="run">Тичане</div>
+  <div id="home">
+    <div class="top"><span class="date" id="h-date"></span><span class="streak" id="streak"></span></div>
+    <h1 class="hh">Днес</h1>
+    <div class="hero" id="h-hero"></div>
+    <div class="hlbl"><span class="l">Тази седмица</span><span class="v" id="h-wk"></span></div>
+    <div class="hweek" id="h-week"></div>
+    <div class="hlbl"><span class="l" id="h-tl"></span></div>
+    <div class="mc" id="h-tmrw"></div>
+    <div class="hlbl"><span class="l">Друга тренировка</span></div>
+    <div class="mrow" id="h-other"></div>
+    <div class="hlbl"><span class="l">Последни сесии</span></div>
+    <div class="card" style="padding:6px 18px 14px"><div id="s-hist"><div class="sub">Още няма записани сесии.</div></div></div>
+    <div class="hlbl"><span class="l">Настройки</span></div>
+    <div class="card" style="padding:4px 18px">
+      <div class="set-row"><div><div class="n">Глас</div><div class="s">Казва упражненията на глас</div></div><button class="lnk" id="voice-btn">Глас</button></div>
+      <div class="set-row"><div><div class="n">Звук</div><div class="s" id="snd-state">Провери дали се чува</div></div><button class="lnk" id="test-snd">Тест</button></div>
+      <div class="set-row"><div><div class="n">Тих режим</div><div class="s">Ядро без скачане</div></div><div class="sw" id="c-quiet"></div></div>
+      <div class="set-row"><div><div class="n">С кривия лост</div><div class="s">Ядро с упражнения с 6 кг</div></div><div class="sw" id="c-bar"></div></div>
+    </div>
   </div>
 
+  <div id="work">
+  <div class="wbar"><button class="back" id="back">‹ Днес</button><span id="awake-status"></span></div>
   <div class="panel active" id="panel-core">
     <div class="card">
       <div class="ring-wrap">
@@ -218,16 +268,6 @@
       <div class="label">Днешни упражнения</div>
       <div class="sub" style="margin-bottom:4px;">Докосни за техника</div>
       <div id="c-list"></div>
-      <div class="toggle">
-        <div><div style="font-size:14.5px;font-weight:500;">Тих режим</div>
-        <div class="sub" style="margin-top:3px;">Без скачане</div></div>
-        <div class="sw" id="c-quiet"></div>
-      </div>
-      <div class="toggle">
-        <div><div style="font-size:14.5px;font-weight:500;">С кривия лост</div>
-        <div class="sub" style="margin-top:3px;">Включва упражнения с 6 кг</div></div>
-        <div class="sw" id="c-bar"></div>
-      </div>
     </div>
   </div>
 
@@ -295,9 +335,6 @@
       <div class="sub" id="r-logged" style="text-align:center;margin-top:10px;"></div>
     </div>
   </div>
-  <div class="card" style="margin-top:18px;">
-    <div class="label">Последни сесии</div>
-    <div id="s-hist"><div class="sub">Още няма записани сесии.</div></div>
   </div>
 </div>
 
@@ -410,7 +447,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
   navigator.wakeLock.request('screen').then(l=>{wl=l;}).catch(()=>{});}});
 function updStatus(){const el=document.getElementById('awake-status');if(!el)return;
   if(!wantAwake){el.textContent='';return;}
-  el.textContent=awake?'екранът е буден':'телефонът не позволи — провери режима за пестене на батерията';el.style.color=awake?'var(--rest)':'var(--work)';}
+  el.textContent=awake?'екранът е буден':'екранът може да заспи';el.style.color=awake?'var(--rest)':'var(--work)';}
 // every tap unlocks audio (needs a user gesture on iOS)
 document.addEventListener('touchend',()=>{unlockAudio();unlockVoice();},{passive:true,capture:true});
 document.addEventListener('click',()=>{unlockAudio();unlockVoice();},true);
@@ -472,14 +509,11 @@ const dayMap={0:'core',1:'core',2:'strength',3:'core',4:'strength',5:'core',6:'r
 const dayNames=['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
 const planNames={core:'Ядро',strength:'Сила',run:'Тичане'};
 const today=new Date().getDay();
-function switchTab(n){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===n));
+function switchTab(n){document.body.classList.add('in-work');window.scrollTo(0,0);
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
   document.getElementById('panel-'+n).classList.add('active');}
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
-document.getElementById('dayhint').innerHTML=dayNames[today]+' · по план <b>'+planNames[dayMap[today]]+'</b>';
-switchTab(dayMap[today]);
-function updClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});}
-updClock();setInterval(updClock,1000);
+
+
 
 const LOG_MAX=250;
 function localISO(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -515,7 +549,7 @@ function logSession(type,detail){
   const entry={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ts:Date.now(),
     date:localISO(),type,detail:detail||null};
   const l=mergeLogs([entry],load('wt_log',[]));
-  store('wt_log',l);renderHist();renderStreak();pushCloud(l);}
+  store('wt_log',l);renderHist();renderStreak();renderHome();pushCloud(l);}
 function renderStreak(){
   const days=new Set(load('wt_log',[]).map(x=>x.date));
   const iso=d=>localISO(d);
@@ -523,7 +557,7 @@ function renderStreak(){
   const d=new Date();
   if(!days.has(iso(d)))d.setDate(d.getDate()-1);
   while(days.has(iso(d))&&n<400){n++;d.setDate(d.getDate()-1);}
-  document.getElementById('streak').textContent=n>0?('\uD83D\uDD25 '+n+(n===1?' ден':' дни')):'';
+  document.getElementById('streak').textContent=n>0?(n+(n===1?' ден':' дни подред')):'';
 }
 function renderHist(){
   const log=load('wt_log',[]).slice(0,8);
@@ -537,17 +571,6 @@ function renderHist(){
     else if(s.type==='run')what='Тичане · <b>'+(x.min||0)+'</b> мин';
     const r=document.createElement('div');r.className='hist';
     r.innerHTML='<span>'+d.getDate()+'.'+(d.getMonth()+1)+'</span><span>'+what+'</span>';el.appendChild(r);});}
-  // week strip
-  const all=new Set(load('wt_log',[]).map(x=>x.date));
-  const wk=document.createElement('div');wk.className='week';
-  const lbl=['пн','вт','ср','чт','пт','сб','нд'];
-  const now=new Date();const mondayOffset=(now.getDay()+6)%7;
-  for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-mondayOffset+i);
-    const s=localISO(d);
-    const c=document.createElement('div');c.className='wd';
-    c.innerHTML='<div class="l">'+lbl[i]+'</div><div class="b'+(all.has(s)?' done':'')+(s===localISO(now)?' today':'')+'"></div>';
-    wk.appendChild(c);}
-  el.appendChild(wk);
   const cs=document.createElement('div');cs.className='cloud';cs.id='cloud-status';el.appendChild(cs);setCloud(cloudState);
 }
 function renderProgress(){
@@ -625,7 +648,7 @@ function renderProgress(){
     ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/total)));
     if(!p){phs.textContent='Готовност';nm.textContent='Интервален кръг';nxt.textContent='';
       ring.style.stroke='var(--work)';setBodyPhase(null);return;}
-    phs.textContent=p.t==='work'?('упражнение '+p.r+' от '+ex.length):'почивка';
+    phs.textContent=p.t==='work'?('работа · '+p.r+'/'+ex.length):'почивка';
     nm.textContent=p.l;
     ring.style.stroke=p.t==='work'?'var(--work)':'var(--rest)';
     setBodyPhase(p.t);
@@ -667,7 +690,7 @@ function renderProgress(){
     start.textContent='Старт';paint(ph[0].d);
     document.querySelectorAll('#c-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
   swb.classList.toggle('on',bar);
-  swb.addEventListener('click',()=>{if(run)return;bar=!bar;swb.classList.toggle('on',bar);store('wt_bar',bar);
+  swb.addEventListener('click',()=>{if(run)return;bar=!bar;swb.classList.toggle('on',bar);store('wt_bar',bar);setTimeout(()=>window.renderHome&&renderHome(),0);
     build();buildDots();renderList();idx=-1;paint(ph[0].d);});
   window.__coreRefresh=()=>{if(run||idx>=0)return;build();buildDots();renderList();paint(ph[0].d);};
   sw.classList.toggle('on',quiet);
@@ -691,6 +714,7 @@ function renderProgress(){
     post,
     {n:'Вдигане на крака (уред за корем)',t:'12-18 повт.',s:3,r:45},
   ];
+  window.__strPlan=plan;
   let ei=0,si=0,hits=0,total=plan.reduce((a,e)=>a+e.s,0),rh=null,rend=0;
   let exHits={};plan.forEach(e=>exHits[e.n]={h:0,s:e.s});
   if(resume){ei=saved.ei;si=saved.si;hits=saved.hits;exHits=saved.exHits;}
@@ -776,14 +800,58 @@ function renderProgress(){
     document.querySelectorAll('#r-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
 })();
 
-renderHist();renderStreak();
+function renderHome(){
+  const $=id=>document.getElementById(id);
+  const now=new Date();let ds=now.toLocaleDateString('bg-BG',{weekday:'long',day:'numeric',month:'long'});
+  $('h-date').textContent=ds.charAt(0).toUpperCase()+ds.slice(1);
+  const type=dayMap[today],log=load('wt_log',[]);
+  const bar=load('wt_bar',true),nEx=bar?10:8;
+  let h='<div class="k">По план</div><div class="t">'+planNames[type]+'</div>';
+  if(type==='core'){
+    h+='<div class="m">'+nEx+' упражнения · около 7 минути</div><div class="chips">'+
+      ['кардио','долна част','корем','горна част'].concat(bar?['с лост']:[]).map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>'+
+      '<button class="b-main full" data-go="core" data-start="1">Започни</button>';
+  }else if(type==='strength'){
+    const plan=window.__strPlan||[];
+    const ses=log.filter(x=>x.type==='strength'&&x.detail&&x.detail.ex);
+    h+='<div class="m">уредите в двора · около 35 минути</div><div style="margin:10px 0 16px">';
+    plan.forEach(e=>{const past=ses.map(x=>x.detail.ex[e.n]).filter(Boolean);
+      const last=past[0],ready=past.length>=2&&past[0].h>=past[0].s&&past[1].h>=past[1].s;
+      const sub=last?('миналия път '+last.h+'/'+last.s+' серии на целта'):'първи път';
+      const r=ready?'<div class="r up">по-трудно<small>3 сек спускане</small></div>':'<div class="r">'+e.s+' серии<small>'+e.t.split(' · ')[0]+'</small></div>';
+      h+='<div class="tg"><div><div class="n">'+e.n+'</div><div class="s">'+sub+'</div></div>'+r+'</div>';});
+    h+='</div><button class="b-main full" data-go="strength">Започни със загрявката</button>';
+  }else{
+    h+='<div class="m">3–4 км · темпо около 6 км/ч · на светло</div><div style="height:16px"></div>'+
+      '<button class="b-main full" data-go="run">Започни</button>';
+  }
+  $('h-hero').innerHTML=h;
+  // week (Monday first)
+  const days=new Set(log.map(x=>x.date)),lbl=['пн','вт','ср','чт','пт','сб','нд'],mo=(now.getDay()+6)%7;let done=0,wk='';
+  for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-mo+i);const iso=localISO(d),ok=days.has(iso);if(ok)done++;
+    wk+='<div class="d'+(ok?' done':'')+(i===mo?' today':'')+'"><div class="n">'+lbl[i]+'</div><div class="c"></div></div>';}
+  $('h-week').innerHTML=wk;$('h-wk').textContent=done+' от 6';
+  const tw=(today+1)%7,tt=dayMap[tw];
+  $('h-tl').textContent='Утре · '+dayNames[tw];
+  const meta={core:nEx+' упражнения · около 7 минути',strength:'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
+  $('h-tmrw').innerHTML='<div class="t">'+planNames[tt]+'</div><div class="s">'+meta[tt]+'</div>';
+  $('h-other').innerHTML=['core','strength','run'].filter(t=>t!==type).map(t=>
+    '<button class="mc" data-go="'+t+'"><div class="t">'+planNames[t]+'</div><div class="s">'+meta[t]+'</div></button>').join('');
+}
+document.getElementById('home').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;
+  switchTab(b.dataset.go);if(b.dataset.start){const st=document.getElementById('c-start');if(st.textContent==='Старт')st.click();}});
+document.getElementById('back').addEventListener('click',()=>{
+  ['c-start','r-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
+  document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
+renderHist();renderStreak();renderHome();
 document.getElementById('test-snd').addEventListener('click',()=>{unlockAudio();unlockVoice();
   setTimeout(()=>{play('work');const st=audioState(),el=document.getElementById('awake-status');
     if(el&&!wantAwake){el.style.color=st==='blocked'?'var(--work)':'var(--rest)';
       el.textContent=st==='blocked'?'браузърът блокира звука':'звукът е отключен';
-      setTimeout(()=>{if(!wantAwake)el.textContent='';},5000);}},150);setTimeout(()=>{const v=voiceOn;voiceOn=true;say('Тест. Звукът работи.');voiceOn=v;},450);});
+      setTimeout(()=>{if(!wantAwake)el.textContent='';},5000);}
+    const ss=document.getElementById('snd-state');if(ss)ss.textContent=st==='blocked'?'браузърът блокира звука':'звукът е отключен';},150);setTimeout(()=>{const v=voiceOn;voiceOn=true;say('Тест. Звукът работи.');voiceOn=v;},450);});
 (function(){const b=document.getElementById('voice-btn');
-  const paintV=()=>{b.textContent='Глас: '+(voiceOn?'вкл':'изкл');b.classList.toggle('on',voiceOn);};
+  const paintV=()=>{b.textContent=voiceOn?'Вкл':'Изкл';b.classList.toggle('on',voiceOn);};
   paintV();b.addEventListener('click',()=>{voiceOn=!voiceOn;store('wt_voice',voiceOn);paintV();
     if(voiceOn){unlockVoice();say('Гласът е включен');}else{try{speechSynthesis.cancel();}catch(e){}}});})();
 initCloud();

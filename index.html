@@ -278,7 +278,7 @@
       <div class="warmrow"><span>02</span><div>10 кръга с ръце назад + 10 ротации на рамене</div></div>
       <div class="warmrow"><span>03</span><div>10 леки клека</div></div>
       <div class="warmrow"><span>04</span><div>Висене на лоста 15 сек или 1 серия на 50% усилие</div></div>
-      <div class="sub" style="margin-top:14px;">Студен лост и студени рамене през зимата е най-честият начин да се контузиш.</div>
+      <div class="sub" style="margin-top:14px;" id="warm-note">Студен лост и студени рамене през зимата е най-честият начин да се контузиш.</div>
       <div class="ctrl"><button class="b-main full" id="warm-ok">Загрях се</button></div>
     </div>
 
@@ -505,6 +505,9 @@ const LIB={
 };
 
 // ---------- day / streak ----------
+const WINTER=true; // permanent: strength outdoors short, core 40 s
+const WORK_S=WINTER?40:30;
+function coreMin(n){return Math.round((n*WORK_S+(n-1)*15)/60);}
 const dayMap={0:'core',1:'core',2:'strength',3:'core',4:'strength',5:'core',6:'run'};
 const dayNames=['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
 const planNames={core:'Ядро',strength:'Сила',run:'Тичане'};
@@ -639,11 +642,11 @@ function renderProgress(){
     const order=['warm','долна част','горна част','barLow','корем','barUp','hot','горна част','долна част','корем']
       .filter(c=>bar||(c!=='barLow'&&c!=='barUp'));
     ex=order.map(c=>{const n=pick(c,rec,avoid,taken);taken.push(n);return n;});
-    ph=[];ex.forEach((n,i)=>{ph.push({t:'work',l:n,d:30,r:i+1});
+    ph=[];ex.forEach((n,i)=>{ph.push({t:'work',l:n,d:WORK_S,r:i+1});
       if(i<ex.length-1)ph.push({t:'rest',l:'Почивка',d:15,r:i+1});});}
   function renderList(){list.innerHTML='';ex.forEach((n,i)=>{const L=LIB[n];
     const row=document.createElement('div');row.className='exrow';
-    row.innerHTML='<div><div class="n">'+(i+1)+'. '+n+'</div><div class="c">'+L.c+'</div></div><div class="v">30с</div>'+
+    row.innerHTML='<div><div class="n">'+(i+1)+'. '+n+'</div><div class="c">'+L.c+'</div></div><div class="v">'+WORK_S+'с</div>'+
       '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span></div>';
     row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});}
   function buildDots(){dots.innerHTML='';ph.forEach(p=>{const d=document.createElement('div');
@@ -720,8 +723,14 @@ function renderProgress(){
     {n:'Обърнати гребания',t:'10-12 повт.',s:3,r:60},
     post,
     {n:'Вдигане на крака (уред за корем)',t:'12-18 повт.',s:3,r:45},
-  ];
+  ].filter(e=>!WINTER||['Набирания на лоста','Дипове на успоредката','Обърнати гребания'].includes(e.n));
+  const hasPost=plan.includes(post);
   window.__strPlan=plan;
+  if(WINTER){const wc=document.getElementById('warm-card');
+    wc.querySelector('.label').textContent='Загрявка вкъщи · 5 мин';
+    wc.querySelectorAll('.warmrow div')[0].textContent='1 минута скачащи джакове или бягане на място';
+    wc.querySelectorAll('.warmrow div')[3].textContent='Облечи се и излез загрят. Навън: първо висене на лоста 15 сек';
+    document.getElementById('warm-note').textContent='Навън правиш само набирания, дипове и гребания, около 15 минути. Краката и коремът са в Ядрото.';}
   let ei=0,si=0,hits=0,total=plan.reduce((a,e)=>a+e.s,0),rh=null,rend=0;
   let exHits={};plan.forEach(e=>exHits[e.n]={h:0,s:e.s});
   if(resume){ei=saved.ei;si=saved.si;hits=saved.hits;exHits=saved.exHits;}
@@ -763,7 +772,7 @@ function renderProgress(){
   function done(){try{localStorage.removeItem('wt_str_live');}catch(e){}
     hit.disabled=true;miss.disabled=true;keepAwake(false);setBodyPhase(null);
     fin.classList.add('on');find.textContent=hits+' от '+total+' серии на целта.';cueEnd();say('Тренировката приключи.');
-    logSession('strength',{hits,total,ex:exHits,post:post.n});}
+    const det={hits,total,ex:exHits};if(hasPost)det.post=post.n;logSession('strength',det);}
   hit.addEventListener('click',()=>{if(ei>=plan.length)return;hits++;exHits[plan[ei].n].h++;adv(true);});
   miss.addEventListener('click',()=>{if(ei>=plan.length)return;adv(false);});
   build();refresh();
@@ -815,13 +824,13 @@ function renderHome(){
   const bar=load('wt_bar',true),nEx=bar?10:8;
   let h='<div class="k">По план</div><div class="t">'+planNames[type]+'</div>';
   if(type==='core'){
-    h+='<div class="m">'+nEx+' упражнения · около 7 минути</div><div class="chips">'+
+    h+='<div class="m">'+nEx+' упражнения · около '+coreMin(nEx)+' минути</div><div class="chips">'+
       ['кардио','долна част','корем','горна част'].concat(bar?['с лост']:[]).map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>'+
       '<button class="b-main full" data-go="core" data-start="1">Започни</button>';
   }else if(type==='strength'){
     const plan=window.__strPlan||[];
     const ses=log.filter(x=>x.type==='strength'&&x.detail&&x.detail.ex);
-    h+='<div class="m">уредите в двора · около 35 минути</div><div style="margin:10px 0 16px">';
+    h+='<div class="m">'+(WINTER?'загрей вкъщи · навън около 15 минути':'уредите в двора · около 35 минути')+'</div><div style="margin:10px 0 16px">';
     plan.forEach(e=>{const past=ses.map(x=>x.detail.ex[e.n]).filter(Boolean);
       const last=past[0],ready=past.length>=2&&past[0].h>=past[0].s&&past[1].h>=past[1].s;
       const sub=last?('миналия път '+last.h+'/'+last.s+' серии на целта'):'първи път';
@@ -840,7 +849,7 @@ function renderHome(){
   $('h-week').innerHTML=wk;$('h-wk').textContent=done+' от 6';
   const tw=(today+1)%7,tt=dayMap[tw];
   $('h-tl').textContent='Утре · '+dayNames[tw];
-  const meta={core:nEx+' упражнения · около 7 минути',strength:'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
+  const meta={core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 15 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
   $('h-tmrw').innerHTML='<div class="t">'+planNames[tt]+'</div><div class="s">'+meta[tt]+'</div>';
   $('h-other').innerHTML=['core','strength','run'].filter(t=>t!==type).map(t=>
     '<button class="mc" data-go="'+t+'"><div class="t">'+planNames[t]+'</div><div class="s">'+meta[t]+'</div></button>').join('');

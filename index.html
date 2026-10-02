@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Тренировка</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Тренировка">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@300;400;500;600;700&family=Sofia+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f6f3;
+    --card:#ffffff;
+    --ink:#16181c;
+    --ink-2:#4c5159;
+    --muted:#9a9ea6;
+    --line:#e6e4df;
+    --line-2:#efedE8;
+    --work:#c4501e;
+    --rest:#3d6f72;
+    --accent:var(--ink);
+    --radius:20px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1012; --card:#17191c; --ink:#f0efec; --ink-2:#b4b7bc;
+      --muted:#72767d; --line:#26282c; --line-2:#1f2125;
+      --work:#e0703c; --rest:#6fa6a8;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1012; --card:#17191c; --ink:#f0efec; --ink-2:#b4b7bc;
+    --muted:#72767d; --line:#26282c; --line-2:#1f2125;
+    --work:#e0703c; --rest:#6fa6a8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--bg);color:var(--ink);
+    font-family:'Sofia Sans',system-ui,sans-serif;min-height:100vh;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:440px;margin:0 auto;padding:26px 20px calc(44px + env(safe-area-inset-bottom));}
+
+  /* header */
+  .head{display:flex;justify-content:space-between;align-items:baseline;
+    padding-bottom:14px;border-bottom:1px solid var(--line);}
+  .head h1{font-size:15px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;}
+  .head .clock{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:400;}
+  .daybar{display:flex;justify-content:space-between;align-items:center;
+    padding:11px 0 22px;font-size:13px;color:var(--muted);}
+  .daybar b{color:var(--ink);font-weight:600;}
+  .streak{font-variant-numeric:tabular-nums;}
+  .tools{display:flex;justify-content:space-between;align-items:center;margin:-12px 0 16px;min-height:26px;}
+  .tools-r{display:flex;gap:18px;}
+  #awake-status{font-size:12px;color:var(--rest);}
+  button.link{flex:none;width:auto;background:none;border:none;padding:4px 0;font-size:12.5px;font-weight:500;
+    color:var(--muted);white-space:nowrap;letter-spacing:.01em;}
+  button.link.on{color:var(--ink);}
+  .pgrid{margin-top:6px;}
+  .prow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-2);}
+  .prow:last-child{border-bottom:none;}
+  .prow .pn{flex:1;font-size:13.5px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cells{display:flex;gap:4px;flex-shrink:0;}
+  .cell{flex:none;width:12px;height:12px;border-radius:3px;border:1px solid var(--line);}
+  .cell.ok{background:var(--ink);border-color:var(--ink);}
+  .cell.part{background:linear-gradient(to top,var(--muted) 50%,transparent 50%);border-color:var(--muted);}
+  .cell.none{background:transparent;}
+  .cloud{font-size:11.5px;color:var(--muted);margin-top:14px;}
+
+  /* tabs */
+  .tabs{display:flex;gap:26px;border-bottom:1px solid var(--line);margin-bottom:26px;}
+  .tab{padding-bottom:11px;font-size:15px;font-weight:500;color:var(--muted);
+    cursor:pointer;border-bottom:1.5px solid transparent;margin-bottom:-1px;transition:color .18s,border-color .18s;}
+  .tab.active{color:var(--ink);border-bottom-color:var(--ink);}
+
+  .panel{display:none;flex-direction:column;gap:18px;}
+  .panel.active{display:flex;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px 22px;}
+
+  /* ring */
+  .ring-wrap{position:relative;width:236px;height:236px;margin:6px auto 0;}
+  .ring-wrap svg{transform:rotate(-90deg);width:100%;height:100%;overflow:visible;}
+  .ring-bg{fill:none;stroke:var(--line);stroke-width:1.5;}
+  .ring-fg{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-linecap:round;
+    transition:stroke .4s,stroke-dashoffset .16s linear;}
+  .ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+  .ring-phase{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+  .ring-num{font-family:'Sofia Sans Condensed','Sofia Sans',sans-serif;font-size:76px;font-weight:400;
+    line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.01em;transition:color .3s;}
+  .ring-num.urgent{color:var(--work);}
+  .ring-next{font-size:11.5px;color:var(--muted);letter-spacing:.02em;max-width:160px;text-align:center;line-height:1.4;}
+
+  .now-name{text-align:center;font-size:23px;font-weight:600;letter-spacing:-.01em;
+    margin:22px 0 0;min-height:30px;line-height:1.2;}
+  .cue{font-size:13.5px;line-height:1.6;color:var(--ink-2);margin-top:12px;
+    padding-top:14px;border-top:1px solid var(--line-2);min-height:40px;}
+  .cue .err{display:block;margin-top:7px;color:var(--work);font-size:12.5px;}
+  .cue b{color:var(--ink);font-weight:600;}
+
+  /* progress */
+  .progress-dots{display:flex;gap:3px;margin-top:20px;}
+  .pd{height:2px;flex:1;background:var(--line);border-radius:1px;transition:background .3s;}
+  .pd.done{background:var(--muted);}
+  .pd.cur{background:var(--work);}
+
+  /* buttons */
+  .ctrl{display:flex;gap:9px;margin-top:22px;}
+  button{font-family:inherit;font-size:14.5px;font-weight:600;letter-spacing:.02em;
+    border:none;border-radius:13px;padding:15px 0;cursor:pointer;flex:1;transition:opacity .15s,transform .08s;}
+  button:active{transform:scale(.985);}
+  .b-main{background:var(--ink);color:var(--card);}
+  .b-alt{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  .b-thin{background:transparent;color:var(--muted);border:none;font-size:13px;padding:11px 0;font-weight:500;}
+  .b-thin:hover{color:var(--ink);}
+  .full{width:100%;}
+  button:disabled{opacity:.3;}
+
+  /* lists */
+  .label{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:6px;}
+  .exrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    padding:15px 0;border-bottom:1px solid var(--line-2);cursor:pointer;flex-wrap:wrap;}
+  .exrow:last-of-type{border-bottom:none;padding-bottom:4px;}
+  .exrow>div:first-child{flex:1;min-width:0;}
+  .exrow .n{font-size:15px;font-weight:500;}
+  .exrow .c{font-size:11.5px;color:var(--muted);margin-top:3px;letter-spacing:.04em;}
+  .exrow .v{font-size:13px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .exrow .v b{color:var(--ink);font-weight:600;}
+  .exrow.cur .n{color:var(--work);}
+  .exrow.fin{opacity:.36;}
+  .exrow .detail{display:none;font-size:13px;color:var(--ink-2);line-height:1.6;
+    margin-top:10px;width:100%;padding-left:0;}
+  .exrow.open .detail{display:block;}
+  .exrow .detail .err{display:block;margin-top:6px;color:var(--work);font-size:12.5px;}
+
+  /* toggle */
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;
+    margin-top:20px;padding-top:18px;border-top:1px solid var(--line-2);}
+  .sw{width:42px;height:25px;background:var(--line);border-radius:20px;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;}
+  .sw.on{background:var(--ink);}
+  .sw::after{content:'';position:absolute;width:19px;height:19px;border-radius:50%;
+    background:var(--card);top:3px;left:3px;transition:left .2s;}
+  .sw.on::after{left:20px;}
+  .sub{font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  /* rest + finish */
+  .restbox{display:none;text-align:center;padding:20px 0 22px;margin-bottom:6px;
+    border-bottom:1px solid var(--line-2);}
+  .restbox.on{display:block;}
+  .restbox .ring-phase{margin-bottom:6px;}
+  .restbox .ring-num{font-size:46px;color:var(--rest);}
+  .levelup{display:none;border-left:2px solid var(--work);padding:2px 0 2px 14px;
+    font-size:13px;line-height:1.6;color:var(--ink-2);margin-top:18px;}
+  .levelup.on{display:block;}
+  .finish{display:none;text-align:center;padding:26px 8px 6px;}
+  .finish.on{display:block;}
+  .finish .big{font-size:21px;font-weight:600;}
+  .finish .sm{font-size:13px;color:var(--muted);margin-top:6px;}
+
+  /* history */
+  .hist{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;
+    padding:11px 0;border-bottom:1px solid var(--line-2);font-variant-numeric:tabular-nums;}
+  .hist:last-child{border-bottom:none;}
+  .hist b{color:var(--ink);font-weight:600;}
+  .week{display:flex;gap:6px;margin-top:20px;}
+  .wd{flex:1;text-align:center;}
+  .wd .l{font-size:10.5px;color:var(--muted);margin-bottom:7px;letter-spacing:.06em;text-transform:uppercase;}
+  .wd .b{height:3px;border-radius:2px;background:var(--line);}
+  .wd .b.done{background:var(--ink);}
+  .wd .b.today{background:var(--work);}
+
+  .warmrow{display:flex;gap:14px;font-size:14px;color:var(--ink-2);line-height:1.55;
+    padding:13px 0;border-bottom:1px solid var(--line-2);}
+  .warmrow:last-of-type{border-bottom:none;}
+  .warmrow span{font-size:12px;color:var(--muted);flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head"><h1>Тренировка</h1><div class="clock" id="clock"></div></div>
+  <div class="daybar"><div id="dayhint"></div><div class="streak" id="streak"></div></div>
+  <div class="tools"><span id="awake-status"></span><div class="tools-r"><button class="link" id="voice-btn">Глас</button><button class="link" id="test-snd">Тест звук</button></div></div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="core">Ядро</div>
+    <div class="tab" data-tab="strength">Сила</div>
+    <div class="tab" data-tab="run">Тичане</div>
+  </div>
+
+  <div class="panel active" id="panel-core">
+    <div class="card">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="44"></circle>
+          <circle class="ring-fg" id="c-ring" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="ring-inner">
+          <div class="ring-phase" id="c-phase">Готовност</div>
+          <div class="ring-num" id="c-num">00:30</div>
+          <div class="ring-next" id="c-next"></div>
+        </div>
+      </div>
+      <div class="now-name" id="c-name">Интервален кръг</div>
+      <div class="cue" id="c-cue">Натисни старт. Упражненията се сменят автоматично.</div>
+      <div class="progress-dots" id="c-dots"></div>
+      <div class="ctrl">
+        <button class="b-main" id="c-start">Старт</button>
+        <button class="b-alt" id="c-shuffle">Разбъркай</button>
+      </div>
+      <div class="ctrl" style="margin-top:6px;"><button class="b-thin full" id="c-reset">Нулирай</button></div>
+    </div>
+
+    <div class="card">
+      <div class="label">Днешни упражнения</div>
+      <div class="sub" style="margin-bottom:4px;">Докосни за техника</div>
+      <div id="c-list"></div>
+      <div class="toggle">
+        <div><div style="font-size:14.5px;font-weight:500;">Тих режим</div>
+        <div class="sub" style="margin-top:3px;">Без скачане</div></div>
+        <div class="sw" id="c-quiet"></div>
+      </div>
+      <div class="toggle">
+        <div><div style="font-size:14.5px;font-weight:500;">С кривия лост</div>
+        <div class="sub" style="margin-top:3px;">Включва упражнения с 6 кг</div></div>
+        <div class="sw" id="c-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-strength">
+    <div class="card" id="warm-card">
+      <div class="label">Загрявка · 5 мин</div>
+      <div class="warmrow"><span>01</span><div>20 скачащи джакове или бързо ходене до уредите</div></div>
+      <div class="warmrow"><span>02</span><div>10 кръга с ръце назад + 10 ротации на рамене</div></div>
+      <div class="warmrow"><span>03</span><div>10 леки клека</div></div>
+      <div class="warmrow"><span>04</span><div>Висене на лоста 15 сек или 1 серия на 50% усилие</div></div>
+      <div class="sub" style="margin-top:14px;">Студен лост и студени рамене през зимата е най-честият начин да се контузиш.</div>
+      <div class="ctrl"><button class="b-main full" id="warm-ok">Загрях се</button></div>
+    </div>
+
+    <div class="card" id="str-card" style="display:none;">
+      <div class="restbox" id="s-restbox">
+        <div class="ring-phase">Почивка</div>
+        <div class="ring-num" id="s-restnum">01:30</div>
+        <div class="ctrl" style="margin-top:8px;gap:6px;">
+          <button class="b-thin" id="s-undo">Отмени серията</button>
+          <button class="b-thin" id="s-skip">Пропусни почивката</button>
+        </div>
+      </div>
+      <div class="label">Днес</div>
+      <div class="sub" style="margin-bottom:4px;">Докосни за техника</div>
+      <div id="s-list"></div>
+      <div class="ctrl"><button class="b-main full" id="s-hit">Сет готово</button></div>
+      <div class="ctrl" style="margin-top:6px;"><button class="b-thin full" id="s-miss">Не стигнах целта</button></div>
+      <div class="levelup" id="s-levelup"></div>
+      <div class="finish" id="s-finish"><div class="big">Готово</div><div class="sm" id="s-finish-d"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="label">Прогрес по упражнение</div>
+      <div class="sub" style="margin-bottom:6px;">Последните 6 сесии · плътно = пълна цел</div>
+      <div class="pgrid" id="s-prog"></div>
+    </div>
+
+  </div>
+
+  <div class="panel" id="panel-run">
+    <div class="card">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="44"></circle>
+          <circle class="ring-fg" id="r-ring" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="276.46"></circle>
+        </svg>
+        <div class="ring-inner">
+          <div class="ring-phase" id="r-phase">Събота · на светло</div>
+          <div class="ring-num" id="r-num">00:00</div>
+          <div class="ring-next" id="r-next">3-4 км · ~6 км/ч</div>
+        </div>
+      </div>
+      <div class="ctrl">
+        <button class="b-main" id="r-start">Старт</button>
+        <button class="b-alt" id="r-reset">Нулирай</button>
+      </div>
+      <div class="toggle">
+        <div><div style="font-size:14.5px;font-weight:500;">Интервален режим</div>
+        <div class="sub" style="margin-top:3px;">1 мин бързо / 2 мин възстановяване × 6</div></div>
+        <div class="sw" id="r-toggle"></div>
+      </div>
+      <div class="progress-dots" id="r-dots"></div>
+      <div class="ctrl"><button class="b-alt full" id="r-log" disabled>Запиши пробега</button></div>
+      <div class="sub" id="r-logged" style="text-align:center;margin-top:10px;"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px;">
+    <div class="label">Последни сесии</div>
+    <div id="s-hist"><div class="sub">Още няма записани сесии.</div></div>
+  </div>
+</div>
+
+<script>
+const C=276.46;
+function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function fmtSW(ms){const t=Math.floor(ms/1000);return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');}
+// ---- audio: Web Audio unlocked inside a real tap (iOS), HTML <audio> as fallback ----
+try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){} // iOS 17+: ignore the silent switch
+function makeWav(tones){
+  const sr=22050; let total=0; tones.forEach(t=>total+=Math.floor(sr*t[1]));
+  const buf=new ArrayBuffer(44+total*2), v=new DataView(buf);
+  const w=(o,str)=>{for(let i=0;i<str.length;i++)v.setUint8(o+i,str.charCodeAt(i));};
+  w(0,'RIFF');v.setUint32(4,36+total*2,true);w(8,'WAVE');w(12,'fmt ');
+  v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
+  w(36,'data');v.setUint32(40,total*2,true);
+  let off=44;
+  tones.forEach(([f,d])=>{const n=Math.floor(sr*d);
+    for(let i=0;i<n;i++){const env=Math.min(1,i/200)*Math.min(1,(n-i)/400);
+      v.setInt16(off,f?Math.sin(2*Math.PI*f*i/sr)*0.55*env*32767:0,true);off+=2;}});
+  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+}
+const TONES={work:[[920,.18]],rest:[[440,.14],[0,.06],[440,.14]],tick:[[700,.08]],end:[[660,.14],[0,.05],[990,.26]]};
+const WAV={};Object.keys(TONES).forEach(k=>WAV[k]=makeWav(TONES[k]));
+const SILENT=makeWav([[0,.05]]);
+let actx=null,htmlEl=null,htmlOk=false;
+function unlockAudio(){ // runs in the capture phase of every tap, before any button handler
+  try{
+    if(!actx){const AC=window.AudioContext||window.webkitAudioContext;if(AC)actx=new AC();}
+    if(actx){if(actx.state!=='running')actx.resume();
+      const sb=actx.createBufferSource();sb.buffer=actx.createBuffer(1,1,22050);sb.connect(actx.destination);sb.start(0);}
+  }catch(e){}
+  if(!htmlOk){try{if(!htmlEl){htmlEl=new Audio();htmlEl.setAttribute('playsinline','');}
+    htmlEl.src=SILENT;const p=htmlEl.play();if(p&&p.then)p.then(()=>{htmlOk=true;}).catch(()=>{});else htmlOk=true;}catch(e){}}
+}
+function audioState(){return actx&&actx.state==='running'?'web':htmlOk?'html':'blocked';}
+function play(k){
+  const t=TONES[k];if(!t)return;
+  if(actx&&actx.state==='running'){try{let at=actx.currentTime+0.01;
+    t.forEach(([f,d])=>{if(f){const o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,at);g.gain.exponentialRampToValueAtTime(0.5,at+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001,at+d);o.connect(g);g.connect(actx.destination);o.start(at);o.stop(at+d+0.02);}
+      at+=d;});return;}catch(e){}}
+  if(htmlEl&&htmlOk){try{htmlEl.src=WAV[k];htmlEl.currentTime=0;const p=htmlEl.play();if(p&&p.catch)p.catch(()=>{});}catch(e){}}
+}
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
+// ---- cue track: every beep of a timed block rendered into ONE audio file and played like music.
+// iPhone keeps music playing when the screen locks, so the beeps keep coming even if the page sleeps.
+const TR_SR=6000;let trackEl=null,trackUrl=null,trackOn=false;
+function buildTrack(total,events){
+  const n=Math.ceil(total*TR_SR),buf=new ArrayBuffer(44+n),v=new DataView(buf),u8=new Uint8Array(buf);
+  const w=(o,str)=>{for(let i=0;i<str.length;i++)v.setUint8(o+i,str.charCodeAt(i));};
+  w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);
+  v.setUint16(22,1,true);v.setUint32(24,TR_SR,true);v.setUint32(28,TR_SR,true);v.setUint16(32,1,true);v.setUint16(34,8,true);
+  w(36,'data');v.setUint32(40,n,true);u8.fill(128,44);
+  events.forEach(([t,k])=>{let pos=Math.floor(t*TR_SR);(TONES[k]||[]).forEach(([f,d])=>{const m=Math.floor(d*TR_SR);
+    if(f)for(let i=0;i<m&&pos+i<n;i++){const env=Math.min(1,i/40)*Math.min(1,(m-i)/80);
+      u8[44+pos+i]=128+Math.round(Math.sin(2*Math.PI*f*i/TR_SR)*90*env);}pos+=m;});});
+  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+}
+function startTrack(total,events){ // must run inside a tap
+  try{if(!trackEl){trackEl=new Audio();trackEl.setAttribute('playsinline','');trackEl.addEventListener('ended',()=>{trackOn=false;});}
+    if(trackUrl)URL.revokeObjectURL(trackUrl);trackUrl=buildTrack(total,events);trackEl.src=trackUrl;
+    trackOn=true;const p=trackEl.play();if(p&&p.catch)p.catch(()=>{trackOn=false;});}catch(e){trackOn=false;}}
+function resumeTrack(offset){if(!trackEl||!trackUrl)return;
+  try{trackEl.currentTime=Math.max(0,offset);trackOn=true;const p=trackEl.play();if(p&&p.catch)p.catch(()=>{trackOn=false;});}catch(e){trackOn=false;}}
+function stopTrack(){trackOn=false;try{trackEl&&trackEl.pause();}catch(e){}}
+function tickEvents(t0,d,ev){for(let k=3;k>=1;k--)if(d>k)ev.push([t0+d-k,'tick']);}
+// while a cue track plays, it makes the sounds; the page only vibrates
+const cueWork=()=>{if(!trackOn)play('work');vib([90]);};
+const cueRest=()=>{if(!trackOn)play('rest');vib([40,70,40]);};
+const cueEnd=()=>{if(!trackOn)play('end');vib([110,70,110]);};
+const tickBeep=()=>{if(!trackOn)play('tick');};
+// ---- voice (Bulgarian speech synthesis) ----
+let voiceOn=load('wt_voice',true),bgVoice=null,voiceUnlocked=false;
+function pickVoice(){try{const vs=speechSynthesis.getVoices();bgVoice=vs.find(v=>/^bg/i.test(v.lang))||null;}catch(e){}}
+try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}catch(e){}
+function unlockVoice(){if(voiceUnlocked||!('speechSynthesis' in window))return;voiceUnlocked=true;
+  try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);}catch(e){}}
+function say(t){if(!voiceOn||!('speechSynthesis' in window))return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='bg-BG';
+    if(bgVoice)u.voice=bgVoice;u.rate=1.02;setTimeout(()=>speechSynthesis.speak(u),180);}catch(e){}}
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+
+const NS_MP4="data:video/mp4;base64,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", NS_WEBM="data:video/webm;base64,GkXfowEAAAAAAAAfQoaBAUL3gQFC8oEEQvOBCEKChHdlYm1Ch4EEQoWBAhhTgGcBAAAAAAAVkhFNm3RALE27i1OrhBVJqWZTrIHfTbuMU6uEFlSua1OsggEwTbuMU6uEHFO7a1OsghV17AEAAAAAAACkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmAQAAAAAAAEUq17GDD0JATYCNTGF2ZjU1LjMzLjEwMFdBjUxhdmY1NS4zMy4xMDBzpJBlrrXf3DCDVB8KcgbMpcr+RImIQJBgAAAAAAAWVK5rAQAAAAAAD++uAQAAAAAAADLXgQFzxYEBnIEAIrWcg3VuZIaFVl9WUDiDgQEj44OEAmJaAOABAAAAAAAABrCBsLqBkK4BAAAAAAAPq9eBAnPFgQKcgQAitZyDdW5khohBX1ZPUkJJU4OBAuEBAAAAAAAAEZ+BArWIQOdwAAAAAABiZIEgY6JPbwIeVgF2b3JiaXMAAAAAAoC7AAAAAAAAgLUBAAAAAAC4AQN2b3JiaXMtAAAAWGlwaC5PcmcgbGliVm9yYmlzIEkgMjAxMDExMDEgKFNjaGF1ZmVudWdnZXQpAQAAABUAAABlbmNvZGVyPUxhdmM1NS41Mi4xMDIBBXZvcmJpcyVCQ1YBAEAAACRzGCpGpXMWhBAaQlAZ4xxCzmvsGUJMEYIcMkxbyyVzkCGkoEKIWyiB0JBVAABAAACHQXgUhIpBCCGEJT1YkoMnPQghhIg5eBSEaUEIIYQQQgghhBBCCCGERTlokoMnQQgdhOMwOAyD5Tj4HIRFOVgQgydB6CCED0K4moOsOQghhCQ1SFCDBjnoHITCLCiKgsQwuBaEBDUojILkMMjUgwtCiJqDSTX4GoRnQXgWhGlBCCGEJEFIkIMGQcgYhEZBWJKDBjm4FITLQagahCo5CB+EIDRkFQCQAACgoiiKoigKEBqyCgDIAAAQQFEUx3EcyZEcybEcCwgNWQUAAAEACAAAoEiKpEiO5EiSJFmSJVmSJVmS5omqLMuyLMuyLMsyEBqyCgBIAABQUQxFcRQHCA1ZBQBkAAAIoDiKpViKpWiK54iOCISGrAIAgAAABAAAEDRDUzxHlETPVFXXtm3btm3btm3btm3btm1blmUZCA1ZBQBAAAAQ0mlmqQaIMAMZBkJDVgEACAAAgBGKMMSA0JBVAABAAACAGEoOogmtOd+c46BZDppKsTkdnEi1eZKbirk555xzzsnmnDHOOeecopxZDJoJrTnnnMSgWQqaCa0555wnsXnQmiqtOeeccc7pYJwRxjnnnCateZCajbU555wFrWmOmkuxOeecSLl5UptLtTnnnHPOOeecc84555zqxekcnBPOOeecqL25lpvQxTnnnE/G6d6cEM4555xzzjnnnHPOOeecIDRkFQAABABAEIaNYdwpCNLnaCBGEWIaMulB9+gwCRqDnELq0ehopJQ6CCWVcVJKJwgNWQUAAAIAQAghhRRSSCGFFFJIIYUUYoghhhhyyimnoIJKKqmooowyyyyzzDLLLLPMOuyssw47DDHEEEMrrcRSU2011lhr7jnnmoO0VlprrbVSSimllFIKQkNWAQAgAAAEQgYZZJBRSCGFFGKIKaeccgoqqIDQkFUAACAAgAAAAABP8hzRER3RER3RER3RER3R8RzPESVREiVREi3TMjXTU0VVdWXXlnVZt31b2IVd933d933d+HVhWJZlWZZlWZZlWZZlWZZlWZYgNGQVAAACAAAghBBCSCGFFFJIKcYYc8w56CSUEAgNWQUAAAIACAAAAHAUR3EcyZEcSbIkS9IkzdIsT/M0TxM9URRF0zRV0RVdUTdtUTZl0zVdUzZdVVZtV5ZtW7Z125dl2/d93/d93/d93/d93/d9XQdCQ1YBABIAADqSIymSIimS4ziOJElAaMgqAEAGAEAAAIriKI7jOJIkSZIlaZJneZaomZrpmZ4qqkBoyCoAABAAQAAAAAAAAIqmeIqpeIqoeI7oiJJomZaoqZoryqbsuq7ruq7ruq7ruq7ruq7ruq7ruq7ruq7ruq7ruq7ruq7ruq4LhIasAgAkAAB0JEdyJEdSJEVSJEdygNCQVQCADACAAAAcwzEkRXIsy9I0T/M0TxM90RM901NFV3SB0JBVAAAgAIAAAAAAAAAMybAUy9EcTRIl1VItVVMt1VJF1VNVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVN0zRNEwgNWQkAkAEAkBBTLS3GmgmLJGLSaqugYwxS7KWxSCpntbfKMYUYtV4ah5RREHupJGOKQcwtpNApJq3WVEKFFKSYYyoVUg5SIDRkhQAQmgHgcBxAsixAsiwAAAAAAAAAkDQN0DwPsDQPAAAAAAAAACRNAyxPAzTPAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABA0jRA8zxA8zwAAAAAAAAA0DwP8DwR8EQRAAAAAAAAACzPAzTRAzxRBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABA0jRA8zxA8zwAAAAAAAAAsDwP8EQR0DwRAAAAAAAAACzPAzxRBDzRAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAEOAAABBgIRQasiIAiBMAcEgSJAmSBM0DSJYFTYOmwTQBkmVB06BpME0AAAAAAAAAAAAAJE2DpkHTIIoASdOgadA0iCIAAAAAAAAAAAAAkqZB06BpEEWApGnQNGgaRBEAAAAAAAAAAAAAzzQhihBFmCbAM02IIkQRpgkAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAGHAAAAgwoQwUGrIiAIgTAHA4imUBAIDjOJYFAACO41gWAABYliWKAABgWZooAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAYcAAACDChDBQashIAiAIAcCiKZQHHsSzgOJYFJMmyAJYF0DyApgFEEQAIAAAocAAACLBBU2JxgEJDVgIAUQAABsWxLE0TRZKkaZoniiRJ0zxPFGma53meacLzPM80IYqiaJoQRVE0TZimaaoqME1VFQAAUOAAABBgg6bE4gCFhqwEAEICAByKYlma5nmeJ4qmqZokSdM8TxRF0TRNU1VJkqZ5niiKommapqqyLE3zPFEURdNUVVWFpnmeKIqiaaqq6sLzPE8URdE0VdV14XmeJ4qiaJqq6roQRVE0TdNUTVV1XSCKpmmaqqqqrgtETxRNU1Vd13WB54miaaqqq7ouEE3TVFVVdV1ZBpimaaqq68oyQFVV1XVdV5YBqqqqruu6sgxQVdd1XVmWZQCu67qyLMsCAAAOHAAAAoygk4wqi7DRhAsPQKEhKwKAKAAAwBimFFPKMCYhpBAaxiSEFEImJaXSUqogpFJSKRWEVEoqJaOUUmopVRBSKamUCkIqJZVSAADYgQMA2IGFUGjISgAgDwCAMEYpxhhzTiKkFGPOOScRUoox55yTSjHmnHPOSSkZc8w556SUzjnnnHNSSuacc845KaVzzjnnnJRSSuecc05KKSWEzkEnpZTSOeecEwAAVOAAABBgo8jmBCNBhYasBABSAQAMjmNZmuZ5omialiRpmud5niiapiZJmuZ5nieKqsnzPE8URdE0VZXneZ4oiqJpqirXFUXTNE1VVV2yLIqmaZqq6rowTdNUVdd1XZimaaqq67oubFtVVdV1ZRm2raqq6rqyDFzXdWXZloEsu67s2rIAAPAEBwCgAhtWRzgpGgssNGQlAJABAEAYg5BCCCFlEEIKIYSUUggJAAAYcAAACDChDBQashIASAUAAIyx1lprrbXWQGettdZaa62AzFprrbXWWmuttdZaa6211lJrrbXWWmuttdZaa6211lprrbXWWmuttdZaa6211lprrbXWWmuttdZaa6211lprrbXWWmstpZRSSimllFJKKaWUUkoppZRSSgUA+lU4APg/2LA6wknRWGChISsBgHAAAMAYpRhzDEIppVQIMeacdFRai7FCiDHnJKTUWmzFc85BKCGV1mIsnnMOQikpxVZjUSmEUlJKLbZYi0qho5JSSq3VWIwxqaTWWoutxmKMSSm01FqLMRYjbE2ptdhqq7EYY2sqLbQYY4zFCF9kbC2m2moNxggjWywt1VprMMYY3VuLpbaaizE++NpSLDHWXAAAd4MDAESCjTOsJJ0VjgYXGrISAAgJACAQUooxxhhzzjnnpFKMOeaccw5CCKFUijHGnHMOQgghlIwx5pxzEEIIIYRSSsaccxBCCCGEkFLqnHMQQgghhBBKKZ1zDkIIIYQQQimlgxBCCCGEEEoopaQUQgghhBBCCKmklEIIIYRSQighlZRSCCGEEEIpJaSUUgohhFJCCKGElFJKKYUQQgillJJSSimlEkoJJYQSUikppRRKCCGUUkpKKaVUSgmhhBJKKSWllFJKIYQQSikFAAAcOAAABBhBJxlVFmGjCRcegEJDVgIAZAAAkKKUUiktRYIipRikGEtGFXNQWoqocgxSzalSziDmJJaIMYSUk1Qy5hRCDELqHHVMKQYtlRhCxhik2HJLoXMOAAAAQQCAgJAAAAMEBTMAwOAA4XMQdAIERxsAgCBEZohEw0JweFAJEBFTAUBigkIuAFRYXKRdXECXAS7o4q4DIQQhCEEsDqCABByccMMTb3jCDU7QKSp1IAAAAAAADADwAACQXAAREdHMYWRobHB0eHyAhIiMkAgAAAAAABcAfAAAJCVAREQ0cxgZGhscHR4fICEiIyQBAIAAAgAAAAAggAAEBAQAAAAAAAIAAAAEBB9DtnUBAAAAAAAEPueBAKOFggAAgACjzoEAA4BwBwCdASqwAJAAAEcIhYWIhYSIAgIABhwJ7kPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99YAD+/6tQgKOFggADgAqjhYIAD4AOo4WCACSADqOZgQArADECAAEQEAAYABhYL/QACIBDmAYAAKOFggA6gA6jhYIAT4AOo5mBAFMAMQIAARAQABgAGFgv9AAIgEOYBgAAo4WCAGSADqOFggB6gA6jmYEAewAxAgABEBAAGAAYWC/0AAiAQ5gGAACjhYIAj4AOo5mBAKMAMQIAARAQABgAGFgv9AAIgEOYBgAAo4WCAKSADqOFggC6gA6jmYEAywAxAgABEBAAGAAYWC/0AAiAQ5gGAACjhYIAz4AOo4WCAOSADqOZgQDzADECAAEQEAAYABhYL/QACIBDmAYAAKOFggD6gA6jhYIBD4AOo5iBARsAEQIAARAQFGAAYWC/0AAiAQ5gGACjhYIBJIAOo4WCATqADqOZgQFDADECAAEQEAAYABhYL/QACIBDmAYAAKOFggFPgA6jhYIBZIAOo5mBAWsAMQIAARAQABgAGFgv9AAIgEOYBgAAo4WCAXqADqOFggGPgA6jmYEBkwAxAgABEBAAGAAYWC/0AAiAQ5gGAACjhYIBpIAOo4WCAbqADqOZgQG7ADECAAEQEAAYABhYL/QACIBDmAYAAKOFggHPgA6jmYEB4wAxAgABEBAAGAAYWC/0AAiAQ5gGAACjhYIB5IAOo4WCAfqADqOZgQILADECAAEQEAAYABhYL/QACIBDmAYAAKOFggIPgA6jhYICJIAOo5mBAjMAMQIAARAQABgAGFgv9AAIgEOYBgAAo4WCAjqADqOFggJPgA6jmYECWwAxAgABEBAAGAAYWC/0AAiAQ5gGAACjhYICZIAOo4WCAnqADqOZgQKDADECAAEQEAAYABhYL/QACIBDmAYAAKOFggKPgA6jhYICpIAOo5mBAqsAMQIAARAQABgAGFgv9AAIgEOYBgAAo4WCArqADqOFggLPgA6jmIEC0wARAgABEBAUYABhYL/QACIBDmAYAKOFggLkgA6jhYIC+oAOo5mBAvsAMQIAARAQABgAGFgv9AAIgEOYBgAAo4WCAw+ADqOZgQMjADECAAEQEAAYABhYL/QACIBDmAYAAKOFggMkgA6jhYIDOoAOo5mBA0sAMQIAARAQABgAGFgv9AAIgEOYBgAAo4WCA0+ADqOFggNkgA6jmYEDcwAxAgABEBAAGAAYWC/0AAiAQ5gGAACjhYIDeoAOo4WCA4+ADqOZgQObADECAAEQEAAYABhYL/QACIBDmAYAAKOFggOkgA6jhYIDuoAOo5mBA8MAMQIAARAQABgAGFgv9AAIgEOYBgAAo4WCA8+ADqOFggPkgA6jhYID+oAOo4WCBA+ADhxTu2sBAAAAAAAAEbuPs4EDt4r3gQHxghEr8IEK";
+let wl=null,vid=null,awake=false,wantAwake=false;
+function ensureVid(){if(vid)return vid;
+  vid=document.createElement('video');vid.setAttribute('playsinline','');vid.setAttribute('title','No Sleep');
+  vid.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01;pointer-events:none;';
+  [['webm',NS_WEBM],['mp4',NS_MP4]].forEach(([t,u])=>{const so=document.createElement('source');so.src=u;so.type='video/'+t;vid.appendChild(so);});
+  vid.addEventListener('loadedmetadata',()=>{if(vid.duration<=1)vid.setAttribute('loop','');
+    else vid.addEventListener('timeupdate',()=>{if(vid.currentTime>0.5)vid.currentTime=Math.random();});});
+  document.body.appendChild(vid);return vid;}
+function keepAwake(on){
+  wantAwake=on;
+  if(on){
+    // video must start synchronously inside the tap (iOS), wake lock second
+    let vp=null;try{vp=ensureVid().play();}catch(e){}
+    const wp=('wakeLock'in navigator)?navigator.wakeLock.request('screen').then(l=>{wl=l;l.addEventListener('release',()=>{wl=null;});return true;}).catch(()=>false):Promise.resolve(false);
+    const vpp=vp&&vp.then?vp.then(()=>true).catch(()=>false):Promise.resolve(false);
+    Promise.all([wp,vpp]).then(([a,b])=>{awake=a;updStatus();});
+  }else{
+    try{wl&&wl.release();}catch(e){}wl=null;try{vid&&vid.pause();}catch(e){}awake=false;updStatus();
+  }
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){try{actx&&actx.state!=='running'&&actx.resume();}catch(e){}}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&wantAwake&&!wl&&'wakeLock'in navigator){
+  navigator.wakeLock.request('screen').then(l=>{wl=l;}).catch(()=>{});}});
+function updStatus(){const el=document.getElementById('awake-status');if(!el)return;
+  if(!wantAwake){el.textContent='';return;}
+  el.textContent=awake?'екранът е буден':'телефонът не позволи — провери режима за пестене на батерията';el.style.color=awake?'var(--rest)':'var(--work)';}
+// every tap unlocks audio (needs a user gesture on iOS)
+document.addEventListener('touchend',()=>{unlockAudio();unlockVoice();},{passive:true,capture:true});
+document.addEventListener('click',()=>{unlockAudio();unlockVoice();},true);
+function setBodyPhase(p){}
+
+// ---------- exercise library ----------
+const LIB={
+ 'Скачащи джакове':{c:'кардио',q:0,t:'Скачаш с разтваряне на краката и вдигане на ръцете над главата. Приземявай меко, на предната част на стъпалото.',e:'Не заключвай лактите и не свивай рамене към ушите.'},
+ 'Високи колене':{c:'кардио',q:0,t:'Бягане на място с коляно до височината на таза. Корем стегнат, ръцете работят.',e:'Не се накланяй назад — торсът стои изправен.'},
+ 'Алпинисти':{c:'кардио',q:1,t:'Опора като за лицева. Редуваш коляно към гърдите бързо, дланите под раменете.',e:'Тазът не подскача нагоре-надолу.'},
+ 'Скачане на въже (имитация)':{c:'кардио',q:0,t:'Дребни подскоци на пръсти, китките въртят, лактите близо до тялото.',e:'Не скачай високо — 2-3 см стигат.'},
+ 'Изритвания на петите назад':{c:'кардио',q:0,t:'Бягане на място, петата удря седалището. Коленете остават под таза.',e:'Не изнасяй коленете напред.'},
+ 'Кънкьорски скокове':{c:'кардио',q:0,t:'Скачаш странично от крак на крак, задният крак минава зад опорния. Кацаш с леко свито коляно.',e:'Коляното да не пада навътре при кацане.'},
+ 'Бързо ходене на място с високи ръце':{c:'кардио',q:1,t:'Ходене на място с високо коляно, ръцете над главата. Без скачане.',e:'Не задържай дъха.'},
+ 'Мечешко ходене':{c:'кардио',q:1,t:'На длани и пръсти, коленете на 5 см от пода. Движиш се напред и назад.',e:'Гърбът остава плосък, тазът не се люлее.'},
+ 'Клекове':{c:'долна част',q:1,t:'Стъпала на ширината на раменете, таз назад и надолу, коленете следват пръстите, гърдите изправени.',e:'Петите не се отлепят от пода.'},
+ 'Клекове с усукване':{c:'долна част',q:1,t:'Клек, а при изправяне завърташ торса настрани с ръце пред гърдите.',e:'Въртенето е от гръдния кош, не от кръста.'},
+ 'Странични стъпки клек':{c:'долна част',q:1,t:'Оставаш в полуклек и стъпваш настрани, без да се изправяш между стъпките.',e:'Не се изправяй — точно това е натоварването.'},
+ 'Напади на място':{c:'долна част',q:1,t:'Крачка напред, задното коляно надолу към пода, предното коляно над петата.',e:'Предното коляно не минава пред пръстите.'},
+ 'Обратни напади':{c:'долна част',q:1,t:'Крачка назад вместо напред, коляното надолу. По-щадящ за коленете вариант.',e:'Торсът остава изправен, не се навеждай.'},
+ 'Мост за седалище':{c:'долна част',q:1,t:'По гръб, стъпала близо до седалището. Вдигаш таза до права линия рамо-коляно и стягаш седалището горе.',e:'Не извивай кръста — работата е на седалището.'},
+ 'Клек до стена (задържане)':{c:'долна част',q:1,t:'Гръб на стената, бедрата успоредни на пода, задържаш неподвижно.',e:'Коленете точно над глезените, не по-напред.'},
+ 'Повдигане на пръсти':{c:'долна част',q:1,t:'Изправен, вдигаш се бавно на пръсти и се спускаш бавно — 2 сек нагоре, 2 сек надолу.',e:'Без засилване с подскок.'},
+ 'Планк':{c:'корем',q:1,t:'Лакти под раменете, тялото права линия. Стегни корем и седалище едновременно.',e:'Тазът не увисва и не се вдига нагоре.'},
+ 'Планк с ходене':{c:'корем',q:1,t:'От изправено положение „изхождаш" с ръце напред до планк и се връщаш обратно.',e:'Коремът стегнат през цялото движение.'},
+ 'Страничен планк':{c:'корем',q:1,t:'На един лакът, тялото права линия, тазът високо. Смени страната по средата на интервала.',e:'Тазът не пада към пода.'},
+ 'Планк с докосване на рамо':{c:'корем',q:1,t:'В планк докосваш срещуположното рамо, бавно и контролирано.',e:'Тазът не се върти — стъпалата по-широко помага.'},
+ 'Мъртва буболечка':{c:'корем',q:1,t:'По гръб, ръце нагоре, колене на 90°. Спускаш срещуположни ръка и крак.',e:'Кръстът остава залепен за пода.'},
+ 'Супермен':{c:'корем',q:1,t:'По корем, вдигаш ръце и крака едновременно и задържаш 2 секунди.',e:'Не отмятай главата назад — вратът е неутрален.'},
+ 'Птица-куче':{c:'корем',q:1,t:'На четири крака, изпъваш срещуположни ръка и крак до хоризонтала.',e:'Тазът не се върти — движението е бавно.'},
+ 'Ножица с крака':{c:'корем',q:1,t:'По гръб, кръстът залепен за пода, кръстосваш прави крака ниско над пода.',e:'Ако кръстът се отлепя, вдигни краката по-високо.'},
+ 'Лицеви опори':{c:'горна част',q:1,t:'Ръце малко по-широко от раменете, лактите под 45°, тялото права линия.',e:'Тазът не увисва, лактите не щръкват на 90°.'},
+ 'Наклонени лицеви опори':{c:'горна част',q:1,t:'Ръцете на перваз, маса или пейка — по-лек вариант със същата техника.',e:'Колкото по-високо е опората, толкова по-лесно.'},
+ 'Лицеви опори тип щука':{c:'горна част',q:1,t:'Тазът високо, тялото обърнато V. Спускаш темето към пода — натоварва раменете.',e:'Лактите назад, не встрани.'},
+ 'Кръгове с ръце':{c:'горна част',q:1,t:'Прави ръце встрани, малки кръгове напред 15 сек и назад 15 сек.',e:'Раменете надолу, не към ушите.'},
+ 'Бицепсово сгъване с лоста':{c:'с лост',q:1,t:'Хват на наклонените части на лоста, лактите залепени до тялото. Вдигаш до гърдите, спускаш бавно за 2 секунди.',e:'Без люлеене с кръста — ако се налага, лостът е твърде тежък за темпото.'},
+ 'Раменна преса с лоста':{c:'с лост',q:1,t:'Изправен, лостът на горната част на гърдите. Избутваш над главата, главата минава леко напред под лоста.',e:'Не извивай кръста назад — стегни корема и седалището.'},
+ 'Наведено гребане с лоста':{c:'с лост',q:1,t:'Колене леко свити, торсът наведен на около 45°, гърбът прав. Дърпаш лоста към пъпа, лопатките се събират.',e:'Гърбът не се закръгля — движението е от лактите и лопатките.'},
+ 'Румънска мъртва тяга с лоста':{c:'с лост',q:1,t:'Лостът пред бедрата, колене леко свити. Изпращаш таза назад, лостът се плъзга по краката до под коляното, после стягаш седалището нагоре.',e:'Гърбът остава прав през цялото време; не клякай — тазът отива назад, не надолу.'},
+ 'Тръстър с лоста':{c:'с лост',q:1,t:'Лостът на раменете, клякаш, а при изправянето с един непрекъснат тласък избутваш лоста над главата.',e:'Силата идва от краката — не спирай между клека и пресата.'},
+ 'Преден клек с лоста':{c:'с лост',q:1,t:'Лостът лежи на предната част на раменете, лактите високо напред. Клякаш с изправен торс.',e:'Лактите не падат надолу — иначе лостът тръгва напред и гърбът се закръгля.'},
+ 'Напади с лоста':{c:'с лост',q:1,t:'Лостът на гърба върху трапеца. Крачка назад, задното коляно към пода, редуваш краката.',e:'Предното коляно следва пръстите и не пада навътре.'},
+ 'Френско разгъване с лоста':{c:'с лост',q:1,t:'Легнал по гръб, ръцете нагоре. Сгъваш само в лактите, лостът слиза към челото, после разгъваш.',e:'Лактите сочат към тавана и не се разтварят встрани.'},
+ 'Преса от пода с лоста':{c:'с лост',q:1,t:'Легнал по гръб, колене свити. Избутваш лоста от гърдите нагоре, спускаш докато лактите докоснат пода.',e:'Лактите под около 45° от тялото, не встрани на 90°.'},
+ 'Обратно сгъване с лоста':{c:'с лост',q:1,t:'Хват отгоре, лактите до тялото. Сгъваш като при бицепс — натоварва предмишниците и хвата, полезно за набиранията.',e:'Китките остават прави, не се пречупват надолу.'},
+ 'Добро утро с лоста':{c:'с лост',q:1,t:'Лостът на гърба, колене леко свити. Навеждаш торса напред от таза до почти хоризонтал и се изправяш.',e:'Гърбът прав и бавно темпо — с 6 кг това е за задната верига, не за тежест.'},
+ 'Вдигане напред с лоста':{c:'с лост',q:1,t:'Изправен, прави ръце с лек сгъв в лакътя. Вдигаш лоста напред до нивото на очите и спускаш бавно.',e:'Без засилване с тялото и без да свиваш рамене към ушите.'},
+ 'T-Y-W с ръце':{c:'горна част',q:1,t:'Легнал по корем или наведен напред, ръцете описват буквите T, Y и W. Лопатките се събират.',e:'Движението е от лопатките, не от ръцете.'},
+ // strength
+ 'Набирания на лоста':{c:'',q:1,t:'Хват малко по-широк от раменете. Дърпаш с лопатките надолу преди лактите, брадичката над лоста, спускане бавно.',e:'Без замах с крака. Завършвай серията с 1 повторение в резерв.'},
+ 'Дипове на успоредката':{c:'',q:1,t:'Раменете надолу, торсът леко напред, спускаш до 90° в лакътя.',e:'Не слизай под 90° — раменната става страда.'},
+ 'Обърнати гребания':{c:'',q:1,t:'Лягаш под ниската тръба, тялото е права дъска, дърпаш гърдите към тръбата.',e:'Тазът не увисва. Колкото по-хоризонтален си, толкова по-тежко.'},
+ 'Мъртва тяга на един крак':{c:'',q:1,t:'На един крак, тазът назад, торсът се навежда напред, а задният крак се вдига до хоризонтала.',e:'Гърбът прав, движението е от таза, не от кръста.'},
+ 'Вдигане на крака (уред за корем)':{c:'',q:1,t:'Подпрян на лактите, вдигаш краката до 90°, бавно надолу. Ако е трудно — свити колене.',e:'Без засилване и люлеене.'}
+};
+
+// ---------- day / streak ----------
+const dayMap={0:'core',1:'core',2:'strength',3:'core',4:'strength',5:'core',6:'run'};
+const dayNames=['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
+const planNames={core:'Ядро',strength:'Сила',run:'Тичане'};
+const today=new Date().getDay();
+function switchTab(n){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===n));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+document.getElementById('dayhint').innerHTML=dayNames[today]+' · по план <b>'+planNames[dayMap[today]]+'</b>';
+switchTab(dayMap[today]);
+function updClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});}
+updClock();setInterval(updClock,1000);
+
+const LOG_MAX=250;
+function localISO(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function withIds(list){return list.map((x,i)=>x.id?x:Object.assign({},x,{id:'legacy-'+x.date+'-'+x.type+'-'+i}));}
+store('wt_log',withIds(load('wt_log',[])));
+function mergeLogs(a,b){const m=new Map();[...a,...b].forEach(x=>{if(x&&x.id&&!m.has(x.id))m.set(x.id,x);});
+  return [...m.values()].sort((x,y)=>(y.ts||0)-(x.ts||0)||(y.date>x.date?1:y.date<x.date?-1:0)).slice(0,LOG_MAX);}
+let dbDoc=null,cloudQ=Promise.resolve(),cloudState='local';
+function setCloud(st){cloudState=st;const el=document.getElementById('cloud-status');
+  if(el)el.textContent=st==='synced'?'Записва се в облака — видимо от всяко устройство.':
+    st==='error'?'Облакът не отговаря — пазя локално и ще синхронизирам по-късно.':'Записва се на този телефон.';}
+function pushCloud(list){if(!dbDoc)return;
+  cloudQ=cloudQ.then(()=>dbDoc.set({sessions:list,updated:Date.now()}))
+    .then(()=>setCloud('synced')).catch(()=>setCloud('error'));}
+async function initCloud(){
+  try{
+    if(!window.claude||typeof window.claude.use!=='function')return;
+    const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
+    if(!db||!user)return;
+    const uid=await user.id();if(!uid)return;
+    dbDoc=db.doc('data/users/'+uid+'/log');
+    const snap=await dbDoc.get();
+    const remote=snap.exists&&snap.data()&&Array.isArray(snap.data().sessions)?snap.data().sessions:[];
+    const merged=mergeLogs(load('wt_log',[]),remote);
+    store('wt_log',merged);
+    if(merged.length!==remote.length||merged.some((x,i)=>!remote[i]||remote[i].id!==x.id))pushCloud(merged);
+    else setCloud('synced');
+    renderHist();renderStreak();
+    if(window.__coreRefresh)window.__coreRefresh();
+  }catch(e){setCloud('error');}
+}
+function logSession(type,detail){
+  const entry={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ts:Date.now(),
+    date:localISO(),type,detail:detail||null};
+  const l=mergeLogs([entry],load('wt_log',[]));
+  store('wt_log',l);renderHist();renderStreak();pushCloud(l);}
+function renderStreak(){
+  const days=new Set(load('wt_log',[]).map(x=>x.date));
+  const iso=d=>localISO(d);
+  let n=0;
+  const d=new Date();
+  if(!days.has(iso(d)))d.setDate(d.getDate()-1);
+  while(days.has(iso(d))&&n<400){n++;d.setDate(d.getDate()-1);}
+  document.getElementById('streak').textContent=n>0?('\uD83D\uDD25 '+n+(n===1?' ден':' дни')):'';
+}
+function renderHist(){
+  const log=load('wt_log',[]).slice(0,8);
+  const el=document.getElementById('s-hist');
+  renderProgress();
+  if(!log.length){el.innerHTML='<div class="sub">Още няма записани сесии.</div>';}
+  else{el.innerHTML='';log.forEach(s=>{const [yy,mm,dd]=s.date.split('-').map(Number);const d=new Date(yy,mm-1,dd);const x=s.detail||{};
+    let what='';
+    if(s.type==='strength')what='Сила · <b>'+(x.hits||0)+'</b>/'+(x.total||0)+' на целта';
+    else if(s.type==='core')what='Ядро'+(Array.isArray(x.ex)?' · <b>'+x.ex.length+'</b> упражнения':'');
+    else if(s.type==='run')what='Тичане · <b>'+(x.min||0)+'</b> мин';
+    const r=document.createElement('div');r.className='hist';
+    r.innerHTML='<span>'+d.getDate()+'.'+(d.getMonth()+1)+'</span><span>'+what+'</span>';el.appendChild(r);});}
+  // week strip
+  const all=new Set(load('wt_log',[]).map(x=>x.date));
+  const wk=document.createElement('div');wk.className='week';
+  const lbl=['пн','вт','ср','чт','пт','сб','нд'];
+  const now=new Date();const mondayOffset=(now.getDay()+6)%7;
+  for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-mondayOffset+i);
+    const s=localISO(d);
+    const c=document.createElement('div');c.className='wd';
+    c.innerHTML='<div class="l">'+lbl[i]+'</div><div class="b'+(all.has(s)?' done':'')+(s===localISO(now)?' today':'')+'"></div>';
+    wk.appendChild(c);}
+  el.appendChild(wk);
+  const cs=document.createElement('div');cs.className='cloud';cs.id='cloud-status';el.appendChild(cs);setCloud(cloudState);
+}
+function renderProgress(){
+  const el=document.getElementById('s-prog');if(!el)return;
+  const ses=load('wt_log',[]).filter(x=>x.type==='strength'&&x.detail&&x.detail.ex).slice(0,6).reverse();
+  if(!ses.length){el.innerHTML='<div class="sub">Появява се след първата силова сесия.</div>';return;}
+  const names=[];ses.forEach(s=>Object.keys(s.detail.ex).forEach(n=>{if(!names.includes(n))names.push(n);}));
+  el.innerHTML='';
+  const ready=[];
+  names.forEach(n=>{
+    const row=document.createElement('div');row.className='prow';
+    let cells='';const recent=[];
+    ses.forEach(s=>{const e=s.detail.ex[n];
+      if(!e){cells+='<div class="cell none" style="opacity:.25"></div>';return;}
+      recent.push(e);
+      cells+='<div class="cell '+(e.h>=e.s?'ok':e.h>0?'part':'none')+'" title="'+e.h+'/'+e.s+'"></div>';});
+    const last=recent[recent.length-1];
+    row.innerHTML='<div class="pn">'+n+'</div><div style="display:flex;align-items:center;gap:10px;"><div class="cells">'+cells+'</div>'+
+      '<div class="sub" style="font-variant-numeric:tabular-nums;min-width:28px;text-align:right;">'+(last?last.h+'/'+last.s:'')+'</div></div>';
+    el.appendChild(row);
+    const l2=recent.slice(-2);
+    if(l2.length===2&&l2.every(e=>e.h>=e.s))ready.push(n);
+  });
+  const lvl=document.getElementById('s-levelup');
+  if(lvl){if(ready.length){lvl.classList.add('on');
+      lvl.innerHTML='Готови за по-тежко (две поредни сесии на пълна цел): <b>'+ready.join(', ')+'</b>. Добави 3 сек бавно спускане, после тежест в раница.';}
+    else lvl.classList.remove('on');}
+}
+
+// ================= CORE =================
+(function(){
+  const names=Object.keys(LIB).filter(k=>LIB[k].c);
+  const baseCats=['кардио','долна част','корем','горна част'];
+  let bar=load('wt_bar',true);
+  const cats=()=>bar?baseCats.concat(['с лост']):baseCats;
+  let quiet=load('wt_quiet',false),ex=[],ph=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99;
+  const $=id=>document.getElementById(id);
+  const ring=$('c-ring'),num=$('c-num'),nm=$('c-name'),phs=$('c-phase'),nxt=$('c-next'),
+    cue=$('c-cue'),dots=$('c-dots'),start=$('c-start'),shuf=$('c-shuffle'),reset=$('c-reset'),
+    list=$('c-list'),sw=$('c-quiet'),swb=$('c-bar');
+  const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+  // how many core sessions ago each exercise was last used (Infinity = never)
+  // rounds count as soon as they are started, not only when finished
+  function recency(){const r={};
+    const rounds=load('wt_core_seen',[]).concat(
+      load('wt_log',[]).filter(x=>x.type==='core'&&x.detail&&Array.isArray(x.detail.ex)).map(x=>x.detail.ex));
+    rounds.forEach((ex,i)=>ex.forEach(n=>{if(!(n in r))r[n]=i;}));return r;}
+  function markSeen(){const l=load('wt_core_seen',[]);l.unshift(ex.slice());store('wt_core_seen',l.slice(0,30));}
+  function pick(c,rec,avoid,taken){
+    let cand=names.filter(n=>LIB[n].c===c&&(!quiet||LIB[n].q)&&!taken.includes(n));
+    const fresh=cand.filter(n=>!avoid.includes(n));if(fresh.length)cand=fresh;
+    const age=n=>(n in rec)?rec[n]:Infinity;
+    const best=Math.max(...cand.map(age));
+    return shuffle(cand.filter(n=>age(n)===best))[0];}
+  function build(avoidCurrent){
+    // one round, two different exercises per category, categories interleaved
+    const rec=recency(),avoid=avoidCurrent?ex.slice():[],taken=[];
+    const half=()=>shuffle(cats()).map(c=>{const n=pick(c,rec,avoid,taken);taken.push(n);return n;});
+    const a=half();let b=half();
+    if(b.length>1&&LIB[b[0]].c===LIB[a[a.length-1]].c)b.push(b.shift()); // no same category back to back
+    ex=a.concat(b);
+    ph=[];ex.forEach((n,i)=>{ph.push({t:'work',l:n,d:30,r:i+1});
+      if(i<ex.length-1)ph.push({t:'rest',l:'Почивка',d:15,r:i+1});});}
+  function renderList(){list.innerHTML='';ex.forEach((n,i)=>{const L=LIB[n];
+    const row=document.createElement('div');row.className='exrow';
+    row.innerHTML='<div><div class="n">'+(i+1)+'. '+n+'</div><div class="c">'+L.c+'</div></div><div class="v">30с</div>'+
+      '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span></div>';
+    row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});}
+  function buildDots(){dots.innerHTML='';ph.forEach(p=>{const d=document.createElement('div');
+    d.className='pd';dots.appendChild(d);});}
+  function paint(rem){
+    const p=idx>=0?ph[idx]:null;
+    num.textContent=fmt(rem);
+    const total=p?p.d:30;
+    ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/total)));
+    if(!p){phs.textContent='Готовност';nm.textContent='Интервален кръг';nxt.textContent='';
+      ring.style.stroke='var(--work)';setBodyPhase(null);return;}
+    phs.textContent=p.t==='work'?('упражнение '+p.r+' от '+ex.length):'почивка';
+    nm.textContent=p.l;
+    ring.style.stroke=p.t==='work'?'var(--work)':'var(--rest)';
+    setBodyPhase(p.t);
+    const nextP=ph[idx+1];
+    nxt.textContent=nextP?('след: '+(nextP.t==='work'?nextP.l:ph[idx+2]?ph[idx+2].l:'край')):'последно';
+    if(p.t==='work'&&LIB[p.l]){cue.innerHTML=LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>';}
+    else if(nextP&&LIB[nextP.l]){cue.innerHTML='<b>Следва: '+nextP.l+'</b><br>'+LIB[nextP.l].t;}
+    num.classList.toggle('urgent',rem<=3);
+    document.querySelectorAll('#c-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<idx);d.classList.toggle('cur',i===idx);});
+  }
+  function next(){idx++;
+    if(idx>=ph.length){run=false;clearInterval(h);keepAwake(false);setBodyPhase(null);
+      phs.textContent='готово';nm.textContent='Кръгът приключи 💪';num.textContent='00:00';nxt.textContent='';
+      cue.textContent='Натисни старт за нов кръг с нови упражнения.';
+      ring.setAttribute('stroke-dashoffset','0');start.textContent='Нов кръг';cueEnd();say('Край. Браво.');logSession('core',{ex:ex.slice()});return;}
+    end=Date.now()+ph[idx].d*1000;lastSec=99;
+    const cp=ph[idx];
+    if(cp.t==='work'){cueWork();say(cp.l);}
+    else{cueRest();const nw=ph[idx+1];say(nw?('Почивка. Следва '+nw.l):'Почивка');}
+    paint(cp.d);}
+  function tick(){if(!run)return;const rem=(end-Date.now())/1000;
+    const s=Math.ceil(rem);
+    if(s<=3&&s>0&&s!==lastSec){lastSec=s;tickBeep();}
+    if(rem<=0){next();return;}paint(rem);}
+  function phaseStart(i){let t=0;for(let k=0;k<i;k++)t+=ph[k].d;return t;}
+  function coreTrack(){const ev=[];let t=0;
+    ph.forEach(p=>{ev.push([t,p.t==='work'?'work':'rest']);tickEvents(t,p.d,ev);t+=p.d;});ev.push([t,'end']);
+    startTrack(t+0.8,ev);}
+  start.addEventListener('click',()=>{
+    if(idx>=ph.length){build(true);buildDots();renderList();idx=-1;}
+    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';return;}
+    run=true;keepAwake(true);start.textContent='Пауза';
+    if(idx<0){markSeen();coreTrack();next();}
+    else{const left=paused>0?paused:0;end=Date.now()+left;resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;}
+    h=setInterval(tick,150);});
+  shuf.addEventListener('click',()=>{if(run)return;stopTrack();build(true);buildDots();renderList();idx=-1;paused=0;
+    start.textContent='Старт';paint(ph[0].d);});
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();idx=-1;paused=0;
+    start.textContent='Старт';paint(ph[0].d);
+    document.querySelectorAll('#c-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
+  swb.classList.toggle('on',bar);
+  swb.addEventListener('click',()=>{if(run)return;bar=!bar;swb.classList.toggle('on',bar);store('wt_bar',bar);
+    build();buildDots();renderList();idx=-1;paint(ph[0].d);});
+  window.__coreRefresh=()=>{if(run||idx>=0)return;build();buildDots();renderList();paint(ph[0].d);};
+  sw.classList.toggle('on',quiet);
+  sw.addEventListener('click',()=>{if(run)return;quiet=!quiet;sw.classList.toggle('on',quiet);store('wt_quiet',quiet);
+    build();buildDots();renderList();idx=-1;paint(ph[0].d);});
+  build();buildDots();renderList();paint(ph[0].d);
+})();
+
+// ================= STRENGTH =================
+(function(){
+  const DL={n:'Мъртва тяга на един крак',t:'10 повт. на крак',s:3,r:45};
+  const BR={n:'Мост за седалище',t:'12-15 повт.',s:3,r:45};
+  const lastStr=load('wt_log',[]).find(x=>x.type==='strength'&&x.detail&&x.detail.post);
+  const saved=load('wt_str_live',null);
+  const resume=saved&&saved.date===localISO()&&saved.ei!=null;
+  const post=resume?(saved.post===BR.n?BR:DL):(lastStr&&lastStr.detail.post===DL.n?BR:DL);
+  const plan=[
+    {n:'Набирания на лоста',t:'5-8 повт. · 1 в резерв',s:4,r:90},
+    {n:'Дипове на успоредката',t:'8-12 повт.',s:4,r:75},
+    {n:'Обърнати гребания',t:'10-12 повт.',s:3,r:60},
+    post,
+    {n:'Вдигане на крака (уред за корем)',t:'12-18 повт.',s:3,r:45},
+  ];
+  let ei=0,si=0,hits=0,total=plan.reduce((a,e)=>a+e.s,0),rh=null,rend=0;
+  let exHits={};plan.forEach(e=>exHits[e.n]={h:0,s:e.s});
+  if(resume){ei=saved.ei;si=saved.si;hits=saved.hits;exHits=saved.exHits;}
+  const undoStack=[];
+  function saveLive(){store('wt_str_live',{date:localISO(),ei,si,hits,exHits,post:post.n});}
+  const $=id=>document.getElementById(id);
+  const list=$('s-list'),hit=$('s-hit'),miss=$('s-miss'),box=$('s-restbox'),rn=$('s-restnum'),
+    skip=$('s-skip'),fin=$('s-finish'),find=$('s-finish-d'),lvl=$('s-levelup'),undo=$('s-undo');
+  if(resume&&ei>0||resume&&si>0){$('warm-ok').textContent='Продължи започнатата тренировка';}
+  $('warm-ok').addEventListener('click',()=>{$('warm-card').style.display='none';
+    $('str-card').style.display='block';keepAwake(true);say((ei>0||si>0?'Продължаваме. ':'Започваме. ')+plan[ei].n);});
+  function build(){list.innerHTML='';plan.forEach((e,i)=>{const L=LIB[e.n];
+    const row=document.createElement('div');row.className='exrow';row.id='sr-'+i;
+    row.innerHTML='<div><div class="n">'+e.n+'</div><div class="c">'+e.t+'</div></div>'+
+      '<div class="v" id="sv-'+i+'"><b>0</b>/'+e.s+'</div>'+
+      (L?'<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span></div>':'');
+    row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});}
+  function refresh(){plan.forEach((e,i)=>{const d=i<ei?e.s:(i===ei?si:0);
+    $('sv-'+i).innerHTML='<b>'+d+'</b>/'+e.s;
+    $('sr-'+i).classList.toggle('cur',i===ei&&ei<plan.length);
+    $('sr-'+i).classList.toggle('fin',i<ei);});}
+  function endRest(fromTimer){clearInterval(rh);if(fromTimer!==true)stopTrack();box.classList.remove('on');hit.disabled=false;miss.disabled=false;
+    setBodyPhase(null);cueWork();if(plan[ei])say((si===0?'':'Серия '+(si+1)+'. ')+plan[ei].n);}
+  function startRest(){const sec=plan[ei]?plan[ei].r:45;
+    box.classList.add('on');hit.disabled=true;miss.disabled=true;setBodyPhase('rest');
+    const ev=[[0,'rest']];tickEvents(0,sec,ev);ev.push([sec,'work']);startTrack(sec+0.6,ev);
+    rend=Date.now()+sec*1000;cueRest();say('Почивка '+sec+' секунди');let last=99;
+    rh=setInterval(()=>{const rem=(rend-Date.now())/1000;const s=Math.ceil(rem);
+      if(s<=3&&s>0&&s!==last){last=s;tickBeep();}
+      if(rem<=0){endRest(true);return;}rn.textContent=fmt(rem);},150);}
+  skip.addEventListener('click',()=>endRest(false));
+  function adv(wasHit){undoStack.push({ei,si,wasHit});
+    si++;if(si>=plan[ei].s){ei++;si=0;}refresh();saveLive();
+    if(ei>=plan.length){done();return;}startRest();}
+  undo.addEventListener('click',()=>{const u=undoStack.pop();if(!u)return;
+    clearInterval(rh);stopTrack();box.classList.remove('on');hit.disabled=false;miss.disabled=false;setBodyPhase(null);
+    ei=u.ei;si=u.si;if(u.wasHit){hits--;exHits[plan[ei].n].h--;}
+    refresh();saveLive();say('Отменено. '+plan[ei].n);});
+  function done(){try{localStorage.removeItem('wt_str_live');}catch(e){}
+    hit.disabled=true;miss.disabled=true;keepAwake(false);setBodyPhase(null);
+    fin.classList.add('on');find.textContent=hits+' от '+total+' серии на целта.';cueEnd();say('Тренировката приключи.');
+    logSession('strength',{hits,total,ex:exHits,post:post.n});}
+  hit.addEventListener('click',()=>{if(ei>=plan.length)return;hits++;exHits[plan[ei].n].h++;adv(true);});
+  miss.addEventListener('click',()=>{if(ei>=plan.length)return;adv(false);});
+  build();refresh();
+})();
+
+// ================= RUN =================
+(function(){
+  const ph=[];for(let i=0;i<6;i++){ph.push({t:'work',l:'Бързо темпо',d:60});ph.push({t:'rest',l:'Възстановяване',d:120});}
+  let el=0,run=false,st=0,h=null,on=false,ii=-1,pe=0;
+  const $=id=>document.getElementById(id);
+  const logBtn=$('r-log'),logged=$('r-logged');let isLogged=false;
+  const num=$('r-num'),start=$('r-start'),reset=$('r-reset'),tg=$('r-toggle'),
+    lbl=$('r-phase'),nxt=$('r-next'),dots=$('r-dots'),ring=$('r-ring');
+  function bd(){dots.innerHTML='';if(!on)return;ph.forEach(p=>{const d=document.createElement('div');
+    d.className='pd';dots.appendChild(d);});}
+  tg.addEventListener('click',()=>{on=!on;tg.classList.toggle('on',on);bd();ii=-1;
+    nxt.textContent=on?'6 интервала':'3-4 км · ~6 км/ч';});
+  function tick(){if(!run)return;el=Date.now()-st;num.textContent=fmtSW(el);
+    if(on){
+      if(ii<0){ii=0;pe=Date.now()+ph[0].d*1000;cueWork();say(ph[0].l);lbl.textContent=ph[0].l;setBodyPhase('work');}
+      else if(Date.now()>=pe){ii++;
+        if(ii>=ph.length){lbl.textContent='интервалите свършиха';cueEnd();say('Интервалите свършиха');on=false;tg.classList.remove('on');setBodyPhase(null);}
+        else{const p=ph[ii];pe=Date.now()+p.d*1000;lbl.textContent=p.l;setBodyPhase(p.t);p.t==='work'?cueWork():cueRest();say(p.l);}}
+      if(ii>=0&&ii<ph.length){const rem=(pe-Date.now())/1000;
+        ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/ph[ii].d)));
+        ring.style.stroke=ph[ii].t==='work'?'var(--work)':'var(--rest)';
+        nxt.textContent=fmt(rem)+' от фазата';}
+      document.querySelectorAll('#r-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<ii);d.classList.toggle('cur',i===ii);});}}
+  start.addEventListener('click',()=>{
+    if(run){run=false;clearInterval(h);keepAwake(false);stopTrack();start.textContent='Продължи';logBtn.disabled=isLogged||el<60000;return;}
+    if(on){if(el===0){const ev=[];let t=0;ph.forEach(p=>{ev.push([t,p.t==='work'?'work':'rest']);tickEvents(t,p.d,ev);t+=p.d;});
+        ev.push([t,'end']);startTrack(t+0.8,ev);}else resumeTrack(el/1000);}
+    run=true;keepAwake(true);st=Date.now()-el;start.textContent='Пауза';logBtn.disabled=true;h=setInterval(tick,200);});
+  logBtn.addEventListener('click',()=>{if(isLogged||run)return;const min=Math.round(el/60000);
+    logSession('run',{min,intervals:on});isLogged=true;logBtn.disabled=true;
+    logged.textContent='Записано: '+min+' мин';say('Пробегът е записан');});
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();el=0;ii=-1;setBodyPhase(null);
+    isLogged=false;logBtn.disabled=true;logged.textContent='';
+    num.textContent='00:00';start.textContent='Старт';lbl.textContent='Събота · на светло';
+    nxt.textContent=on?'6 интервала':'3-4 км · ~6 км/ч';ring.setAttribute('stroke-dashoffset',String(C));
+    document.querySelectorAll('#r-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
+})();
+
+renderHist();renderStreak();
+document.getElementById('test-snd').addEventListener('click',()=>{unlockAudio();unlockVoice();
+  setTimeout(()=>{play('work');const st=audioState(),el=document.getElementById('awake-status');
+    if(el&&!wantAwake){el.style.color=st==='blocked'?'var(--work)':'var(--rest)';
+      el.textContent=st==='blocked'?'браузърът блокира звука':'звукът е отключен';
+      setTimeout(()=>{if(!wantAwake)el.textContent='';},5000);}},150);setTimeout(()=>{const v=voiceOn;voiceOn=true;say('Тест. Звукът работи.');voiceOn=v;},450);});
+(function(){const b=document.getElementById('voice-btn');
+  const paintV=()=>{b.textContent='Глас: '+(voiceOn?'вкл':'изкл');b.classList.toggle('on',voiceOn);};
+  paintV();b.addEventListener('click',()=>{voiceOn=!voiceOn;store('wt_voice',voiceOn);paintV();
+    if(voiceOn){unlockVoice();say('Гласът е включен');}else{try{speechSynthesis.cancel();}catch(e){}}});})();
+initCloud();
+</script>
+</body>
+</html>

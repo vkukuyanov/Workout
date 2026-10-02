@@ -619,19 +619,26 @@ function renderProgress(){
       load('wt_log',[]).filter(x=>x.type==='core'&&x.detail&&Array.isArray(x.detail.ex)).map(x=>x.detail.ex));
     rounds.forEach((ex,i)=>ex.forEach(n=>{if(!(n in r))r[n]=i;}));return r;}
   function markSeen(){const l=load('wt_core_seen',[]);l.unshift(ex.slice());store('wt_core_seen',l.slice(0,30));}
+  // slot pools: warm-up cardio, leg-driven intense cardio, bar split by lower/whole body vs upper
+  const POOL={
+    warm:['Бързо ходене на място с високи ръце','Скачащи джакове','Скачане на въже (имитация)','Високи колене'],
+    hot:['Кънкьорски скокове','Високи колене','Изритвания на петите назад','Скачащи джакове','Скачане на въже (имитация)','Алпинисти','Мечешко ходене'],
+    barLow:['Румънска мъртва тяга с лоста','Преден клек с лоста','Напади с лоста','Тръстър с лоста','Добро утро с лоста'],
+    barUp:['Раменна преса с лоста','Наведено гребане с лоста','Бицепсово сгъване с лоста','Френско разгъване с лоста','Преса от пода с лоста','Обратно сгъване с лоста','Вдигане напред с лоста']};
   function pick(c,rec,avoid,taken){
-    let cand=names.filter(n=>LIB[n].c===c&&(!quiet||LIB[n].q)&&!taken.includes(n));
+    const pool=POOL[c];
+    let cand=names.filter(n=>(pool?pool.includes(n):LIB[n].c===c)&&(!quiet||LIB[n].q)&&!taken.includes(n));
     const fresh=cand.filter(n=>!avoid.includes(n));if(fresh.length)cand=fresh;
     const age=n=>(n in rec)?rec[n]:Infinity;
     const best=Math.max(...cand.map(age));
     return shuffle(cand.filter(n=>age(n)===best))[0];}
   function build(avoidCurrent){
-    // one round, two different exercises per category, categories interleaved
+    // Fixed structure (ACSM/NSCA + 7-minute workout): warm up first, loaded compound work while fresh,
+    // upper and lower body alternate so one rests while the other works, core between, intense cardio late.
     const rec=recency(),avoid=avoidCurrent?ex.slice():[],taken=[];
-    const half=()=>shuffle(cats()).map(c=>{const n=pick(c,rec,avoid,taken);taken.push(n);return n;});
-    const a=half();let b=half();
-    if(b.length>1&&LIB[b[0]].c===LIB[a[a.length-1]].c)b.push(b.shift()); // no same category back to back
-    ex=a.concat(b);
+    const order=['warm','долна част','горна част','barLow','корем','barUp','hot','горна част','долна част','корем']
+      .filter(c=>bar||(c!=='barLow'&&c!=='barUp'));
+    ex=order.map(c=>{const n=pick(c,rec,avoid,taken);taken.push(n);return n;});
     ph=[];ex.forEach((n,i)=>{ph.push({t:'work',l:n,d:30,r:i+1});
       if(i<ex.length-1)ph.push({t:'rest',l:'Почивка',d:15,r:i+1});});}
   function renderList(){list.innerHTML='';ex.forEach((n,i)=>{const L=LIB[n];

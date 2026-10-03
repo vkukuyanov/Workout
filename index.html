@@ -242,8 +242,8 @@
     <div class="card" style="padding:4px 18px">
       <div class="set-row"><div><div class="n">Глас</div><div class="s">Казва упражненията на глас</div></div><button class="lnk" id="voice-btn">Глас</button></div>
       <div class="set-row"><div><div class="n">Звук</div><div class="s" id="snd-state">Провери дали се чува</div></div><button class="lnk" id="test-snd">Тест</button></div>
-      <div class="set-row"><div><div class="n">Тих режим</div><div class="s">Ядро без скачане</div></div><div class="sw" id="c-quiet"></div></div>
-      <div class="set-row"><div><div class="n">С кривия лост</div><div class="s">Ядро с упражнения с 6 кг</div></div><div class="sw" id="c-bar"></div></div>
+      <div class="set-row"><div><div class="n">Тих режим</div><div class="s">Без скачане в Ядро и Функционална</div></div><div class="sw" id="c-quiet"></div></div>
+      <div class="set-row"><div><div class="n">С кривия лост</div><div class="s">Упражнения с 6 кг в Ядро и Функционална</div></div><div class="sw" id="c-bar"></div></div>
     </div>
   </div>
 
@@ -528,7 +528,7 @@ const LIB={
  'Бързо ходене на място с високи ръце':{c:'кардио',q:1,t:'Ходене на място с високо коляно, ръцете над главата. Без скачане.',e:'Не задържай дъха.'},
  'Мечешко ходене':{c:'кардио',q:1,t:'На длани и пръсти, коленете на 5 см от пода. Движиш се напред и назад.',e:'Гърбът остава плосък, тазът не се люлее.'},
  'Напади на място':{c:'долна част',q:1,t:'Крачка напред, задното коляно надолу към пода, предното коляно над петата.',e:'Предното коляно не минава пред пръстите.'},
- 'Обратни напади':{c:'долна част',q:1,t:'Крачка назад вместо напред, коляното надолу. По-щадящ за коленете вариант.',e:'Торсът остава изправен, не се навеждай.'},
+ 'Обратни напади':{c:'долна част',q:1,t:'Крачка назад вместо напред, коляното надолу. Редуваш краката. По-щадящ за коленете вариант.',e:'Торсът остава изправен, не се навеждай.'},
  'Мост за седалище':{c:'',q:1,t:'По гръб, стъпала близо до седалището. Вдигаш таза до права линия рамо-коляно и стягаш седалището горе.',e:'Не извивай кръста — работата е на седалището.'},
  'Клек до стена (задържане)':{c:'долна част',q:1,t:'Гръб на стената, бедрата успоредни на пода, задържаш неподвижно.',e:'Коленете точно над глезените, не по-напред.'},
  'Планк с ходене':{c:'корем',q:1,t:'От изправено положение „изхождаш" с ръце напред до планк и се връщаш обратно.',e:'Коремът стегнат през цялото движение.'},
@@ -554,7 +554,7 @@ const LIB={
  'Набирания на лоста':{c:'',q:1,t:'Хват малко по-широк от раменете. Дърпаш с лопатките надолу преди лактите, брадичката над лоста, спускане бавно.',e:'Без замах с крака. Завършвай серията с 1 повторение в резерв.'},
  'Дипове на успоредката':{c:'',q:1,t:'Раменете надолу, торсът леко напред, спускаш до 90° в лакътя.',e:'Не слизай под 90° — раменната става страда.'},
  'Обърнати гребания':{c:'',q:1,t:'Лягаш под ниската тръба, тялото е права дъска, дърпаш гърдите към тръбата.',e:'Тазът не увисва. Колкото по-хоризонтален си, толкова по-тежко.'},
- 'Мъртва тяга на един крак':{c:'',q:1,t:'На един крак, тазът назад, торсът се навежда напред, а задният крак се вдига до хоризонтала.',e:'Гърбът прав, движението е от таза, не от кръста.'},
+ 'Мъртва тяга на един крак':{c:'',q:1,t:'На един крак, тазът назад, торсът се навежда напред, а задният крак се вдига до хоризонтала. Смени крака по средата.',e:'Гърбът прав, движението е от таза, не от кръста.'},
  'Вдигане на крака (уред за корем)':{c:'',q:1,t:'Подпрян на лактите, вдигаш краката до 90°, бавно надолу. Ако е трудно — свити колене.',e:'Без засилване и люлеене.'}
 ,
  // ---- harder bodyweight (core circuit) ----
@@ -583,7 +583,7 @@ const LIB={
  'Звяр с изритване':{c:'функционално',q:1,t:'От мечешка позиция вдигаш лявата ръка, прекарваш десния крак под тялото и го изритваш напред, седнал на ръка. Връщаш се и сменяш.',e:'Опорната ръка е под рамото, тазът ниско. По-лесно: бавно, без изритване докрай.'},
  'Краб с достигане':{c:'функционално',q:1,t:'Седнал, длани зад теб, стъпала на пода. Вдигаш таза високо и протягаш едната ръка над тялото към отсрещната страна. Редуваш.',e:'Тазът се вдига със седалището, не с кръста. По-лесно: без вдигане на таза.'},
  'Напад с ротация':{c:'функционално',q:1,t:'Обратен напад, долу завърташ торса към предния крак с ръце пред гърдите, връщаш се в центъра и ставаш. Редуваш краката.',e:'Коляното на предния крак не пада навътре при завъртането.'},
- 'Страничен напад с докосване':{c:'функционално',q:1,t:'Голяма крачка настрани, сядаш на този крак с таза назад и докосваш пода пред стъпалото с противоположната ръка. Отблъскваш се обратно.',e:'Гърбът прав, петата не се отлепя. По-лесно: без докосване на пода.'},
+ 'Страничен напад с докосване':{c:'функционално',q:1,t:'Голяма крачка настрани, сядаш на този крак с таза назад и докосваш пода пред стъпалото с противоположната ръка. Отблъскваш се обратно. Редуваш страните.',e:'Гърбът прав, петата не се отлепя. По-лесно: без докосване на пода.'},
  'Скок напред и назад':{c:'функционално',q:0,t:'Скок напред от клек с размах на ръцете, меко кацане в клек, после 3 бързи крачки назад и отново.',e:'Кацай меко с колене над пръстите.'},
  // ---- functional library: movement patterns (squat, push, single leg, rotation, power, core/carry) ----
  'Клек с лоста над главата':{c:'с лост',q:1,t:'Лостът над главата с широк хват и изпънати ръце. Клякаш бавно, ръцете остават над средата на стъпалото. С 6 кг учиш стабилност на раменете и корема.',e:'Лостът не пада напред и гърбът не се закръгля. По-лесно: по-плитък клек.'},
@@ -685,7 +685,7 @@ function renderHist(){
     if(s.type==='strength')what='Сила · <b>'+(x.hits||0)+'</b>/'+(x.total||0)+' на целта';
     else if(s.type==='core')what='Ядро'+(Array.isArray(x.ex)?' · <b>'+x.ex.length+'</b> упражнения':'');
     else if(s.type==='run')what='Тичане · <b>'+(x.min||0)+'</b> мин';
-    else if(s.type==='func')what='Функционална'+(Array.isArray(x.ex)?' · <b>'+x.ex.length+'</b> упражнения':'');
+    else if(s.type==='func')what='Функционална'+(Array.isArray(x.ex)?' · <b>'+(x.n||x.ex.length)+'</b> упражнения':'');
     else if(s.type==='stretch')what='Разтягане · <b>'+(x.min||0)+'</b> мин';
     const r=document.createElement('div');r.className='hist';
     r.innerHTML='<span>'+d.getDate()+'.'+(d.getMonth()+1)+'</span><span>'+what+'</span>';el.appendChild(r);});}
@@ -718,13 +718,17 @@ function renderProgress(){
     else lvl.classList.remove('on');}
 }
 
+// one-sided exercises ("смени ... по средата"): a beep and "Смени" at half time, also inside the cue track
+const twoSided=n=>!!(LIB[n]&&/по средата/.test(LIB[n].t));
+function sideCue(){vib([60,60,60]);if(!trackOn)play('tick');say('Смени');}
+function sideEvents(ph,ev){let t=0;ph.forEach(p=>{if(p.t==='work'&&twoSided(p.l))ev.push([t+p.d/2,'tick']);t+=p.d;});}
 // ================= CORE =================
 (function(){
   const names=Object.keys(LIB).filter(k=>LIB[k].c);
   const baseCats=['кардио','функционално','долна част','корем','горна част'];
   let bar=load('wt_bar',true);
   const cats=()=>bar?baseCats.concat(['с лост']):baseCats;
-  let quiet=load('wt_quiet',false),ex=[],ph=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99;
+  let quiet=load('wt_quiet',false),ex=[],ph=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,swDone=false;
   const $=id=>document.getElementById(id);
   const ring=$('c-ring'),num=$('c-num'),nm=$('c-name'),phs=$('c-phase'),nxt=$('c-next'),
     cue=$('c-cue'),dots=$('c-dots'),start=$('c-start'),shuf=$('c-shuffle'),reset=$('c-reset'),
@@ -789,18 +793,19 @@ function renderProgress(){
       phs.textContent='готово';nm.textContent='Кръгът приключи 💪';num.textContent='00:00';nxt.textContent='';
       cue.textContent='Натисни старт за нов кръг с нови упражнения.';
       ring.setAttribute('stroke-dashoffset','0');start.textContent='Нов кръг';cueEnd();say('Край. Браво.');logSession('core',{ex:ex.slice()});return;}
-    end=Date.now()+ph[idx].d*1000;lastSec=99;
+    end=Date.now()+ph[idx].d*1000;lastSec=99;swDone=false;
     const cp=ph[idx];
     if(cp.t==='work'){cueWork();say(cp.l);}
     else{cueRest();const nw=ph[idx+1];say(nw?('Почивка. Следва '+nw.l):'Почивка');}
     paint(cp.d);}
   function tick(){if(!run)return;const rem=(end-Date.now())/1000;
-    const s=Math.ceil(rem);
+    const s=Math.ceil(rem);const cp=ph[idx];
+    if(!swDone&&cp&&cp.t==='work'&&twoSided(cp.l)&&rem<=cp.d/2){swDone=true;sideCue();}
     if(s<=3&&s>0&&s!==lastSec){lastSec=s;tickBeep();}
     if(rem<=0){next();return;}paint(rem);}
   function phaseStart(i){let t=0;for(let k=0;k<i;k++)t+=ph[k].d;return t;}
   function coreTrack(){const ev=[];let t=0;
-    ph.forEach(p=>{ev.push([t,p.t==='work'?'work':'rest']);tickEvents(t,p.d,ev);t+=p.d;});ev.push([t,'end']);
+    ph.forEach(p=>{ev.push([t,p.t==='work'?'work':'rest']);tickEvents(t,p.d,ev);t+=p.d;});ev.push([t,'end']);sideEvents(ph,ev);
     startTrack(t+0.8,ev);}
   start.addEventListener('click',()=>{
     if(idx>=ph.length){build(true);buildDots();renderList();idx=-1;}
@@ -939,7 +944,7 @@ function renderProgress(){
   const ring=$('f-ring'),num=$('f-num'),nm=$('f-name'),phs=$('f-phase'),nxt=$('f-next'),cue=$('f-cue'),
     dots=$('f-dots'),start=$('f-start'),shuf=$('f-shuffle'),reset=$('f-reset'),list=$('f-list');
   const W=40,R=20,BR=30,WU=30;
-  let blocks=[],ph=[],ex=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99;
+  let blocks=[],ph=[],ex=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,swDone=false;
   const all=Object.keys(LIB);
   const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
   function recency(){const r={};
@@ -1003,18 +1008,19 @@ function renderProgress(){
   function next(){idx++;
     if(idx>=ph.length){run=false;clearInterval(h);keepAwake(false);phs.textContent='готово';nm.textContent='Тренировката приключи 💪';
       num.textContent='00:00';nxt.textContent='';cue.textContent='Натисни старт за нова с нови упражнения.';start.textContent='Нова тренировка';
-      ring.setAttribute('stroke-dashoffset','0');cueEnd();say('Край. Браво.');logSession('func',{ex:ex.slice()});return;}
-    end=Date.now()+ph[idx].d*1000;lastSec=99;const p=ph[idx];
+      ring.setAttribute('stroke-dashoffset','0');cueEnd();say('Край. Браво.');logSession('func',{ex:ex.slice(),n:ex.length-2});return;}
+    end=Date.now()+ph[idx].d*1000;lastSec=99;swDone=false;const p=ph[idx];
     if(p.t==='work'){cueWork();const prev=ph.slice(0,idx).reverse().find(q=>q.t==='work');
       say(p.l);}
     else{cueRest();const nw=ph[idx+1];say(nw?'Почивка. Следва '+nw.l:'Почивка');}
     paint(p.d);}
-  function tick(){if(!run)return;const rem=(end-Date.now())/1000,s=Math.ceil(rem);
+  function tick(){if(!run)return;const rem=(end-Date.now())/1000,s=Math.ceil(rem);const cp=ph[idx];
+    if(!swDone&&cp&&cp.t==='work'&&twoSided(cp.l)&&rem<=cp.d/2){swDone=true;sideCue();}
     if(s<=3&&s>0&&s!==lastSec){lastSec=s;tickBeep();}
     if(rem<=0){next();return;}paint(rem);}
   function phaseStart(i){let t=0;for(let k=0;k<i;k++)t+=ph[k].d;return t;}
   function track(){const ev=[];let t=0;ph.forEach(p=>{ev.push([t,p.t==='work'?'work':'rest']);tickEvents(t,p.d,ev);t+=p.d;});
-    ev.push([t,'end']);startTrack(t+0.8,ev);}
+    ev.push([t,'end']);sideEvents(ph,ev);startTrack(t+0.8,ev);}
   function markSeen(){const l=load('wt_func_seen',[]);l.unshift(ex.slice());store('wt_func_seen',l.slice(0,10));}
   start.addEventListener('click',()=>{
     if(idx>=ph.length){build(true);buildDots();renderList();idx=-1;}

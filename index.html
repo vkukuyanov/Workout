@@ -423,7 +423,8 @@ function makeWav(tones){
       v.setInt16(off,f?Math.sin(2*Math.PI*f*i/sr)*0.55*env*32767:0,true);off+=2;}});
   return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
 }
-const TONES={work:[[920,.18]],rest:[[440,.14],[0,.06],[440,.14]],tick:[[700,.08]],end:[[660,.14],[0,.05],[990,.26]]};
+const TONES={work:[[920,.18]],rest:[[440,.14],[0,.06],[440,.14]],tick:[[700,.08]],end:[[660,.14],[0,.05],[990,.26]],
+  go:[[880,.14],[0,.06],[880,.14],[0,.06],[1320,.42]]}; // end of rest in strength: louder, longer, unmistakable
 const WAV={};Object.keys(TONES).forEach(k=>WAV[k]=makeWav(TONES[k]));
 const SILENT=makeWav([[0,.05]]);
 let actx=null,htmlEl=null,htmlOk=false;
@@ -462,18 +463,21 @@ function buildTrack(total,events){
   return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
 }
 function startTrack(total,events){ // must run inside a tap
-  try{if(!trackEl){trackEl=new Audio();trackEl.setAttribute('playsinline','');trackEl.addEventListener('ended',()=>{trackOn=false;});}
+  try{if(!trackEl){trackEl=new Audio();trackEl.setAttribute('playsinline','');trackEl.addEventListener('ended',()=>{trackOn=false;});
+      // iOS may pause the track (e.g. when speech starts); then the page must make the sounds itself
+      trackEl.addEventListener('pause',()=>{trackOn=false;});}
     if(trackUrl)URL.revokeObjectURL(trackUrl);trackUrl=buildTrack(total,events);trackEl.src=trackUrl;
     trackOn=true;const p=trackEl.play();if(p&&p.catch)p.catch(()=>{trackOn=false;});}catch(e){trackOn=false;}}
 function resumeTrack(offset){if(!trackEl||!trackUrl)return;
   try{trackEl.currentTime=Math.max(0,offset);trackOn=true;const p=trackEl.play();if(p&&p.catch)p.catch(()=>{trackOn=false;});}catch(e){trackOn=false;}}
 function stopTrack(){trackOn=false;try{trackEl&&trackEl.pause();}catch(e){}}
+function trackPlaying(){return !!(trackOn&&trackEl&&!trackEl.paused&&!trackEl.ended);}
 function tickEvents(t0,d,ev){for(let k=3;k>=1;k--)if(d>k)ev.push([t0+d-k,'tick']);}
 // while a cue track plays, it makes the sounds; the page only vibrates
-const cueWork=()=>{if(!trackOn)play('work');vib([90]);};
-const cueRest=()=>{if(!trackOn)play('rest');vib([40,70,40]);};
-const cueEnd=()=>{if(!trackOn)play('end');vib([110,70,110]);};
-const tickBeep=()=>{if(!trackOn)play('tick');};
+const cueWork=()=>{if(!trackPlaying())play('work');vib([90]);};
+const cueRest=()=>{if(!trackPlaying())play('rest');vib([40,70,40]);};
+const cueEnd=()=>{if(!trackPlaying())play('end');vib([110,70,110]);};
+const tickBeep=()=>{if(!trackPlaying())play('tick');};
 // ---- voice (Bulgarian speech synthesis) ----
 let voiceOn=load('wt_voice',true),bgVoice=null,voiceUnlocked=false;
 function pickVoice(){try{const vs=speechSynthesis.getVoices();bgVoice=vs.find(v=>/^bg/i.test(v.lang))||null;}catch(e){}}
@@ -553,6 +557,8 @@ const LIB={
  // strength
  'Набирания на лоста':{c:'',q:1,t:'Хват малко по-широк от раменете. Дърпаш с лопатките надолу преди лактите, брадичката над лоста, спускане бавно.',e:'Без замах с крака. Завършвай серията с 1 повторение в резерв.'},
  'Дипове на успоредката':{c:'',q:1,t:'Раменете надолу, торсът леко напред, спускаш до 90° в лакътя.',e:'Не слизай под 90° — раменната става страда.'},
+ 'Набирания с обратен хват':{c:'',q:1,t:'Дланите към теб, на ширината на раменете. Дърпаш, докато брадичката мине над лоста, спускаш бавно до изпънати ръце. Повече бицепс и долната част на широкия гръбен.',e:'Без люлеене и без половинчати повторения долу. Завършвай с 1 повторение в резерв.'},
+ 'Висящо вдигане на крака':{c:'',q:1,t:'Висиш на лоста с изпънати ръце. Вдигаш краката до 90° (по-трудно — коленете към гърдите и таза навън), спускаш бавно. Може и на уреда за корем.',e:'Без люлеене — ако тялото се клати, спри за секунда долу. Хватът се уморява след набиранията: това е полезно, не пречка.'},
  'Обърнати гребания':{c:'',q:1,t:'Лягаш под ниската тръба, тялото е права дъска, дърпаш гърдите към тръбата.',e:'Тазът не увисва. Колкото по-хоризонтален си, толкова по-тежко.'},
  'Мъртва тяга на един крак':{c:'',q:1,t:'На един крак, тазът назад, торсът се навежда напред, а задният крак се вдига до хоризонтала. Смени крака по средата.',e:'Гърбът прав, движението е от таза, не от кръста.'},
  'Вдигане на крака (уред за корем)':{c:'',q:1,t:'Подпрян на лактите, вдигаш краката до 90°, бавно надолу. Ако е трудно — свити колене.',e:'Без засилване и люлеене.'}
@@ -720,7 +726,7 @@ function renderProgress(){
 
 // one-sided exercises ("смени ... по средата"): a beep and "Смени" at half time, also inside the cue track
 const twoSided=n=>!!(LIB[n]&&/по средата/.test(LIB[n].t));
-function sideCue(){vib([60,60,60]);if(!trackOn)play('tick');say('Смени');}
+function sideCue(){vib([60,60,60]);if(!trackPlaying())play('tick');say('Смени');}
 function sideEvents(ph,ev){let t=0;ph.forEach(p=>{if(p.t==='work'&&twoSided(p.l))ev.push([t+p.d/2,'tick']);t+=p.d;});}
 // ================= CORE =================
 (function(){
@@ -835,27 +841,33 @@ function sideEvents(ph,ev){let t=0;ph.forEach(p=>{if(p.t==='work'&&twoSided(p.l)
   const BR={n:'Мост за седалище',t:'12-15 повт.',s:3,r:45};
   const lastStr=load('wt_log',[]).find(x=>x.type==='strength'&&x.detail&&x.detail.post);
   const saved=load('wt_str_live',null);
-  const resume=saved&&saved.date===localISO()&&saved.ei!=null;
+  let resume=saved&&saved.date===localISO()&&saved.ei!=null;
   const post=resume?(saved.post===BR.n?BR:DL):(lastStr&&lastStr.detail.post===DL.n?BR:DL);
+  // third exercise alternates every session: chin-ups one time, hanging leg raises the next
+  const CH={n:'Набирания с обратен хват',t:'5-8 повт. · 1 в резерв',s:3,r:90};
+  const LR={n:'Висящо вдигане на крака',t:'8-12 повт.',s:3,r:60};
+  const lastEx=(load('wt_log',[]).find(x=>x.type==='strength'&&x.detail&&x.detail.ex)||{detail:{ex:{}}}).detail.ex;
+  const third=resume&&saved.third?(saved.third===LR.n?LR:CH):(lastEx[CH.n]?LR:CH);
   const plan=[
     {n:'Набирания на лоста',t:'5-8 повт. · 1 в резерв',s:3,r:90},
     {n:'Дипове на успоредката',t:'8-12 повт.',s:3,r:75},
-    {n:'Обърнати гребания',t:'10-12 повт.',s:3,r:60},
+    third,
     post,
     {n:'Вдигане на крака (уред за корем)',t:'12-18 повт.',s:3,r:45},
-  ].filter(e=>!WINTER||['Набирания на лоста','Дипове на успоредката','Обърнати гребания'].includes(e.n));
+  ].filter(e=>!WINTER||['Набирания на лоста','Дипове на успоредката',third.n].includes(e.n));
   const hasPost=plan.includes(post);
+  if(resume&&!plan.every(e=>saved.exHits&&saved.exHits[e.n]))resume=false; // saved under an older plan
   window.__strPlan=plan;
   if(WINTER){const wc=document.getElementById('warm-card');
     wc.querySelector('.label').textContent='Загрявка вкъщи · 5 мин';
     wc.querySelectorAll('.warmrow div')[0].textContent='1 минута скачащи джакове или бягане на място';
     wc.querySelectorAll('.warmrow div')[3].textContent='Облечи се и излез загрят. Навън: първо висене на лоста 15 сек';
-    document.getElementById('warm-note').textContent='Навън правиш само набирания, дипове и гребания, около 15 минути. Краката и коремът са в Ядрото.';}
+    document.getElementById('warm-note').textContent='Навън: набирания, дипове и трето, което се сменя всеки път — набирания с обратен хват или висящо вдигане на крака. Около 12 минути.';}
   let ei=0,si=0,hits=0,total=plan.reduce((a,e)=>a+e.s,0),rh=null,rend=0;
   let exHits={};plan.forEach(e=>exHits[e.n]={h:0,s:e.s});
   if(resume){ei=saved.ei;si=saved.si;hits=saved.hits;exHits=saved.exHits;}
   const undoStack=[];
-  function saveLive(){store('wt_str_live',{date:localISO(),ei,si,hits,exHits,post:post.n});}
+  function saveLive(){store('wt_str_live',{date:localISO(),ei,si,hits,exHits,post:post.n,third:third.n});}
   const $=id=>document.getElementById(id);
   const list=$('s-list'),hit=$('s-hit'),miss=$('s-miss'),box=$('s-restbox'),rn=$('s-restnum'),
     skip=$('s-skip'),fin=$('s-finish'),find=$('s-finish-d'),lvl=$('s-levelup'),undo=$('s-undo');
@@ -872,11 +884,18 @@ function sideEvents(ph,ev){let t=0;ph.forEach(p=>{if(p.t==='work'&&twoSided(p.l)
     $('sv-'+i).innerHTML='<b>'+d+'</b>/'+e.s;
     $('sr-'+i).classList.toggle('cur',i===ei&&ei<plan.length);
     $('sr-'+i).classList.toggle('fin',i<ei);});}
-  function endRest(fromTimer){clearInterval(rh);if(fromTimer!==true)stopTrack();box.classList.remove('on');hit.disabled=false;miss.disabled=false;
-    setBodyPhase(null);cueWork();if(plan[ei])say((si===0?'':'Серия '+(si+1)+'. ')+plan[ei].n);}
+  let restLen=0;
+  function endRest(fromTimer){clearInterval(rh);box.classList.remove('on');hit.disabled=false;miss.disabled=false;setBodyPhase(null);
+    if(fromTimer===true){
+      // the cue track carries the "go" sound; if it is not really playing at the right spot, the page plays it
+      const onTime=trackPlaying()&&Math.abs(trackEl.currentTime-restLen)<0.5;
+      if(!onTime)play('go');vib([200,80,200,80,300]);
+    }else{stopTrack();cueWork();}
+    const t=plan[ei]?(si===0?'':'Серия '+(si+1)+'. ')+plan[ei].n:'';
+    if(t)setTimeout(()=>say(t),fromTimer===true?800:0);}
   function startRest(){const sec=plan[ei]?plan[ei].r:45;
     box.classList.add('on');hit.disabled=true;miss.disabled=true;setBodyPhase('rest');
-    const ev=[[0,'rest']];tickEvents(0,sec,ev);ev.push([sec,'work']);startTrack(sec+0.6,ev);
+    const ev=[[0,'rest']];tickEvents(0,sec,ev);ev.push([sec,'go']);restLen=sec;startTrack(sec+1.2,ev);
     rend=Date.now()+sec*1000;cueRest();say('Почивка '+sec+' секунди');let last=99;
     rh=setInterval(()=>{const rem=(rend-Date.now())/1000;const s=Math.ceil(rem);
       if(s<=3&&s>0&&s!==last){last=s;tickBeep();}
@@ -1122,7 +1141,7 @@ function renderHome(){
   }else if(type==='strength'){
     const plan=window.__strPlan||[];
     const ses=log.filter(x=>x.type==='strength'&&x.detail&&x.detail.ex);
-    h+='<div class="m">'+(WINTER?'загрей вкъщи · навън около 15 минути':'уредите в двора · около 35 минути')+'</div><div style="margin:10px 0 16px">';
+    h+='<div class="m">'+(WINTER?'загрей вкъщи · навън около 12 минути':'уредите в двора · около 35 минути')+'</div><div style="margin:10px 0 16px">';
     plan.forEach(e=>{const past=ses.map(x=>x.detail.ex[e.n]).filter(Boolean);
       const last=past[0],ready=past.length>=2&&past[0].h>=past[0].s&&past[1].h>=past[1].s;
       const sub=last?('миналия път '+last.h+'/'+last.s+' серии на целта'):'първи път';
@@ -1143,7 +1162,7 @@ function renderHome(){
   $('h-tl').textContent='Утре · '+dayNames[tw];
   const hs=$('h-stretch');if(hs&&window.__stretchMin)hs.querySelector('.s').textContent=window.__stretchMin+' минути · вечер или след тичане';
   const fm=window.__funcInfo?window.__funcInfo().min:13;
-  const meta={func:'12 упражнения · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 15 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
+  const meta={func:'12 упражнения · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 12 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
   $('h-tmrw').innerHTML='<div class="t">'+planNames[tt]+'</div><div class="s">'+meta[tt]+'</div>';
   $('h-other').innerHTML=['core','func','strength','run'].filter(t=>t!==type).map(t=>
     '<button class="mc" data-go="'+t+'"><div class="t">'+planNames[t]+'</div><div class="s">'+meta[t]+'</div></button>').join('');

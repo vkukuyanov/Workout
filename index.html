@@ -330,7 +330,7 @@
         </div>
       </div>
       <div class="now-name" id="f-name">Функционална</div>
-      <div class="cue" id="f-cue">Загрявка, после 3 блока. Всеки блок е 2 упражнения в 2 кръга: 40 сек работа, 20 сек почивка.</div>
+      <div class="cue" id="f-cue">Загрявка, после 12 различни упражнения: 40 сек работа, 20 сек почивка.</div>
       <div class="progress-dots" id="f-dots"></div>
       <div class="ctrl">
         <button class="b-main" id="f-start">Старт</button>
@@ -932,8 +932,8 @@ function renderProgress(){
 })();
 
 // ================= FUNCTIONAL (Centr-style) =================
-// ~13 min: 1 min warm-up flow, then 3 blocks x 2 exercises x 2 rounds, 40 s work / 20 s rest, 30 s between blocks.
-// Blocks pair movement patterns: squat + push, single leg + rotation, power + core. No pulling: that is done outdoors.
+// ~13 min: 1 min warm-up flow, then one circuit of 12 different exercises, 40 s work / 20 s rest.
+// Movement patterns in a fixed order (squat, push, single leg, rotation, power, core) x 2. No pulling: done outdoors.
 (function(){
   const $=id=>document.getElementById(id);
   const ring=$('f-ring'),num=$('f-num'),nm=$('f-name'),phs=$('f-phase'),nxt=$('f-next'),cue=$('f-cue'),
@@ -966,38 +966,37 @@ function renderProgress(){
     const P=(pools)=>{const n=pick(pools,rec,avoid,taken,quiet);if(n)taken.push(n);return n;};
     const pat=k=>n=>PAT[k].includes(n)&&(bar||!/лоста/.test(n));
     const warm=[P([n=>n==='Спайдърмен напад с ротация']),P([n=>n==='Мечешко ходене',inCat('функционално')])];
-    blocks=[
-      {k:'Загрявка',w:warm,rounds:1},
-      {k:'Клек + бутане',rounds:2,w:[P([pat('клек')]),P([pat('бутане')])]},
-      {k:'Един крак + ротация',rounds:2,w:[P([pat('един крак')]),P([pat('ротация')])]},
-      {k:'Мощност + корем',rounds:2,w:[P([pat('мощност')]),P([pat('корем')])]}];
+    // one circuit, 12 different exercises: the six patterns twice, so muscles alternate and nothing repeats
+    const ORD=['клек','бутане','един крак','ротация','мощност','корем'];
+    const main=ORD.concat(ORD).map(k=>P([pat(k)]));
+    blocks=[{k:'Загрявка',w:warm,rounds:1},{k:'Кръг',w:main,rounds:1}];
     ex=taken.slice();ph=[];
     blocks.forEach((b,bi)=>{for(let r=1;r<=b.rounds;r++)b.w.forEach((n,i)=>{
       const last=r===b.rounds&&i===b.w.length-1;
-      ph.push({t:'work',l:n,d:bi?W:WU,b:b.k,bi,r,rs:b.rounds});
+      ph.push({t:'work',l:n,d:bi?W:WU,b:b.k,bi,r,rs:b.rounds,i:i+1,of:b.w.length});
       if(bi===0){if(last)ph.push({t:'rest',l:'Почивка',d:R,b:b.k,bi});return;}
       if(last){if(bi<blocks.length-1)ph.push({t:'rest',l:'Почивка между блоковете',d:BR,b:b.k,bi});}
       else ph.push({t:'rest',l:'Почивка',d:R,b:b.k,bi});});});}
   const total=()=>ph.reduce((a,p)=>a+p.d,0);
   function renderList(){list.innerHTML='';
     blocks.forEach((b,bi)=>{const hd=document.createElement('div');hd.className='blk';
-      hd.innerHTML=(bi?'Блок '+bi+' · ':'')+b.k+'<small>'+(bi?'2 кръга · 40/20':'1 мин без почивка')+'</small>';list.appendChild(hd);
+      hd.innerHTML=(bi?'Основна част':'Загрявка')+'<small>'+(bi?b.w.length+' различни упражнения · 40 сек работа, 20 почивка':'1 мин без почивка')+'</small>';list.appendChild(hd);
       b.w.forEach(n=>{const L=LIB[n];const row=document.createElement('div');row.className='exrow';
         const pk=Object.keys(PAT).find(k=>PAT[k].includes(n));
-        row.innerHTML='<div><div class="n">'+n+'</div><div class="c">'+(bi&&pk?pk:'раздвижване')+'</div></div><div class="v">'+(bi?'2 × '+W:WU)+'с</div>'+
+        row.innerHTML='<div><div class="n">'+n+'</div><div class="c">'+(bi&&pk?pk:'раздвижване')+'</div></div><div class="v">'+(bi?W:WU)+'с</div>'+
           '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span></div>';
         row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});});}
   function buildDots(){dots.innerHTML='';ph.forEach(p=>{if(p.t!=='work')return;const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
   function paint(rem){const p=idx>=0&&idx<ph.length?ph[idx]:null;
     if(!p){num.textContent=fmt(total());ring.setAttribute('stroke-dashoffset','0');ring.style.stroke='var(--work)';
-      phs.textContent='около '+Math.round(total()/60)+' минути';nm.textContent='Функционална';nxt.textContent='3 блока · '+ex.length+' упражнения';return;}
+      phs.textContent='около '+Math.round(total()/60)+' минути';nm.textContent='Функционална';nxt.textContent=(ex.length-2)+' упражнения + загрявка';return;}
     num.textContent=fmt(rem);ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/p.d)));
     ring.style.stroke=p.t==='work'?'var(--work)':'var(--rest)';
-    phs.textContent=p.t==='work'?(p.b+(p.rs>1?' · кръг '+p.r+'/'+p.rs:'')):p.l.toLowerCase();
+    phs.textContent=p.t==='work'?(p.bi?'работа · '+p.i+'/'+p.of:'загрявка'):p.l.toLowerCase();
     nm.textContent=p.t==='work'?p.l:'Почивка';
     const nw=ph.slice(idx+1).find(q=>q.t==='work');nxt.textContent=nw?'след: '+nw.l:'последно';
     if(p.t==='work'&&LIB[p.l])cue.innerHTML=LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>';
-    else if(nw&&LIB[nw.l])cue.innerHTML='<b>Следва: '+nw.l+(nw.b!==p.b?' · блок „'+nw.b+'“':'')+'</b><br>'+LIB[nw.l].t;
+    else if(nw&&LIB[nw.l])cue.innerHTML='<b>Следва: '+nw.l+'</b><br>'+LIB[nw.l].t;
     num.classList.toggle('urgent',rem<=3);
     let wi=-1;for(let k=0;k<=idx;k++)if(ph[k].t==='work')wi++;
     document.querySelectorAll('#f-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<wi||(i===wi&&p.t!=='work'));d.classList.toggle('cur',i===wi&&p.t==='work');});}
@@ -1007,8 +1006,8 @@ function renderProgress(){
       ring.setAttribute('stroke-dashoffset','0');cueEnd();say('Край. Браво.');logSession('func',{ex:ex.slice()});return;}
     end=Date.now()+ph[idx].d*1000;lastSec=99;const p=ph[idx];
     if(p.t==='work'){cueWork();const prev=ph.slice(0,idx).reverse().find(q=>q.t==='work');
-      say((prev&&prev.b!==p.b?'Блок '+p.b+'. ':'')+p.l);}
-    else{cueRest();const nw=ph[idx+1];say(nw?(p.d>R?'Почивка. Следва блок '+nw.b+'. '+nw.l:'Почивка. Следва '+nw.l):'Почивка');}
+      say(p.l);}
+    else{cueRest();const nw=ph[idx+1];say(nw?'Почивка. Следва '+nw.l:'Почивка');}
     paint(p.d);}
   function tick(){if(!run)return;const rem=(end-Date.now())/1000,s=Math.ceil(rem);
     if(s<=3&&s>0&&s!==lastSec){lastSec=s;tickBeep();}
@@ -1112,7 +1111,7 @@ function renderHome(){
       '<button class="b-main full" data-go="core" data-start="1">Започни</button>';
   }else if(type==='func'){
     const fi=window.__funcInfo?window.__funcInfo():{min:13,n:8};
-    h+='<div class="m">загрявка + 3 блока · около '+fi.min+' минути</div><div class="chips">'+
+    h+='<div class="m">12 упражнения · около '+fi.min+' минути</div><div class="chips">'+
       ['клек','бутане','един крак','ротация','мощност','корем'].map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>'+
       '<button class="b-main full" data-go="func" data-start="1">Започни</button>';
   }else if(type==='strength'){
@@ -1139,7 +1138,7 @@ function renderHome(){
   $('h-tl').textContent='Утре · '+dayNames[tw];
   const hs=$('h-stretch');if(hs&&window.__stretchMin)hs.querySelector('.s').textContent=window.__stretchMin+' минути · вечер или след тичане';
   const fm=window.__funcInfo?window.__funcInfo().min:13;
-  const meta={func:'3 блока · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 15 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
+  const meta={func:'12 упражнения · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 15 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
   $('h-tmrw').innerHTML='<div class="t">'+planNames[tt]+'</div><div class="s">'+meta[tt]+'</div>';
   $('h-other').innerHTML=['core','func','strength','run'].filter(t=>t!==type).map(t=>
     '<button class="mc" data-go="'+t+'"><div class="t">'+planNames[t]+'</div><div class="s">'+meta[t]+'</div></button>').join('');

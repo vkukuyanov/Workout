@@ -203,7 +203,11 @@
   .hweek .done .c{border-color:var(--gold)}
   .hweek .done .c:after{content:'';position:absolute;left:6.5px;top:3px;width:5px;height:10px;border:solid var(--gold);border-width:0 2px 2px 0;transform:rotate(45deg)}
   .hweek .today{box-shadow:inset 0 0 0 1.5px var(--gold)} .hweek .today .n{color:var(--ink)}
-  .mrow{display:flex;gap:10px}
+  .mrow{display:flex;gap:10px;flex-wrap:wrap}
+  .mrow .mc{flex:1 1 calc(50% - 5px)}
+  .blk{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:16px 0 2px}
+  .blk:first-child{margin-top:6px}
+  .blk small{color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:none;font-size:12px;margin-left:6px}
   .mc{flex:1;background:var(--card);border-radius:18px;padding:15px 16px;text-align:left;border:none;font-family:inherit;color:var(--ink);width:auto}
   .mc.wide{display:flex;justify-content:space-between;align-items:center;width:100%}
   .mc.wide .go{font-size:26px;color:var(--gold);font-weight:400;line-height:1}
@@ -310,6 +314,35 @@
       <div class="pgrid" id="s-prog"></div>
     </div>
 
+  </div>
+
+  <div class="panel" id="panel-func">
+    <div class="card">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="44"></circle>
+          <circle class="ring-fg" id="f-ring" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="ring-inner">
+          <div class="ring-phase" id="f-phase">Функционална</div>
+          <div class="ring-num" id="f-num">20:00</div>
+          <div class="ring-next" id="f-next"></div>
+        </div>
+      </div>
+      <div class="now-name" id="f-name">Функционална</div>
+      <div class="cue" id="f-cue">Загрявка, после 3 блока. Всеки блок е 2 упражнения в 2 кръга: 40 сек работа, 20 сек почивка.</div>
+      <div class="progress-dots" id="f-dots"></div>
+      <div class="ctrl">
+        <button class="b-main" id="f-start">Старт</button>
+        <button class="b-alt" id="f-shuffle">Разбъркай</button>
+      </div>
+      <div class="ctrl" style="margin-top:6px;"><button class="b-thin full" id="f-reset">Нулирай</button></div>
+    </div>
+    <div class="card">
+      <div class="label">Днешна тренировка</div>
+      <div class="sub" style="margin-bottom:4px;">Докосни за техника</div>
+      <div id="f-list"></div>
+    </div>
   </div>
 
   <div class="panel" id="panel-stretch">
@@ -558,9 +591,9 @@ const LIB={
 const WINTER=true; // permanent: strength outdoors short, core 40 s
 const WORK_S=WINTER?40:30;
 function coreMin(n){return Math.round((n*WORK_S+(n-1)*15)/60);}
-const dayMap={0:'core',1:'core',2:'strength',3:'core',4:'strength',5:'core',6:'run'};
+const dayMap={0:'core',1:'func',2:'strength',3:'core',4:'strength',5:'func',6:'run'};
 const dayNames=['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
-const planNames={core:'Ядро',strength:'Сила',run:'Тичане'};
+const planNames={core:'Ядро',strength:'Сила',run:'Тичане',func:'Функционална'};
 const today=new Date().getDay();
 function switchTab(n){document.body.classList.add('in-work');window.scrollTo(0,0);
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
@@ -622,6 +655,7 @@ function renderHist(){
     if(s.type==='strength')what='Сила · <b>'+(x.hits||0)+'</b>/'+(x.total||0)+' на целта';
     else if(s.type==='core')what='Ядро'+(Array.isArray(x.ex)?' · <b>'+x.ex.length+'</b> упражнения':'');
     else if(s.type==='run')what='Тичане · <b>'+(x.min||0)+'</b> мин';
+    else if(s.type==='func')what='Функционална'+(Array.isArray(x.ex)?' · <b>'+x.ex.length+'</b> упражнения':'');
     else if(s.type==='stretch')what='Разтягане · <b>'+(x.min||0)+'</b> мин';
     const r=document.createElement('div');r.className='hist';
     r.innerHTML='<span>'+d.getDate()+'.'+(d.getMonth()+1)+'</span><span>'+what+'</span>';el.appendChild(r);});}
@@ -867,6 +901,105 @@ function renderProgress(){
     document.querySelectorAll('#r-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
 })();
 
+// ================= FUNCTIONAL (Centr-style) =================
+// ~13 min: 1 min warm-up flow, then 3 blocks x 2 exercises x 2 rounds, 40 s work / 20 s rest, 30 s between blocks.
+// Block 1 strength (legs + upper body), block 2 directions (sideways, rotation, crawling), block 3 finisher.
+// The day before a strength day (Monday) there is no pulling, so the back is fresh for pull-ups.
+(function(){
+  const $=id=>document.getElementById(id);
+  const ring=$('f-ring'),num=$('f-num'),nm=$('f-name'),phs=$('f-phase'),nxt=$('f-next'),cue=$('f-cue'),
+    dots=$('f-dots'),start=$('f-start'),shuf=$('f-shuffle'),reset=$('f-reset'),list=$('f-list');
+  const W=40,R=20,BR=30,WU=30;
+  let blocks=[],ph=[],ex=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99;
+  const all=Object.keys(LIB).filter(k=>LIB[k].c);
+  const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+  function recency(){const r={};
+    load('wt_func_seen',[]).concat(load('wt_log',[]).filter(x=>x.type==='func'&&x.detail&&Array.isArray(x.detail.ex)).map(x=>x.detail.ex))
+      .forEach((l,i)=>l.forEach(n=>{if(!(n in r))r[n]=i;}));return r;}
+  function pick(pools,rec,avoid,taken,quiet){
+    for(const pool of pools){let c=all.filter(n=>pool(n)&&(!quiet||LIB[n].q)&&!taken.includes(n));
+      if(!c.length)continue;const f=c.filter(n=>!avoid.includes(n));if(f.length)c=f;
+      const age=n=>(n in rec)?rec[n]:Infinity,best=Math.max(...c.map(age));
+      return shuffle(c.filter(n=>age(n)===best))[0];}
+    return null;}
+  const inCat=c=>n=>LIB[n].c===c;
+  const HOT=['Бърпи','Клек със скок','Напади със скок','Кънкьорски скокове','Алпинисти','Мечешко ходене','Високи колене'];
+  const BLOW=['Румънска мъртва тяга с лоста','Преден клек с лоста','Напади с лоста','Тръстър с лоста','Добро утро с лоста'];
+  const BUP=['Раменна преса с лоста','Наведено гребане с лоста','Преса от пода с лоста'];
+  const DIR=n=>LIB[n].c==='функционално'&&n!=='Скок напред и назад'; // sideways, rotation, crawling; the jump belongs to the finisher
+  function build(avoidCurrent){
+    const bar=load('wt_bar',true),quiet=load('wt_quiet',false),rec=recency(),avoid=avoidCurrent?ex.slice():[],taken=[];
+    const P=(pools)=>{const n=pick(pools,rec,avoid,taken,quiet);if(n)taken.push(n);return n;};
+    const noPull=dayMap[(new Date().getDay()+1)%7]==='strength';
+    const up=bar?BUP.filter(n=>!noPull||n!=='Наведено гребане с лоста'):[];
+    const warm=[P([n=>['Скачащи джакове','Скачане на въже (имитация)','Бързо ходене на място с високи ръце'].includes(n)]),
+      P([n=>n==='Спайдърмен напад с ротация',DIR])];
+    blocks=[
+      {k:'Загрявка',w:warm,rounds:1},
+      {k:'Сила',rounds:2,w:[P(bar?[n=>BLOW.includes(n),inCat('долна част')]:[inCat('долна част')]),
+        P([n=>up.includes(n)||LIB[n].c==='горна част'])]},
+      {k:'Посоки',rounds:2,w:[P([DIR]),P([DIR,inCat('корем')])]},
+      {k:'Финал',rounds:2,w:[P([n=>HOT.includes(n)||['Звяр с изритване','Скок напред и назад'].includes(n),inCat('кардио')]),P([inCat('корем')])]}];
+    ex=taken.slice();ph=[];
+    blocks.forEach((b,bi)=>{for(let r=1;r<=b.rounds;r++)b.w.forEach((n,i)=>{
+      const last=r===b.rounds&&i===b.w.length-1;
+      ph.push({t:'work',l:n,d:bi?W:WU,b:b.k,bi,r,rs:b.rounds});
+      if(bi===0){if(last)ph.push({t:'rest',l:'Почивка',d:R,b:b.k,bi});return;}
+      if(last){if(bi<blocks.length-1)ph.push({t:'rest',l:'Почивка между блоковете',d:BR,b:b.k,bi});}
+      else ph.push({t:'rest',l:'Почивка',d:R,b:b.k,bi});});});}
+  const total=()=>ph.reduce((a,p)=>a+p.d,0);
+  function renderList(){list.innerHTML='';
+    blocks.forEach((b,bi)=>{const hd=document.createElement('div');hd.className='blk';
+      hd.innerHTML=(bi?'Блок '+bi+' · ':'')+b.k+'<small>'+(bi?'2 кръга · 40/20':'1 мин без почивка')+'</small>';list.appendChild(hd);
+      b.w.forEach(n=>{const L=LIB[n];const row=document.createElement('div');row.className='exrow';
+        row.innerHTML='<div><div class="n">'+n+'</div><div class="c">'+L.c+'</div></div><div class="v">'+(bi?'2 × '+W:WU)+'с</div>'+
+          '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span></div>';
+        row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});});}
+  function buildDots(){dots.innerHTML='';ph.forEach(p=>{if(p.t!=='work')return;const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
+  function paint(rem){const p=idx>=0&&idx<ph.length?ph[idx]:null;
+    if(!p){num.textContent=fmt(total());ring.setAttribute('stroke-dashoffset','0');ring.style.stroke='var(--work)';
+      phs.textContent='около '+Math.round(total()/60)+' минути';nm.textContent='Функционална';nxt.textContent='3 блока · '+ex.length+' упражнения';return;}
+    num.textContent=fmt(rem);ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/p.d)));
+    ring.style.stroke=p.t==='work'?'var(--work)':'var(--rest)';
+    phs.textContent=p.t==='work'?(p.b+(p.rs>1?' · кръг '+p.r+'/'+p.rs:'')):p.l.toLowerCase();
+    nm.textContent=p.t==='work'?p.l:'Почивка';
+    const nw=ph.slice(idx+1).find(q=>q.t==='work');nxt.textContent=nw?'след: '+nw.l:'последно';
+    if(p.t==='work'&&LIB[p.l])cue.innerHTML=LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>';
+    else if(nw&&LIB[nw.l])cue.innerHTML='<b>Следва: '+nw.l+(nw.b!==p.b?' · блок „'+nw.b+'“':'')+'</b><br>'+LIB[nw.l].t;
+    num.classList.toggle('urgent',rem<=3);
+    let wi=-1;for(let k=0;k<=idx;k++)if(ph[k].t==='work')wi++;
+    document.querySelectorAll('#f-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<wi||(i===wi&&p.t!=='work'));d.classList.toggle('cur',i===wi&&p.t==='work');});}
+  function next(){idx++;
+    if(idx>=ph.length){run=false;clearInterval(h);keepAwake(false);phs.textContent='готово';nm.textContent='Тренировката приключи 💪';
+      num.textContent='00:00';nxt.textContent='';cue.textContent='Натисни старт за нова с нови упражнения.';start.textContent='Нова тренировка';
+      ring.setAttribute('stroke-dashoffset','0');cueEnd();say('Край. Браво.');logSession('func',{ex:ex.slice()});return;}
+    end=Date.now()+ph[idx].d*1000;lastSec=99;const p=ph[idx];
+    if(p.t==='work'){cueWork();const prev=ph.slice(0,idx).reverse().find(q=>q.t==='work');
+      say((prev&&prev.b!==p.b?'Блок '+p.b+'. ':'')+p.l);}
+    else{cueRest();const nw=ph[idx+1];say(nw?(p.d>R?'Почивка. Следва блок '+nw.b+'. '+nw.l:'Почивка. Следва '+nw.l):'Почивка');}
+    paint(p.d);}
+  function tick(){if(!run)return;const rem=(end-Date.now())/1000,s=Math.ceil(rem);
+    if(s<=3&&s>0&&s!==lastSec){lastSec=s;tickBeep();}
+    if(rem<=0){next();return;}paint(rem);}
+  function phaseStart(i){let t=0;for(let k=0;k<i;k++)t+=ph[k].d;return t;}
+  function track(){const ev=[];let t=0;ph.forEach(p=>{ev.push([t,p.t==='work'?'work':'rest']);tickEvents(t,p.d,ev);t+=p.d;});
+    ev.push([t,'end']);startTrack(t+0.8,ev);}
+  function markSeen(){const l=load('wt_func_seen',[]);l.unshift(ex.slice());store('wt_func_seen',l.slice(0,10));}
+  start.addEventListener('click',()=>{
+    if(idx>=ph.length){build(true);buildDots();renderList();idx=-1;}
+    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';return;}
+    run=true;keepAwake(true);start.textContent='Пауза';
+    if(idx<0){markSeen();track();next();}
+    else{const left=paused>0?paused:0;end=Date.now()+left;resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;}
+    h=setInterval(tick,150);});
+  shuf.addEventListener('click',()=>{if(run)return;stopTrack();build(true);buildDots();renderList();idx=-1;paused=0;start.textContent='Старт';paint(0);});
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();idx=-1;paused=0;start.textContent='Старт';buildDots();paint(0);});
+  // rebuild unless a session is running or paused halfway (a finished one gets fresh exercises)
+  window.__funcRefresh=()=>{if(run||(idx>=0&&idx<ph.length))return;idx=-1;paused=0;start.textContent='Старт';build(true);buildDots();renderList();paint(0);};
+  window.__funcInfo=()=>({min:Math.round(total()/60),n:ex.length});
+  build();buildDots();renderList();paint(0);
+})();
+
 // ================= STRETCH =================
 // Fixed 12-minute sequence for desk + car days, pull-ups/dips and running: spine, lats, hip flexors,
 // glutes, hamstrings, calves, chest, thoracic rotation, deep squat. One side after the other.
@@ -945,6 +1078,11 @@ function renderHome(){
     h+='<div class="m">'+nEx+' упражнения · около '+coreMin(nEx)+' минути</div><div class="chips">'+
       ['кардио','функционално','долна част','горна част','корем'].concat(bar?['с лост']:[]).map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>'+
       '<button class="b-main full" data-go="core" data-start="1">Започни</button>';
+  }else if(type==='func'){
+    const fi=window.__funcInfo?window.__funcInfo():{min:13,n:8};
+    h+='<div class="m">загрявка + 3 блока · около '+fi.min+' минути</div><div class="chips">'+
+      ['сила','посоки','финал','2 кръга · 40/20'].map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>'+
+      '<button class="b-main full" data-go="func" data-start="1">Започни</button>';
   }else if(type==='strength'){
     const plan=window.__strPlan||[];
     const ses=log.filter(x=>x.type==='strength'&&x.detail&&x.detail.ex);
@@ -968,15 +1106,17 @@ function renderHome(){
   const tw=(today+1)%7,tt=dayMap[tw];
   $('h-tl').textContent='Утре · '+dayNames[tw];
   const hs=$('h-stretch');if(hs&&window.__stretchMin)hs.querySelector('.s').textContent=window.__stretchMin+' минути · вечер или след тичане';
-  const meta={core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 15 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
+  const fm=window.__funcInfo?window.__funcInfo().min:13;
+  const meta={func:'3 блока · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 15 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
   $('h-tmrw').innerHTML='<div class="t">'+planNames[tt]+'</div><div class="s">'+meta[tt]+'</div>';
-  $('h-other').innerHTML=['core','strength','run'].filter(t=>t!==type).map(t=>
+  $('h-other').innerHTML=['core','func','strength','run'].filter(t=>t!==type).map(t=>
     '<button class="mc" data-go="'+t+'"><div class="t">'+planNames[t]+'</div><div class="s">'+meta[t]+'</div></button>').join('');
 }
 document.getElementById('home').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;
-  switchTab(b.dataset.go);if(b.dataset.start){const st=document.getElementById('c-start');if(st.textContent==='Старт')st.click();}});
+  if(b.dataset.go==='func'&&window.__funcRefresh)window.__funcRefresh();
+  switchTab(b.dataset.go);if(b.dataset.start){const st=document.getElementById(b.dataset.go==='func'?'f-start':'c-start');if(st.textContent==='Старт')st.click();}});
 document.getElementById('back').addEventListener('click',()=>{
-  ['c-start','r-start','x-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
+  ['c-start','r-start','x-start','f-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
   document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
 renderHist();renderStreak();renderHome();
 document.getElementById('test-snd').addEventListener('click',()=>{unlockAudio();unlockVoice();

@@ -205,6 +205,8 @@
   .hweek .today{box-shadow:inset 0 0 0 1.5px var(--gold)} .hweek .today .n{color:var(--ink)}
   .mrow{display:flex;gap:10px}
   .mc{flex:1;background:var(--card);border-radius:18px;padding:15px 16px;text-align:left;border:none;font-family:inherit;color:var(--ink);width:auto}
+  .mc.wide{display:flex;justify-content:space-between;align-items:center;width:100%}
+  .mc.wide .go{font-size:26px;color:var(--gold);font-weight:400;line-height:1}
   .mc .t{font-size:17px;font-weight:700}.mc .s{font-size:12.5px;color:var(--muted);margin-top:3px;font-weight:500}
   .set-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--line-2)}
   .set-row:last-child{border-bottom:none}
@@ -228,6 +230,8 @@
     <div class="mc" id="h-tmrw"></div>
     <div class="hlbl"><span class="l">Друга тренировка</span></div>
     <div class="mrow" id="h-other"></div>
+    <div class="hlbl"><span class="l">Възстановяване</span></div>
+    <button class="mc wide" data-go="stretch" id="h-stretch"><div><div class="t">Разтягане</div><div class="s">12 минути · вечер или след тичане</div></div><span class="go">›</span></button>
     <div class="hlbl"><span class="l">Последни сесии</span></div>
     <div class="card" style="padding:6px 18px 14px"><div id="s-hist"><div class="sub">Още няма записани сесии.</div></div></div>
     <div class="hlbl"><span class="l">Настройки</span></div>
@@ -306,6 +310,34 @@
       <div class="pgrid" id="s-prog"></div>
     </div>
 
+  </div>
+
+  <div class="panel" id="panel-stretch">
+    <div class="card">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="44"></circle>
+          <circle class="ring-fg" id="x-ring" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="ring-inner">
+          <div class="ring-phase" id="x-phase">Разтягане</div>
+          <div class="ring-num" id="x-num">12:00</div>
+          <div class="ring-next" id="x-next"></div>
+        </div>
+      </div>
+      <div class="now-name" id="x-name">Разтягане</div>
+      <div class="cue" id="x-cue">Бавно дишане, без пружиниране. Задържаш на леко дърпане, не на болка.</div>
+      <div class="progress-dots" id="x-dots"></div>
+      <div class="ctrl">
+        <button class="b-main" id="x-start">Старт</button>
+        <button class="b-alt" id="x-reset">Нулирай</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Позиции</div>
+      <div class="sub" style="margin-bottom:4px;">Докосни за техника</div>
+      <div id="x-list"></div>
+    </div>
   </div>
 
   <div class="panel" id="panel-run">
@@ -511,6 +543,15 @@ const LIB={
  'Бърпи':{c:'кардио',q:0,t:'Клек, ръцете на пода, скачаш назад в планк, лицева, скачаш напред и подскок с ръце нагоре.',e:'Кръстът не провисва в планка. По-лесно: без лицевата и без подскока.'},
  'Клек със скок':{c:'кардио',q:0,t:'Клек до успоредно и експлозивен скок нагоре. Приземяваш се меко направо в следващия клек.',e:'Коленете не падат навътре при кацане.'},
  'Напади със скок':{c:'кардио',q:0,t:'От напад скачаш и сменяш краката във въздуха, кацаш в напад с другия крак.',e:'Кацай меко; ако коленете протестират — обратни напади без скок.'},
+ // ---- functional: whole body, several directions (rotation, sideways, crawling) ----
+ 'Спайдърмен напад с ротация':{c:'функционално',q:1,t:'От планк стъпваш с десния крак до дясната длан, вдигаш дясната ръка към тавана с поглед след нея, връщаш се в планк. Редуваш страните.',e:'Задният крак остава изпънат. По-лесно: без ротацията.'},
+ 'Лицева с T-ротация':{c:'функционално',q:1,t:'Лицева опора, горе се завърташ в страничен планк с ръка към тавана, връщаш се и правиш следващата към другата страна.',e:'Тазът не пада при завъртането. По-лесно: без лицевата, само ротация от планк.'},
+ 'Мечешко пълзене настрани':{c:'функционално',q:1,t:'На длани и пръсти, коленете на 5 см от пода. Пълзиш 3–4 крачки настрани и обратно — дясна ръка с ляв крак.',e:'Гърбът плосък, коленете не се вдигат високо. По-лесно: по-къси крачки.'},
+ 'Звяр с изритване':{c:'функционално',q:1,t:'От мечешка позиция вдигаш лявата ръка, прекарваш десния крак под тялото и го изритваш напред, седнал на ръка. Връщаш се и сменяш.',e:'Опорната ръка е под рамото, тазът ниско. По-лесно: бавно, без изритване докрай.'},
+ 'Краб с достигане':{c:'функционално',q:1,t:'Седнал, длани зад теб, стъпала на пода. Вдигаш таза високо и протягаш едната ръка над тялото към отсрещната страна. Редуваш.',e:'Тазът се вдига със седалището, не с кръста. По-лесно: без вдигане на таза.'},
+ 'Напад с ротация':{c:'функционално',q:1,t:'Обратен напад, долу завърташ торса към предния крак с ръце пред гърдите, връщаш се в центъра и ставаш. Редуваш краката.',e:'Коляното на предния крак не пада навътре при завъртането.'},
+ 'Страничен напад с докосване':{c:'функционално',q:1,t:'Голяма крачка настрани, сядаш на този крак с таза назад и докосваш пода пред стъпалото с противоположната ръка. Отблъскваш се обратно.',e:'Гърбът прав, петата не се отлепя. По-лесно: без докосване на пода.'},
+ 'Скок напред и назад':{c:'функционално',q:0,t:'Скок напред от клек с размах на ръцете, меко кацане в клек, после 3 бързи крачки назад и отново.',e:'Кацай меко с колене над пръстите.'},
 };
 
 // ---------- day / streak ----------
@@ -563,7 +604,7 @@ function logSession(type,detail){
   const l=mergeLogs([entry],load('wt_log',[]));
   store('wt_log',l);renderHist();renderStreak();renderHome();pushCloud(l);}
 function renderStreak(){
-  const days=new Set(load('wt_log',[]).map(x=>x.date));
+  const days=new Set(load('wt_log',[]).filter(x=>x.type!=='stretch').map(x=>x.date));
   const iso=d=>localISO(d);
   let n=0;
   const d=new Date();
@@ -581,6 +622,7 @@ function renderHist(){
     if(s.type==='strength')what='Сила · <b>'+(x.hits||0)+'</b>/'+(x.total||0)+' на целта';
     else if(s.type==='core')what='Ядро'+(Array.isArray(x.ex)?' · <b>'+x.ex.length+'</b> упражнения':'');
     else if(s.type==='run')what='Тичане · <b>'+(x.min||0)+'</b> мин';
+    else if(s.type==='stretch')what='Разтягане · <b>'+(x.min||0)+'</b> мин';
     const r=document.createElement('div');r.className='hist';
     r.innerHTML='<span>'+d.getDate()+'.'+(d.getMonth()+1)+'</span><span>'+what+'</span>';el.appendChild(r);});}
   const cs=document.createElement('div');cs.className='cloud';cs.id='cloud-status';el.appendChild(cs);setCloud(cloudState);
@@ -615,7 +657,7 @@ function renderProgress(){
 // ================= CORE =================
 (function(){
   const names=Object.keys(LIB).filter(k=>LIB[k].c);
-  const baseCats=['кардио','долна част','корем','горна част'];
+  const baseCats=['кардио','функционално','долна част','корем','горна част'];
   let bar=load('wt_bar',true);
   const cats=()=>bar?baseCats.concat(['с лост']):baseCats;
   let quiet=load('wt_quiet',false),ex=[],ph=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99;
@@ -648,7 +690,7 @@ function renderProgress(){
     // Fixed structure (ACSM/NSCA + 7-minute workout): warm up first, loaded compound work while fresh,
     // upper and lower body alternate so one rests while the other works, core between, intense cardio late.
     const rec=recency(),avoid=avoidCurrent?ex.slice():[],taken=[];
-    const order=['warm','долна част','горна част','barLow','корем','barUp','hot','горна част','долна част','корем']
+    const order=['warm','функционално','долна част','горна част','barLow','корем','barUp','hot','функционално','корем']
       .filter(c=>bar||(c!=='barLow'&&c!=='barUp'));
     ex=order.map(c=>{const n=pick(c,rec,avoid,taken);taken.push(n);return n;});
     ph=[];ex.forEach((n,i)=>{ph.push({t:'work',l:n,d:WORK_S,r:i+1});
@@ -825,6 +867,73 @@ function renderProgress(){
     document.querySelectorAll('#r-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
 })();
 
+// ================= STRETCH =================
+// Fixed 12-minute sequence for desk + car days, pull-ups/dips and running: spine, lats, hip flexors,
+// glutes, hamstrings, calves, chest, thoracic rotation, deep squat. One side after the other.
+const STRETCH=[
+ {n:'Котка-крава',d:45,t:'На четири крака. С вдишване извиваш гърба надолу и гледаш напред, с издишване го закръгляш нагоре. Бавно, в ритъма на дишането.',e:'Движението е по цялия гръбнак, не само в кръста.'},
+ {n:'Детска поза с ръце напред',d:60,t:'Коленете широко, седалището към петите, ръцете изпънати напред, челото на пода. Протягай пръстите напред при всяко издишване.',e:'Раменете не се свиват към ушите. Разтяга широкия гръбен мускул след набиранията.'},
+ {n:'Нисък напад',s:1,d:45,t:'Задното коляно на пода, предният крак напред. Стягаш седалището на задния крак и избутваш таза леко напред.',e:'Кръстът не се извива — разтягането е отпред на бедрото. Освобождава таза след седене.'},
+ {n:'Гълъб',s:1,d:60,t:'Предният крак свит пред теб напречно, задният изпънат назад. Торсът изправен или легнал напред върху предмишниците.',e:'Ако коляното дърпа — сложи възглавница под седалището.'},
+ {n:'Задно бедро по гръб',s:1,d:45,t:'По гръб, единият крак изпънат нагоре. Хващаш го зад бедрото или с колан и го придърпваш към себе си.',e:'Кракът остава почти прав, кръстът на пода.'},
+ {n:'Прасец на стената',s:1,d:30,t:'Ръцете на стената, единият крак назад с изпънато коляно и петата на пода. Навеждаш се към стената.',e:'Петата не се отлепя. Важно след тичане по неравен терен.'},
+ {n:'Гърди на рамката на вратата',s:1,d:45,t:'Предмишницата на рамката, лакътят на височината на рамото. Завърташ тялото навън, докато усетиш гърдите.',e:'Не насилвай рамото — разтягането е в гърдите, не в ставата.'},
+ {n:'Отворена книга',s:1,d:45,t:'Легнал на една страна, коленете свити напред, ръцете изпънати една върху друга. Отваряш горната ръка в дъга към другата страна и гледаш след нея.',e:'Коленете остават залепени едно за друго — въртенето е от горната част на гърба.'},
+ {n:'Дълбок клек',d:60,t:'Клякаш колкото можеш по-ниско, петите на пода, лактите избутват коленете навън. Задържаш и дишаш.',e:'Ако петите се вдигат — дръж се за врата или сложи нещо тънко под петите.'},
+];
+(function(){
+  const $=id=>document.getElementById(id);
+  const ring=$('x-ring'),num=$('x-num'),nm=$('x-name'),phs=$('x-phase'),nxt=$('x-next'),cue=$('x-cue'),
+    dots=$('x-dots'),start=$('x-start'),reset=$('x-reset'),list=$('x-list');
+  const CH=5; // seconds to move into the next position
+  const ph=[];
+  STRETCH.forEach(x=>{const sides=x.s?[' · ляво',' · дясно']:[''];
+    sides.forEach((sd,k)=>{ph.push({t:'move',l:x.n+sd,d:CH,x});ph.push({t:'hold',l:x.n+sd,d:x.d,x});});});
+  const total=ph.reduce((a,p)=>a+p.d,0);
+  let idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,t0=0;
+  function renderList(){list.innerHTML='';STRETCH.forEach((x,i)=>{
+    const row=document.createElement('div');row.className='exrow';
+    row.innerHTML='<div><div class="n">'+(i+1)+'. '+x.n+'</div><div class="c">'+(x.s?'всяка страна':'')+'</div></div><div class="v">'+(x.s?'2 × ':'')+x.d+'с</div>'+
+      '<div class="detail">'+x.t+'<span class="err">'+x.e+'</span></div>';
+    row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});}
+  function buildDots(){dots.innerHTML='';ph.forEach(p=>{if(p.t!=='hold')return;const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
+  function paint(rem){const p=idx>=0&&idx<ph.length?ph[idx]:null;
+    if(!p){num.textContent=fmt(total);ring.setAttribute('stroke-dashoffset','0');phs.textContent=Math.round(total/60)+' минути';
+      nm.textContent='Разтягане';nxt.textContent=STRETCH.length+' позиции';return;}
+    num.textContent=fmt(rem);ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/p.d)));
+    ring.style.stroke=p.t==='hold'?'var(--work)':'var(--rest)';
+    phs.textContent=p.t==='hold'?'задръж':'смени позицията';nm.textContent=p.l;
+    const nh=ph.slice(idx+1).find(q=>q.t==='hold'&&q.l!==p.l);nxt.textContent=nh?'след: '+nh.l:'последна';
+    cue.innerHTML=p.x.t+'<span class="err">'+p.x.e+'</span>';
+    num.classList.toggle('urgent',p.t==='hold'&&rem<=3);
+    let hi=-1;for(let k=0;k<=idx;k++)if(ph[k].t==='hold')hi++;
+    document.querySelectorAll('#x-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<hi||(i===hi&&p.t!=='hold'));d.classList.toggle('cur',i===hi&&p.t==='hold');});}
+  function next(){idx++;
+    if(idx>=ph.length){run=false;clearInterval(h);keepAwake(false);phs.textContent='готово';nm.textContent='Разтягането приключи';
+      num.textContent='00:00';nxt.textContent='';cue.textContent='Добре свършено. Пий вода.';start.textContent='Отначало';
+      cueEnd();say('Край на разтягането.');logSession('stretch',{min:Math.round(total/60)});return;}
+    end=Date.now()+ph[idx].d*1000;lastSec=99;const p=ph[idx];
+    if(p.t==='hold'){cueWork();}else{cueRest();say(p.l);}
+    paint(p.d);}
+  function tick(){if(!run)return;const rem=(end-Date.now())/1000,s=Math.ceil(rem);
+    if(s<=3&&s>0&&s!==lastSec&&ph[idx].t==='hold'){lastSec=s;tickBeep();}
+    if(rem<=0){next();return;}paint(rem);}
+  function phaseStart(i){let t=0;for(let k=0;k<i;k++)t+=ph[k].d;return t;}
+  function track(){const ev=[];let t=0;ph.forEach(p=>{ev.push([t,p.t==='hold'?'work':'rest']);if(p.t==='hold')tickEvents(t,p.d,ev);t+=p.d;});
+    ev.push([t,'end']);startTrack(t+0.8,ev);}
+  start.addEventListener('click',()=>{
+    if(idx>=ph.length){idx=-1;buildDots();}
+    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';return;}
+    run=true;keepAwake(true);start.textContent='Пауза';
+    if(idx<0){track();next();}
+    else{const left=paused>0?paused:0;end=Date.now()+left;resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;}
+    h=setInterval(tick,150);});
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();idx=-1;paused=0;
+    start.textContent='Старт';buildDots();paint(0);cue.textContent='Бавно дишане, без пружиниране. Задържаш на леко дърпане, не на болка.';});
+  window.__stretchMin=Math.round(total/60);
+  renderList();buildDots();paint(0);
+})();
+
 function renderHome(){
   const $=id=>document.getElementById(id);
   const now=new Date();let ds=now.toLocaleDateString('bg-BG',{weekday:'long',day:'numeric',month:'long'});
@@ -834,7 +943,7 @@ function renderHome(){
   let h='<div class="k">По план</div><div class="t">'+planNames[type]+'</div>';
   if(type==='core'){
     h+='<div class="m">'+nEx+' упражнения · около '+coreMin(nEx)+' минути</div><div class="chips">'+
-      ['кардио','долна част','корем','горна част'].concat(bar?['с лост']:[]).map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>'+
+      ['кардио','функционално','долна част','горна част','корем'].concat(bar?['с лост']:[]).map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>'+
       '<button class="b-main full" data-go="core" data-start="1">Започни</button>';
   }else if(type==='strength'){
     const plan=window.__strPlan||[];
@@ -852,12 +961,13 @@ function renderHome(){
   }
   $('h-hero').innerHTML=h;
   // week (Monday first)
-  const days=new Set(log.map(x=>x.date)),lbl=['пн','вт','ср','чт','пт','сб','нд'],mo=(now.getDay()+6)%7;let done=0,wk='';
+  const days=new Set(log.filter(x=>x.type!=='stretch').map(x=>x.date)),lbl=['пн','вт','ср','чт','пт','сб','нд'],mo=(now.getDay()+6)%7;let done=0,wk='';
   for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-mo+i);const iso=localISO(d),ok=days.has(iso);if(ok)done++;
     wk+='<div class="d'+(ok?' done':'')+(i===mo?' today':'')+'"><div class="n">'+lbl[i]+'</div><div class="c"></div></div>';}
   $('h-week').innerHTML=wk;$('h-wk').textContent=done+' от 6';
   const tw=(today+1)%7,tt=dayMap[tw];
   $('h-tl').textContent='Утре · '+dayNames[tw];
+  const hs=$('h-stretch');if(hs&&window.__stretchMin)hs.querySelector('.s').textContent=window.__stretchMin+' минути · вечер или след тичане';
   const meta={core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 15 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
   $('h-tmrw').innerHTML='<div class="t">'+planNames[tt]+'</div><div class="s">'+meta[tt]+'</div>';
   $('h-other').innerHTML=['core','strength','run'].filter(t=>t!==type).map(t=>
@@ -866,7 +976,7 @@ function renderHome(){
 document.getElementById('home').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;
   switchTab(b.dataset.go);if(b.dataset.start){const st=document.getElementById('c-start');if(st.textContent==='Старт')st.click();}});
 document.getElementById('back').addEventListener('click',()=>{
-  ['c-start','r-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
+  ['c-start','r-start','x-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
   document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
 renderHist();renderStreak();renderHome();
 document.getElementById('test-snd').addEventListener('click',()=>{unlockAudio();unlockVoice();

@@ -838,8 +838,8 @@ function sideEvents(ph,ev){let t=0;ph.forEach(p=>{if(p.t==='work'&&twoSided(p.l)
   const resume=saved&&saved.date===localISO()&&saved.ei!=null;
   const post=resume?(saved.post===BR.n?BR:DL):(lastStr&&lastStr.detail.post===DL.n?BR:DL);
   const plan=[
-    {n:'Набирания на лоста',t:'5-8 повт. · 1 в резерв',s:4,r:90},
-    {n:'Дипове на успоредката',t:'8-12 повт.',s:4,r:75},
+    {n:'Набирания на лоста',t:'5-8 повт. · 1 в резерв',s:3,r:90},
+    {n:'Дипове на успоредката',t:'8-12 повт.',s:3,r:75},
     {n:'Обърнати гребания',t:'10-12 повт.',s:3,r:60},
     post,
     {n:'Вдигане на крака (уред за корем)',t:'12-18 повт.',s:3,r:45},

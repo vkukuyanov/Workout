@@ -155,6 +155,16 @@
   .finish .sm{font-size:13px;color:var(--muted);margin-top:6px;}
 
   /* history */
+  .rstats{display:flex;gap:8px;margin-top:6px}
+  .rstats div{flex:1;text-align:center;background:var(--card-2,rgba(127,127,127,.08));border-radius:14px;padding:10px 4px}
+  .rstats b{display:block;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+  .rstats span{font-size:11.5px;color:var(--muted)}
+  .split{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+  .split:last-child{border-bottom:none}
+  .split .bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+  .split .bar i{display:block;height:100%;background:var(--gold)}
+  .split b{font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+  .split.best b{color:var(--gold)}
   .hist{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;
     padding:11px 0;border-bottom:1px solid var(--line-2);font-variant-numeric:tabular-nums;}
   .hist:last-child{border-bottom:none;}
@@ -384,23 +394,41 @@
           <circle class="ring-fg" id="r-ring" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="276.46"></circle>
         </svg>
         <div class="ring-inner">
-          <div class="ring-phase" id="r-phase">Събота · на светло</div>
-          <div class="ring-num" id="r-num">00:00</div>
-          <div class="ring-next" id="r-next">3-4 км · ~6 км/ч</div>
+          <div class="ring-phase" id="r-phase">цел 4 км</div>
+          <div class="ring-num" id="r-num">0,00</div>
+          <div class="ring-next" id="r-next">км</div>
         </div>
       </div>
+      <div class="rstats">
+        <div><b id="r-time">00:00</b><span>време</span></div>
+        <div><b id="r-pace">–</b><span>темпо сега</span></div>
+        <div><b id="r-avg">–</b><span>средно /км</span></div>
+      </div>
+      <div class="sub" id="r-gps" style="text-align:center;margin-top:10px;">GPS се включва при старт</div>
       <div class="ctrl">
         <button class="b-main" id="r-start">Старт</button>
         <button class="b-alt" id="r-reset">Нулирай</button>
       </div>
       <div class="toggle">
-        <div><div style="font-size:14.5px;font-weight:500;">Интервален режим</div>
-        <div class="sub" style="margin-top:3px;">1 мин бързо / 2 мин възстановяване × 6</div></div>
+        <div><div style="font-size:14.5px;font-weight:500;">Интервали</div>
+        <div class="sub" style="margin-top:3px;">1 мин бързо / 2 мин спокойно × 6</div></div>
         <div class="sw" id="r-toggle"></div>
       </div>
       <div class="progress-dots" id="r-dots"></div>
       <div class="ctrl"><button class="b-alt full" id="r-log" disabled>Запиши пробега</button></div>
       <div class="sub" id="r-logged" style="text-align:center;margin-top:10px;"></div>
+    </div>
+    <div class="card" id="r-splits-card" style="display:none">
+      <div class="label">Километри</div>
+      <div id="r-splits"></div>
+    </div>
+    <div class="card" id="r-route-card" style="display:none">
+      <div class="label" id="r-route-lbl">Маршрут</div>
+      <svg id="r-route" viewBox="0 0 300 200" style="width:100%;height:auto;display:block;margin-top:8px"></svg>
+    </div>
+    <div class="card" id="r-last-card" style="display:none">
+      <div class="label">Предишни пробези</div>
+      <div id="r-last"></div>
     </div>
   </div>
   </div>
@@ -693,7 +721,7 @@ function renderHist(){
     let what='';
     if(s.type==='strength')what='Сила · <b>'+(x.hits||0)+'</b>/'+(x.total||0)+' на целта';
     else if(s.type==='core')what='Ядро'+(Array.isArray(x.ex)?' · <b>'+x.ex.length+'</b> упражнения':'');
-    else if(s.type==='run')what='Тичане · <b>'+(x.min||0)+'</b> мин';
+    else if(s.type==='run')what='Тичане · '+(x.km?'<b>'+String(x.km).replace('.',',')+'</b> км · '+fmtPace(x.pace)+' /км':'<b>'+(x.min||0)+'</b> мин');
     else if(s.type==='func')what='Функционална'+(Array.isArray(x.ex)?' · <b>'+(x.n||x.ex.length)+'</b> упражнения':'');
     else if(s.type==='stretch')what='Разтягане · <b>'+(x.min||0)+'</b> мин';
     const r=document.createElement('div');r.className='hist';
@@ -921,41 +949,101 @@ function sideEvents(ph,ev){let t=0;ph.forEach(p=>{if(p.t==='work'&&twoSided(p.l)
 })();
 
 // ================= RUN =================
+// GPS distance, current/average pace, a voice split every km, route trace and a comparison with earlier runs.
+// iPhone only reports position while the page is open: the screen stays awake during the run.
+const fmtPace=sec=>{if(!isFinite(sec)||sec<=0||sec>1800)return '–';sec=Math.round(sec);return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');};
+const fmtKm=m=>(m/1000).toFixed(2).replace('.',',');
+const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;return m+(m===1?' минута':' минути')+(s2?' и '+s2+' секунди':'');};
 (function(){
-  const ph=[];for(let i=0;i<6;i++){ph.push({t:'work',l:'Бързо темпо',d:60});ph.push({t:'rest',l:'Възстановяване',d:120});}
+  const GOAL=4000;
+  const ph=[];for(let i=0;i<6;i++){ph.push({t:'work',l:'Бързо темпо',d:60});ph.push({t:'rest',l:'Спокойно',d:120});}
   let el=0,run=false,st=0,h=null,on=false,ii=-1,pe=0;
+  let geoId=null,pts=[],dist=0,last=null,splits=[],nextKm=1000,lastKmT=0,gpsOk=false;
   const $=id=>document.getElementById(id);
   const logBtn=$('r-log'),logged=$('r-logged');let isLogged=false;
-  const num=$('r-num'),start=$('r-start'),reset=$('r-reset'),tg=$('r-toggle'),
-    lbl=$('r-phase'),nxt=$('r-next'),dots=$('r-dots'),ring=$('r-ring');
-  function bd(){dots.innerHTML='';if(!on)return;ph.forEach(p=>{const d=document.createElement('div');
-    d.className='pd';dots.appendChild(d);});}
-  tg.addEventListener('click',()=>{on=!on;tg.classList.toggle('on',on);bd();ii=-1;
-    nxt.textContent=on?'6 интервала':'3-4 км · ~6 км/ч';});
-  function tick(){if(!run)return;el=Date.now()-st;num.textContent=fmtSW(el);
+  const num=$('r-num'),start=$('r-start'),reset=$('r-reset'),tg=$('r-toggle'),lbl=$('r-phase'),nxt=$('r-next'),
+    dots=$('r-dots'),ring=$('r-ring'),tEl=$('r-time'),pEl=$('r-pace'),aEl=$('r-avg'),gps=$('r-gps');
+  const R=6371000,rad=x=>x*Math.PI/180;
+  function hav(a,b){const dLa=rad(b.lat-a.lat),dLo=rad(b.lon-a.lon);
+    const q=Math.sin(dLa/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(q));}
+  function bd(){dots.innerHTML='';if(!on)return;ph.forEach(()=>{const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
+  tg.addEventListener('click',()=>{if(run)return;on=!on;tg.classList.toggle('on',on);bd();ii=-1;});
+  function curPace(){ // last ~30 s
+    if(pts.length<2)return NaN;const now=pts[pts.length-1];let i=pts.length-2;
+    while(i>0&&now.t-pts[i].t<30000)i--;const d=now.d-pts[i].d,t=(now.t-pts[i].t)/1000;
+    return d>15?t/(d/1000):NaN;}
+  function onPos(p){const c=p.coords,acc=Math.round(c.accuracy||999);
+    gpsOk=acc<=30;gps.textContent=gpsOk?'GPS · точност '+acc+' м':'GPS търси сигнал… (точност '+acc+' м)';
+    if(!run||!gpsOk)return;
+    const pt={lat:c.latitude,lon:c.longitude,t:Date.now()};
+    if(!last){last=pt;pt.d=dist;pts.push(pt);return;}
+    const d=hav(last,pt),dt=(pt.t-last.t)/1000;
+    if(d<3)return;                  // GPS jitter while standing
+    if(dt>0&&d/dt>8){last=pt;return;} // impossible jump, re-anchor
+    dist+=d;pt.d=dist;pts.push(pt);last=pt;
+    while(dist>=nextKm){const t=el,sp=(t-lastKmT)/1000;splits.push(sp);lastKmT=t;
+      cueWork();say('Километър '+splits.length+'. Темпо '+sayPace(sp)+'.');nextKm+=1000;renderSplits();}
+    paint();}
+  function onErr(e){gps.textContent=e&&e.code===1?'Няма достъп до местоположението — разреши го за сайта в Настройки › Safari':'GPS не отговаря — времето пак се мери';}
+  function geoStart(){if(!('geolocation' in navigator)){gps.textContent='Няма GPS — мери се само времето';return;}
+    if(geoId==null)geoId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:30000});}
+  function geoStop(){if(geoId!=null){try{navigator.geolocation.clearWatch(geoId);}catch(e){}geoId=null;}}
+  function paint(){
+    num.textContent=fmtKm(dist);tEl.textContent=fmtSW(el);
+    pEl.textContent=fmtPace(curPace());aEl.textContent=dist>=100?fmtPace(el/1000/(dist/1000)):'–';
+    if(!on||ii<0||ii>=ph.length){ring.style.stroke='var(--work)';ring.setAttribute('stroke-dashoffset',String(C*(1-Math.min(1,dist/GOAL))));
+      lbl.textContent=dist>=GOAL?'целта е взета':'цел 4 км';nxt.textContent='км';}}
+  function renderSplits(){const card=$('r-splits-card');card.style.display=splits.length?'':'none';
+    const best=Math.min(...splits),worst=Math.max(...splits);
+    $('r-splits').innerHTML=splits.map((sp,i)=>'<div class="split'+(splits.length>1&&sp===best?' best':'')+'"><span>'+(i+1)+' км</span>'+
+      '<div class="bar"><i style="width:'+Math.round(40+60*(best/sp))+'%"></i></div><b>'+fmtPace(sp)+'</b></div>').join('');}
+  function drawRoute(list,label){const card=$('r-route-card'),svg=$('r-route');
+    if(!list||list.length<3){card.style.display='none';return;}
+    const la=list.map(p=>p[0]),lo=list.map(p=>p[1]),k=Math.cos(rad(la[0]));
+    const minA=Math.min(...la),maxA=Math.max(...la),minO=Math.min(...lo),maxO=Math.max(...lo);
+    const w=(maxO-minO)*k||1e-6,hh=(maxA-minA)||1e-6,sc=Math.min(280/w,180/hh);
+    const ox=(300-w*sc)/2,oy=(200-hh*sc)/2;
+    const xy=list.map(p=>[(ox+(p[1]-minO)*k*sc).toFixed(1),(oy+(maxA-p[0])*sc).toFixed(1)]);
+    svg.innerHTML='<polyline points="'+xy.map(q=>q.join(',')).join(' ')+'" fill="none" stroke="var(--gold)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>'+
+      '<circle cx="'+xy[0][0]+'" cy="'+xy[0][1]+'" r="6" fill="var(--ink)"/><circle cx="'+xy[xy.length-1][0]+'" cy="'+xy[xy.length-1][1]+'" r="6" fill="var(--gold)"/>';
+    $('r-route-lbl').textContent=label;card.style.display='';}
+  function renderLast(){const runs=load('wt_log',[]).filter(x=>x.type==='run'&&x.detail&&x.detail.km).slice(0,5);
+    const card=$('r-last-card');card.style.display=runs.length?'':'none';
+    $('r-last').innerHTML=runs.map(r=>{const [y,m,d]=r.date.split('-').map(Number);
+      return '<div class="split"><span>'+d+'.'+m+'</span><span>'+String(r.detail.km).replace('.',',')+' км</span><b>'+fmtPace(r.detail.pace)+'</b></div>';}).join('');}
+  function tick(){if(!run)return;el=Date.now()-st;
     if(on){
-      if(ii<0){ii=0;pe=Date.now()+ph[0].d*1000;cueWork();say(ph[0].l);lbl.textContent=ph[0].l;setBodyPhase('work');}
+      if(ii<0){ii=0;pe=Date.now()+ph[0].d*1000;cueWork();say(ph[0].l);lbl.textContent=ph[0].l;}
       else if(Date.now()>=pe){ii++;
-        if(ii>=ph.length){lbl.textContent='интервалите свършиха';cueEnd();say('Интервалите свършиха');on=false;tg.classList.remove('on');setBodyPhase(null);}
-        else{const p=ph[ii];pe=Date.now()+p.d*1000;lbl.textContent=p.l;setBodyPhase(p.t);p.t==='work'?cueWork():cueRest();say(p.l);}}
-      if(ii>=0&&ii<ph.length){const rem=(pe-Date.now())/1000;
+        if(ii>=ph.length){cueEnd();say('Интервалите свършиха');on=false;tg.classList.remove('on');}
+        else{const q=ph[ii];pe=Date.now()+q.d*1000;lbl.textContent=q.l;q.t==='work'?cueWork():cueRest();say(q.l);}}
+      if(on&&ii>=0&&ii<ph.length){const rem=(pe-Date.now())/1000;
         ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/ph[ii].d)));
-        ring.style.stroke=ph[ii].t==='work'?'var(--work)':'var(--rest)';
-        nxt.textContent=fmt(rem)+' от фазата';}
-      document.querySelectorAll('#r-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<ii);d.classList.toggle('cur',i===ii);});}}
+        ring.style.stroke=ph[ii].t==='work'?'var(--work)':'var(--rest)';nxt.textContent=fmt(rem)+' · '+ph[ii].l.toLowerCase();}
+      document.querySelectorAll('#r-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<ii);d.classList.toggle('cur',i===ii);});}
+    paint();}
   start.addEventListener('click',()=>{
-    if(run){run=false;clearInterval(h);keepAwake(false);stopTrack();start.textContent='Продължи';logBtn.disabled=isLogged||el<60000;return;}
-    if(on){if(el===0){const ev=[];let t=0;ph.forEach(p=>{ev.push([t,p.t==='work'?'work':'rest']);tickEvents(t,p.d,ev);t+=p.d;});
+    if(run){run=false;clearInterval(h);keepAwake(false);stopTrack();start.textContent='Продължи';
+      logBtn.disabled=isLogged||el<60000;if(pts.length>2)drawRoute(pts.map(p=>[p.lat,p.lon]),'Маршрут · '+fmtKm(dist)+' км');return;}
+    if(on){if(el===0){const ev=[];let t=0;ph.forEach(q=>{ev.push([t,q.t==='work'?'work':'rest']);tickEvents(t,q.d,ev);t+=q.d;});
         ev.push([t,'end']);startTrack(t+0.8,ev);}else resumeTrack(el/1000);}
-    run=true;keepAwake(true);st=Date.now()-el;start.textContent='Пауза';logBtn.disabled=true;h=setInterval(tick,200);});
+    geoStart();last=null; // after a pause, distance walked meanwhile is not counted
+    run=true;keepAwake(true);st=Date.now()-el;start.textContent='Пауза';logBtn.disabled=true;
+    if(el===0)say('Тръгваме. Ще ти казвам всеки километър.');h=setInterval(tick,250);});
   logBtn.addEventListener('click',()=>{if(isLogged||run)return;const min=Math.round(el/60000);
-    logSession('run',{min,intervals:on});isLogged=true;logBtn.disabled=true;
-    logged.textContent='Записано: '+min+' мин';say('Пробегът е записан');});
-  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();el=0;ii=-1;setBodyPhase(null);
-    isLogged=false;logBtn.disabled=true;logged.textContent='';
-    num.textContent='00:00';start.textContent='Старт';lbl.textContent='Събота · на светло';
-    nxt.textContent=on?'6 интервала':'3-4 км · ~6 км/ч';ring.setAttribute('stroke-dashoffset',String(C));
+    const km=Math.round(dist/10)/100,pace=dist>=100?Math.round(el/1000/(dist/1000)):0;
+    logSession('run',{min,km,pace,splits:splits.map(Math.round),intervals:on});isLogged=true;logBtn.disabled=true;geoStop();
+    const step=Math.max(1,Math.ceil(pts.length/300));
+    store('wt_run_route',pts.filter((p,i)=>i%step===0||i===pts.length-1).map(p=>[+p.lat.toFixed(5),+p.lon.toFixed(5)]));
+    logged.textContent='Записано: '+(km?String(km).replace('.',',')+' км · ':'')+min+' мин'+(pace?' · '+fmtPace(pace)+' /км':'');
+    say('Пробегът е записан');renderLast();});
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();geoStop();el=0;ii=-1;
+    pts=[];dist=0;last=null;splits=[];nextKm=1000;lastKmT=0;isLogged=false;logBtn.disabled=true;logged.textContent='';
+    start.textContent='Старт';gps.textContent='GPS се включва при старт';renderSplits();bd();paint();
+    drawRoute(load('wt_run_route',null),'Последен маршрут');
     document.querySelectorAll('#r-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
+  window.__runDebug=()=>({dist,splits:splits.slice(),pts:pts.length,el});
+  paint();renderLast();drawRoute(load('wt_run_route',null),'Последен маршрут');
 })();
 
 // ================= FUNCTIONAL (Centr-style) =================
@@ -1152,7 +1240,10 @@ function renderHome(){
       h+='<div class="tg"><div><div class="n">'+e.n+'</div><div class="s">'+sub+'</div></div>'+r+'</div>';});
     h+='</div><button class="b-main full" data-go="strength">Започни със загрявката</button>';
   }else{
-    h+='<div class="m">3–4 км · темпо около 6 км/ч · на светло</div><div style="height:16px"></div>'+
+    const lr=log.find(x=>x.type==='run'&&x.detail&&x.detail.km);
+    h+='<div class="m">3–4 км · на светло · GPS мери разстоянието и темпото</div>'+
+      (lr?'<div class="tg"><div><div class="n">Миналия път</div><div class="s">'+lr.date.split('-').reverse().slice(0,2).map(Number).join('.')+'</div></div><div class="r">'+String(lr.detail.km).replace('.',',')+' км<small>'+fmtPace(lr.detail.pace)+' /км</small></div></div>':'')+
+      '<div style="height:16px"></div>'+
       '<button class="b-main full" data-go="run">Започни</button>';
   }
   $('h-hero').innerHTML=h;

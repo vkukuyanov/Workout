@@ -244,6 +244,9 @@
       <div class="set-row"><div><div class="n">Звук</div><div class="s" id="snd-state">Провери дали се чува</div></div><button class="lnk" id="test-snd">Тест</button></div>
       <div class="set-row"><div><div class="n">Тих режим</div><div class="s">Без скачане в Ядро и Функционална</div></div><div class="sw" id="c-quiet"></div></div>
       <div class="set-row"><div><div class="n">С кривия лост</div><div class="s">Упражнения с 6 кг в Ядро и Функционална</div></div><div class="sw" id="c-bar"></div></div>
+      <div class="set-row"><div><div class="n">Копие на тренировките</div><div class="s" id="bk-state">Записани на телефона</div></div>
+        <div style="display:flex;gap:14px"><button class="lnk" id="bk-save">Свали</button><button class="lnk" id="bk-load">Върни</button></div></div>
+      <input type="file" id="bk-file" accept="application/json,.json" style="display:none">
     </div>
   </div>
 
@@ -637,7 +640,7 @@ function switchTab(n){document.body.classList.add('in-work');window.scrollTo(0,0
 
 
 
-const LOG_MAX=250;
+const LOG_MAX=5000; // ~15 years of training — nothing old is ever dropped
 function localISO(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function withIds(list){return list.map((x,i)=>x.id?x:Object.assign({},x,{id:'legacy-'+x.date+'-'+x.type+'-'+i}));}
 store('wt_log',withIds(load('wt_log',[])));
@@ -671,7 +674,7 @@ function logSession(type,detail){
   const entry={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ts:Date.now(),
     date:localISO(),type,detail:detail||null};
   const l=mergeLogs([entry],load('wt_log',[]));
-  store('wt_log',l);renderHist();renderStreak();renderHome();pushCloud(l);}
+  store('wt_log',l);renderHist();renderStreak();renderHome();pushCloud(l);bkState();}
 function renderStreak(){
   const days=new Set(load('wt_log',[]).filter(x=>x.type!=='stretch').map(x=>x.date));
   const iso=d=>localISO(d);
@@ -1185,6 +1188,32 @@ document.getElementById('test-snd').addEventListener('click',()=>{unlockAudio();
   paintV();b.addEventListener('click',()=>{voiceOn=!voiceOn;store('wt_voice',voiceOn);paintV();
     if(voiceOn){unlockVoice();say('Гласът е включен');}else{try{speechSynthesis.cancel();}catch(e){}}});})();
 initCloud();
+// ---- keeping the training log safe ----
+// 1) ask the browser not to clear this site's storage; 2) a backup file the user can keep in Files/iCloud;
+// 3) restoring only ever ADDS sessions (merge by id), it never deletes anything.
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
+const BK_KEYS=['wt_log','wt_core_seen','wt_func_seen','wt_run_route','wt_bar','wt_quiet','wt_voice'];
+function bkState(msg){const n=load('wt_log',[]).length,el=document.getElementById('bk-state');
+  if(el)el.textContent=msg||(n?n+' тренировки на телефона · последно копие '+(load('wt_bk_last','')||'никога'):'Още няма тренировки');}
+document.getElementById('bk-save').addEventListener('click',async()=>{
+  const data={};BK_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!=null)data[k]=JSON.parse(v);});
+  const day=localISO(),name='trenirovki-'+day+'.json';
+  const blob=new Blob([JSON.stringify({app:'Тренировка',v:1,saved:new Date().toISOString(),data})],{type:'application/json'});
+  try{const f=new File([blob],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'Тренировки'});}
+    else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();}
+    store('wt_bk_last',day.split('-').reverse().join('.'));bkState();
+  }catch(e){if(e&&e.name!=='AbortError')bkState('Копието не стана — опитай пак');}});
+document.getElementById('bk-load').addEventListener('click',()=>document.getElementById('bk-file').click());
+document.getElementById('bk-file').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;
+  try{const j=JSON.parse(await f.text()),d=j&&j.data;if(!d||!Array.isArray(d.wt_log))throw 0;
+    const before=load('wt_log',[]),merged=mergeLogs(withIds(d.wt_log),before);store('wt_log',merged);
+    BK_KEYS.slice(1).forEach(k=>{if(d[k]!=null&&localStorage.getItem(k)==null)store(k,d[k]);});
+    renderHist();renderStreak();renderHome();pushCloud(merged);
+    bkState('Върнати '+(merged.length-before.length)+' тренировки · общо '+merged.length);
+  }catch(err){bkState('Файлът не е копие на тренировките');}
+  e.target.value='';});
+bkState();
 </script>
 </body>
 </html>

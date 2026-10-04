@@ -203,11 +203,10 @@
   .tg .n{font-size:15px;font-weight:600}.tg .s{font-size:12.5px;color:var(--muted);margin-top:2px}
   .tg .r{font-size:15px;font-weight:700;text-align:right;white-space:nowrap}.tg .r small{display:block;font-size:12px;color:var(--muted);font-weight:500}
   .tg .r.up{color:var(--gold)}
-  .ptiles{display:flex;gap:8px}
-  .pt{flex:1;background:var(--card);border-radius:16px;padding:14px 8px 12px;text-align:center}
-  .pt b{display:block;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
-  .pt.up b{color:var(--gold)}
-  .pt span{display:block;font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+  .pline{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--muted)}
+  .pline:empty{display:none}
+  .pline b{color:var(--ink-2);font-weight:700;font-variant-numeric:tabular-nums}
+  .pline .up b{color:var(--gold)}
   .hlbl{display:flex;justify-content:space-between;align-items:baseline;margin:26px 0 10px}
   .hlbl .l{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .hlbl .v{font-size:13px;font-weight:700;color:var(--ink-2)}
@@ -245,8 +244,7 @@
     <div class="hero" id="h-hero"></div>
     <div class="hlbl"><span class="l">Тази седмица</span><span class="v" id="h-wk"></span></div>
     <div class="hweek" id="h-week"></div>
-    <div class="hlbl"><span class="l">Как се движиш</span></div>
-    <div id="h-prog"></div>
+    <div id="h-prog" class="pline"></div>
     <div class="hlbl"><span class="l" id="h-tl"></span></div>
     <div class="mc" id="h-tmrw"></div>
     <div class="hlbl"><span class="l">Друга тренировка</span></div>
@@ -1223,17 +1221,17 @@ const STRETCH=[
 // "How am I doing": three numbers computed from the log on the phone, nothing to enter
 function progressHTML(log){
   const iso=n=>localISO(new Date(Date.now()-n*864e5)),tr=log.filter(x=>x.type!=='stretch');
-  if(!tr.length)return '<div class="sub" style="padding:4px 2px">Попълва се само след първите тренировки.</div>';
-  const tile=(v,l,up,down)=>'<div class="pt'+(up?' up':'')+'"><b>'+v+(up?' ↑':down?' ↓':'')+'</b><span>'+l+'</span></div>';
+  if(!tr.length)return '';
+  const tile=(v,l,up,down)=>'<span'+(up?' class="up"':'')+'><b>'+v+(up?'↑':down?'↓':'')+'</b> '+l+'</span>';
   let h='';
   const a=tr.filter(x=>x.date>iso(30)).length,b=tr.filter(x=>x.date>iso(60)&&x.date<=iso(30)).length;
-  h+=tile(a,'тренировки<br>за 30 дни',b&&a>b,b&&a<b);
+  h+=tile(a,'за 30 дни',b&&a>b,b&&a<b);
   const n='Набирания на лоста',l=log.filter(x=>x.type==='strength'&&x.detail&&x.detail.ex&&x.detail.ex[n]);
   if(l.length){const now=l[0].detail.ex[n],o=(l.find(x=>x.date<=iso(28))||(l.length>1?l[l.length-1]:null));
-    const p=e=>e.h/e.s,oe=o&&o.detail.ex[n];h+=tile(now.h+'/'+now.s,'набирания<br>серии на целта',oe&&p(now)>p(oe),oe&&p(now)<p(oe));}
+    const p=e=>e.h/e.s,oe=o&&o.detail.ex[n];h+=tile(now.h+'/'+now.s,'набирания',oe&&p(now)>p(oe),oe&&p(now)<p(oe));}
   const runs=log.filter(x=>x.type==='run'&&x.detail&&x.detail.pace);
-  if(runs.length){const r=runs[0].detail.pace,q=runs[1]&&runs[1].detail.pace;h+=tile(fmtPace(r),'темпо /км<br>последно',q&&r<q,q&&r>q);}
-  return '<div class="ptiles">'+h+'</div>';}
+  if(runs.length){const r=runs[0].detail.pace,q=runs[1]&&runs[1].detail.pace;h+=tile(fmtPace(r),'/км',q&&r<q,q&&r>q);}
+  return h;}
 function renderHome(){
   const $=id=>document.getElementById(id);
   const now=new Date();let ds=now.toLocaleDateString('bg-BG',{weekday:'long',day:'numeric',month:'long'});

@@ -203,6 +203,7 @@
   .tg .n{font-size:15px;font-weight:600}.tg .s{font-size:12.5px;color:var(--muted);margin-top:2px}
   .tg .r{font-size:15px;font-weight:700;text-align:right;white-space:nowrap}.tg .r small{display:block;font-size:12px;color:var(--muted);font-weight:500}
   .tg .r.up{color:var(--gold)}
+  .tg .r.down{color:var(--muted)}
   .hlbl{display:flex;justify-content:space-between;align-items:baseline;margin:26px 0 10px}
   .hlbl .l{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .hlbl .v{font-size:13px;font-weight:700;color:var(--ink-2)}
@@ -240,6 +241,8 @@
     <div class="hero" id="h-hero"></div>
     <div class="hlbl"><span class="l">Тази седмица</span><span class="v" id="h-wk"></span></div>
     <div class="hweek" id="h-week"></div>
+    <div class="hlbl"><span class="l">Как се движиш</span></div>
+    <div class="card" id="h-prog" style="padding:4px 18px 6px"></div>
     <div class="hlbl"><span class="l" id="h-tl"></span></div>
     <div class="mc" id="h-tmrw"></div>
     <div class="hlbl"><span class="l">Друга тренировка</span></div>
@@ -1213,6 +1216,36 @@ const STRETCH=[
   renderList();buildDots();paint(0);
 })();
 
+// "How am I doing": everything computed from the log on the phone, nothing to enter
+function progressHTML(log){
+  const iso=n=>localISO(new Date(Date.now()-n*864e5)),tr=log.filter(x=>x.type!=='stretch');
+  const row=(n,s2,r,small,cls)=>'<div class="tg"><div><div class="n">'+n+'</div><div class="s">'+s2+'</div></div><div class="r'+(cls?' '+cls:'')+'">'+r+(small?'<small>'+small+'</small>':'')+'</div></div>';
+  if(!tr.length)return '<div class="sub" style="padding:12px 0">Попълва се от само себе си след първите тренировки.</div>';
+  let h='';
+  // 1) volume: last 30 days vs the 30 before
+  const a=tr.filter(x=>x.date>iso(30)),b=tr.filter(x=>x.date>iso(60)&&x.date<=iso(30));
+  const nm={core:'Ядро',strength:'Сила',func:'Функц.',run:'Тичане'};
+  const br=Object.keys(nm).map(k=>[nm[k],a.filter(x=>x.type===k).length]).filter(x=>x[1]).map(x=>x[0]+' '+x[1]).join(' · ');
+  h+=row('Тренировки · 30 дни',br||'—',a.length,b.length?(a.length>b.length?'↑ ':a.length<b.length?'↓ ':'= ')+'преди '+b.length:'',b.length&&a.length>b.length?'up':'');
+  // 2) strength: now vs about a month ago
+  const ses=log.filter(x=>x.type==='strength'&&x.detail&&x.detail.ex);
+  ['Набирания на лоста','Дипове на успоредката'].forEach(n=>{const l=ses.filter(x=>x.detail.ex[n]);if(!l.length)return;
+    const now=l[0].detail.ex[n],old=(l.find(x=>x.date<=iso(28))||(l.length>1?l[l.length-1]:null));
+    const pct=e=>e.h/e.s,o=old&&old.detail.ex[n];
+    const trend=o?(pct(now)>pct(o)?'up':pct(now)<pct(o)?'down':''):'';
+    h+=row(n.replace(' на лоста','').replace(' на успоредката',''),'серии на целта · последно',now.h+'/'+now.s,
+      o?(trend==='up'?'↑ ':trend==='down'?'↓ ':'= ')+'беше '+o.h+'/'+o.s:'първи път',trend);});
+  // 3) running: last run vs the one before
+  const runs=log.filter(x=>x.type==='run'&&x.detail&&x.detail.km);
+  if(runs.length){const r=runs[0].detail,p=runs[1]&&runs[1].detail,dp=p&&p.pace&&r.pace?r.pace-p.pace:0;
+    h+=row('Тичане',String(r.km).replace('.',',')+' км · последно',fmtPace(r.pace)+' /км',
+      p?(dp<0?'↑ по-бързо с '+(-dp)+' сек':dp>0?'↓ по-бавно с '+dp+' сек':'= същото темпо'):'първи с GPS',p&&dp<0?'up':'');}
+  // 4) missed days in the last 4 weeks (only since the first session)
+  const first=tr[tr.length-1].date,days=new Set(tr.map(x=>x.date)),miss=[0,0,0,0,0,0,0],seen=[0,0,0,0,0,0,0];let total=0,m=0;
+  for(let i=1;i<=28;i++){const d=new Date(Date.now()-i*864e5),k=localISO(d);if(k<first)break;total++;seen[d.getDay()]++;if(!days.has(k)){m++;miss[d.getDay()]++;}}
+  if(total>=7){const wd=miss.indexOf(Math.max(...miss));
+    h+=row('Пропуснати дни',miss[wd]>=2?'най-често '+dayNames[wd]+' · '+miss[wd]+' от '+seen[wd]:'без повтарящ се ден',m,'от '+total,m<=total/7?'up':'');}
+  return h;}
 function renderHome(){
   const $=id=>document.getElementById(id);
   const now=new Date();let ds=now.toLocaleDateString('bg-BG',{weekday:'long',day:'numeric',month:'long'});
@@ -1252,6 +1285,7 @@ function renderHome(){
   for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-mo+i);const iso=localISO(d),ok=days.has(iso);if(ok)done++;
     wk+='<div class="d'+(ok?' done':'')+(i===mo?' today':'')+'"><div class="n">'+lbl[i]+'</div><div class="c"></div></div>';}
   $('h-week').innerHTML=wk;$('h-wk').textContent=done+' от 6';
+  $('h-prog').innerHTML=progressHTML(log);
   const tw=(today+1)%7,tt=dayMap[tw];
   $('h-tl').textContent='Утре · '+dayNames[tw];
   const hs=$('h-stretch');if(hs&&window.__stretchMin)hs.querySelector('.s').textContent=window.__stretchMin+' минути · вечер или след тичане';

@@ -190,7 +190,11 @@
   .sw.on{background:var(--gold);}
   #home .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
   #home .date{font-size:14px;color:var(--muted);font-weight:500}
-  #home .streak{font-size:14px;font-weight:600;color:var(--ink-2)}
+  #home .streak{font-size:16px;font-weight:800;color:var(--ink-2)}
+  #home .streak.hot{color:var(--gold)}
+  #home h1.hh{margin-bottom:4px!important}
+  .sline{font-size:14px;color:var(--muted);margin:0 0 16px;font-weight:500}
+  .sline.warn{color:var(--gold);font-weight:600}
   #home h1.hh{font-size:34px;font-weight:800;letter-spacing:-.01em;margin-bottom:18px}
   .hero{background:var(--card);border-radius:24px;padding:20px}
   .hero .k{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
@@ -240,6 +244,7 @@
   .done-st div{font-size:12px;color:var(--muted)}.done-st b{display:block;font-size:24px;color:var(--ink);font-weight:800}
   .done-m{font-size:16px;line-height:1.5;color:var(--ink);margin:14px 4px 22px;font-weight:500}
   @keyframes dfade{from{opacity:0}to{opacity:1}} @keyframes dpop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+  .vid{display:inline-block;margin-top:10px;font-size:14px;font-weight:600;color:var(--gold);text-decoration:none}
   .lnk.ban{display:block;margin-top:10px;padding:0;font-size:13px;color:var(--muted);text-decoration:underline}
   #work{display:none} body.in-work #work{display:block} body.in-work #home{display:none}
   .wbar{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 18px;min-height:30px}
@@ -260,6 +265,7 @@
   <div id="home">
     <div class="top"><span class="date" id="h-date"></span><span class="streak" id="streak"></span></div>
     <h1 class="hh">Днес</h1>
+    <div id="streak-line" class="sline"></div>
     <div class="hero" id="h-hero"></div>
     <div class="hlbl"><span class="l">Тази седмица</span><span class="v" id="h-wk"></span></div>
     <div class="hweek" id="h-week"></div>
@@ -736,15 +742,24 @@ function logSession(type,detail){
     date:localISO(),type,detail:detail||null};
   const l=mergeLogs([entry],load('wt_log',[]));
   store('wt_log',l);renderHist();renderStreak();renderHome();pushCloud(l);bkState();}
-function renderStreak(){
-  const days=new Set(load('wt_log',[]).filter(x=>x.type!=='stretch').map(x=>x.date));
-  const iso=d=>localISO(d);
-  let n=0;
-  const d=new Date();
-  if(!days.has(iso(d)))d.setDate(d.getDate()-1);
+// streak: built so you don't want to break it — it shows what you'd lose today, and your record to beat
+function streakInfo(){
+  const list=[...new Set(load('wt_log',[]).filter(x=>x.type!=='stretch').map(x=>x.date))].sort();
+  const days=new Set(list),iso=d=>localISO(d),today=iso(new Date());
+  let n=0;const d=new Date();if(!days.has(today))d.setDate(d.getDate()-1);
   while(days.has(iso(d))&&n<400){n++;d.setDate(d.getDate()-1);}
-  document.getElementById('streak').textContent=n>0?(n+(n===1?' ден':' дни подред')):'';
-}
+  let best=0,run=0,prev=null;list.forEach(k=>{const t=new Date(k+'T12:00');run=prev&&(t-prev)/864e5<1.5?run+1:1;best=Math.max(best,run);prev=t;});
+  return {n,best,doneToday:days.has(today)};}
+function renderStreak(){
+  const {n,best,doneToday}=streakInfo(),el=document.getElementById('streak'),ln=document.getElementById('streak-line');
+  el.innerHTML=n>0?'<span class="fl">🔥</span> '+n:'';el.classList.toggle('hot',n>0);
+  if(!ln)return;const dn=x=>x+(x===1?' ден':' дни');let t,cls='';
+  if(n===0)t=best?'Започни нова серия днес. Рекордът ти е '+dn(best)+'.':'Започни серия днес — всеки ден по малко.';
+  else if(!doneToday){t='Серия '+dn(n)+'. Тренирай днес, за да не я загубиш.';cls='warn';}
+  else if(n>=best&&n>1)t='Серия '+dn(n)+' — това е твоят рекорд. Утре го подобряваш.';
+  else if(best>n)t='Серия '+dn(n)+'. Още '+dn(best-n+1)+' до нов рекорд.';
+  else t='Серия '+dn(n)+'. Утре я продължаваш.';
+  ln.textContent=t;ln.className='sline '+cls;}
 function renderHist(){
   const log=load('wt_log',[]).slice(0,8);
   const el=document.getElementById('s-hist');
@@ -788,6 +803,9 @@ function renderProgress(){
     else lvl.classList.remove('on');}
 }
 
+// "how is it done" — a YouTube search for the exercise, opens next to the app
+const EN={"Скачащи джакове": "jumping jacks", "Високи колене": "high knees exercise", "Алпинисти": "mountain climbers exercise", "Скачане на въже (имитация)": "imaginary jump rope exercise", "Кънкьорски скокове": "skater jumps exercise", "Бързо ходене на място с високи ръце": "marching in place arms overhead", "Мечешко ходене": "bear crawl exercise", "Напади на място": "stationary lunge", "Обратни напади": "reverse lunge", "Мост за седалище": "glute bridge", "Клек до стена (задържане)": "wall sit", "Планк с ходене": "plank walkout inchworm", "Страничен планк": "side plank", "Планк с докосване на рамо": "plank shoulder taps", "Мъртва буболечка": "dead bug exercise", "Супермен": "superman exercise", "Лицеви опори": "push up proper form", "Лицеви опори тип щука": "pike push up", "Бицепсово сгъване с лоста": "ez bar curl", "Раменна преса с лоста": "ez bar overhead press", "Наведено гребане с лоста": "ez bar bent over row", "Румънска мъртва тяга с лоста": "ez bar romanian deadlift", "Тръстър с лоста": "barbell thruster", "Преден клек с лоста": "ez bar front squat", "Напади с лоста": "barbell reverse lunge", "Френско разгъване с лоста": "ez bar skull crusher", "Преса от пода с лоста": "ez bar floor press", "Обратно сгъване с лоста": "ez bar reverse curl", "Добро утро с лоста": "barbell good morning", "Вдигане напред с лоста": "ez bar front raise", "Набирания на лоста": "pull up proper form", "Дипове на успоредката": "parallel bar dips form", "Набирания с обратен хват": "chin up proper form", "Висящо вдигане на крака": "hanging leg raise", "Обърнати гребания": "inverted row", "Мъртва тяга на един крак": "single leg romanian deadlift bodyweight", "Вдигане на крака (уред за корем)": "captains chair leg raise", "Български сплит клек": "bulgarian split squat", "Клек на един крак до стол": "box pistol squat", "Казашки клек": "cossack squat", "Клек с пауза": "pause squat bodyweight", "Мост на един крак": "single leg glute bridge", "Лицеви с бавно спускане": "eccentric push up", "Лицеви с крака на стол": "decline push up", "Диамантени лицеви": "diamond push up", "Архер лицеви": "archer push up", "Щука с крака на стол": "elevated pike push up", "Дипове на стол": "chair dips", "Холоу холд": "hollow body hold", "V-сгъване": "v up exercise", "Планк с ръце напред": "long lever plank", "Страничен планк с вдигане на таза": "side plank hip dips", "Бърпи": "burpee proper form", "Клек със скок": "jump squat", "Напади със скок": "jumping lunges", "Спайдърмен напад с ротация": "world greatest stretch spiderman lunge rotation", "Лицева с T-ротация": "push up with t rotation", "Мечешко пълзене настрани": "lateral bear crawl", "Звяр с изритване": "animal flow kick through", "Краб с достигане": "crab reach exercise", "Напад с ротация": "reverse lunge with rotation", "Страничен напад с докосване": "lateral lunge reach", "Скок напред и назад": "broad jump backpedal", "Клек с лоста над главата": "overhead squat", "Обратен напад с лоста над главата": "overhead reverse lunge", "Качване на стол": "step up exercise", "Ходещи напади": "walking lunges", "Клек „1 и половина“": "1 and a half squat", "Тласък с лоста": "push press", "Хинду лицева": "hindu push up", "Лицева с пляскане": "clap push up", "Мъртва тяга на един крак с лоста": "single leg romanian deadlift barbell", "Скейтър клек": "skater squat", "Обратен напад с коляно нагоре": "reverse lunge knee drive", "Сгъване на задното бедро с кърпа": "towel hamstring curl slider", "Дървосекач с лоста": "barbell wood chop", "Ротационна преса с лоста": "rotational press", "Руски усуквания с лоста": "russian twist", "Планк с издърпване на лоста": "plank pull through", "Страничен планк с провиране": "side plank thread the needle", "Чистачки": "windshield wipers lying", "Колене към гърдите със скок": "tuck jump", "Бърпи със скок напред": "burpee broad jump", "Странични скокове над линия": "lateral line hops", "Скок със завъртане на 180°": "180 jump squat", "Бърз клек с вдигане на пръсти": "squat to calf raise", "Бързо мечешко пълзене": "bear crawl", "Мъртва буболечка с лоста": "dead bug with bar", "Мечешко задържане с вдигане на крак": "bear plank leg lift", "Копенхагенски планк": "copenhagen plank", "Люлеене в холоу позиция": "hollow body rock", "Ходене с лоста над главата": "overhead carry", "Пълзене напред-назад": "Da Rulk forward reverse crawl", "Горила настрани": "Da Rulk side gorilla", "Хопскоч": "Da Rulk hopscotch", "Заложник": "Da Rulk hostage squat", "5 скока + заложник": "Da Rulk 5 jump hostage", "Сит-тру": "Da Rulk sit thru", "Суичове": "Da Rulk switches", "Колене към гърдите": "knees to chest stretch", "Таз на ръба на леглото": "thomas stretch bed", "Гърди на ръба на леглото": "chest stretch lying on bed edge", "Задно бедро с кърпа": "lying hamstring stretch towel", "Фигура 4": "figure 4 stretch lying", "Усукване по гръб": "supine spinal twist", "Прасец с кърпа": "seated calf stretch towel", "Детска поза с посягане настрани": "child pose side reach"};
+function vidLink(n){const q=EN[n];return q?'<a class="vid" href="https://www.youtube.com/results?search_query='+encodeURIComponent(q)+'" target="_blank" rel="noopener">▶ Виж как се прави</a>':'';}
 // one-sided exercises ("смени ... по средата"): a beep and "Смени" at half time, also inside the cue track
 const twoSided=n=>!!(LIB[n]&&/по средата/.test(LIB[n].t));
 function sideCue(){vib([120,60,120,60,120]);if(!trackPlaying())play('side');say('Смени страната');}
@@ -845,7 +863,7 @@ function renderBanned(){const el=document.getElementById('ban-state');if(!el)ret
   function renderList(){list.innerHTML='';ex.forEach((n,i)=>{const L=LIB[n];
     const row=document.createElement('div');row.className='exrow';
     row.innerHTML='<div><div class="n">'+(i+1)+'. '+n+'</div><div class="c">'+L.c+'</div></div><div class="v">'+WORK_S+'с</div>'+
-      '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span>'+banLink(n)+'</div>';
+      '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span>'+vidLink(n)+banLink(n)+'</div>';
     row.addEventListener('click',e=>{if(onBan(e,()=>{if(!run&&idx<0){build();buildDots();renderList();paint(0);}}))return;row.classList.toggle('open');});list.appendChild(row);});}
   function buildDots(){dots.innerHTML='';ph.forEach(p=>{const d=document.createElement('div');
     d.className='pd';dots.appendChild(d);});}
@@ -857,7 +875,7 @@ function renderBanned(){const el=document.getElementById('ban-state');if(!el)ret
     if(!p){ // preview: read the first exercise before starting
       phs.textContent='първо упражнение';nm.textContent=ex[0];num.textContent=fmt(ph.reduce((a,q)=>a+q.d,0));
       nxt.textContent=ex.length+' упражнения';ring.setAttribute('stroke-dashoffset','0');
-      if(LIB[ex[0]])cue.innerHTML=LIB[ex[0]].t+'<span class="err">Грешка: '+LIB[ex[0]].e+'</span>';
+      if(LIB[ex[0]])cue.innerHTML=LIB[ex[0]].t+'<span class="err">Грешка: '+LIB[ex[0]].e+'</span>'+vidLink(ex[0]);
       ring.style.stroke='var(--work)';setBodyPhase(null);return;}
     phs.textContent=p.t==='work'?('работа · '+p.r+'/'+ex.length):(p.l==='Подготви се'?'подготви се':'почивка');
     nm.textContent=p.l;
@@ -865,8 +883,8 @@ function renderBanned(){const el=document.getElementById('ban-state');if(!el)ret
     setBodyPhase(p.t);
     const nextP=ph[idx+1];
     nxt.textContent=nextP?('след: '+(nextP.t==='work'?nextP.l:ph[idx+2]?ph[idx+2].l:'край')):'последно';
-    if(p.t==='work'&&LIB[p.l]){cue.innerHTML=LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>';}
-    else if(nextP&&LIB[nextP.l]){cue.innerHTML='<b>Следва: '+nextP.l+'</b><br>'+LIB[nextP.l].t;}
+    if(p.t==='work'&&LIB[p.l]){cue.innerHTML=LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>'+vidLink(p.l);}
+    else if(nextP&&LIB[nextP.l]){cue.innerHTML='<b>Следва: '+nextP.l+'</b><br>'+LIB[nextP.l].t+vidLink(nextP.l);}
     num.classList.toggle('urgent',rem<=3);
     document.querySelectorAll('#c-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<idx);d.classList.toggle('cur',i===idx);});
   }
@@ -955,7 +973,7 @@ function renderBanned(){const el=document.getElementById('ban-state');if(!el)ret
     const row=document.createElement('div');row.className='exrow';row.id='sr-'+i;
     row.innerHTML='<div><div class="n">'+e.n+'</div><div class="c">'+e.t+'</div></div>'+
       '<div class="v" id="sv-'+i+'"><b>0</b>/'+e.s+'</div>'+
-      (L?'<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span></div>':'');
+      (L?'<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span>'+vidLink(e.n)+'</div>':'');
     row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});}
   function refresh(){plan.forEach((e,i)=>{const d=i<ei?e.s:(i===ei?si:0);
     $('sv-'+i).innerHTML='<b>'+d+'</b>/'+e.s;
@@ -1165,20 +1183,20 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
       b.w.forEach(n=>{const L=LIB[n];const row=document.createElement('div');row.className='exrow';
         const pk=['Пълзене напред-назад','Мечешко пълзене настрани','Горила настрани','Хопскоч','Заложник','5 скока + заложник','Сит-тру','Суичове','Звяр с изритване'].includes(n)?'Да Рълк':Object.keys(PAT).find(k=>PAT[k].includes(n));
         row.innerHTML='<div><div class="n">'+n+'</div><div class="c">'+(bi&&pk?pk:'раздвижване')+'</div></div><div class="v">'+(bi?W:WU)+'с</div>'+
-          '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span>'+banLink(n)+'</div>';
+          '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span>'+vidLink(n)+banLink(n)+'</div>';
         row.addEventListener('click',e=>{if(onBan(e,()=>{if(!run&&idx<0){build();buildDots();renderList();paint(0);}}))return;row.classList.toggle('open');});list.appendChild(row);});});}
   function buildDots(){dots.innerHTML='';ph.forEach(p=>{if(p.t!=='work')return;const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
   function paint(rem){const p=idx>=0&&idx<ph.length?ph[idx]:null;
     if(!p){num.textContent=fmt(total());ring.setAttribute('stroke-dashoffset','0');ring.style.stroke='var(--work)';
       phs.textContent='първо упражнение';nm.textContent=ex[0];nxt.textContent='около '+Math.round(total()/60)+' мин · '+(ex.length-2)+' упражнения';
-      if(LIB[ex[0]])cue.innerHTML=LIB[ex[0]].t+'<span class="err">Грешка: '+LIB[ex[0]].e+'</span>';return;}
+      if(LIB[ex[0]])cue.innerHTML=LIB[ex[0]].t+'<span class="err">Грешка: '+LIB[ex[0]].e+'</span>'+vidLink(ex[0]);return;}
     num.textContent=fmt(rem);ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/p.d)));
     ring.style.stroke=p.t==='work'?'var(--work)':'var(--rest)';
     phs.textContent=p.t==='work'?(p.bi?'работа · '+p.i+'/'+p.of:'загрявка'):p.l.toLowerCase();
     nm.textContent=p.t==='work'?p.l:(p.l==='Подготви се'?'Подготви се':'Почивка');
     const nw=ph.slice(idx+1).find(q=>q.t==='work');nxt.textContent=nw?'след: '+nw.l:'последно';
-    if(p.t==='work'&&LIB[p.l])cue.innerHTML=LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>';
-    else if(nw&&LIB[nw.l])cue.innerHTML='<b>Следва: '+nw.l+'</b><br>'+LIB[nw.l].t;
+    if(p.t==='work'&&LIB[p.l])cue.innerHTML=LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>'+vidLink(p.l);
+    else if(nw&&LIB[nw.l])cue.innerHTML='<b>Следва: '+nw.l+'</b><br>'+LIB[nw.l].t+vidLink(nw.l);
     num.classList.toggle('urgent',rem<=3);
     let wi=-1;for(let k=0;k<=idx;k++)if(ph[k].t==='work')wi++;
     document.querySelectorAll('#f-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<wi||(i===wi&&p.t!=='work'));d.classList.toggle('cur',i===wi&&p.t==='work');});}
@@ -1241,7 +1259,7 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
   function renderList(){list.innerHTML='';STRETCH.forEach((x,i)=>{
     const row=document.createElement('div');row.className='exrow';
     row.innerHTML='<div><div class="n">'+(i+1)+'. '+x.n+'</div><div class="c">'+(x.s?'всяка страна':'')+'</div></div><div class="v">'+(x.s?'2 × ':'')+x.d+'с</div>'+
-      '<div class="detail">'+x.t+'<span class="err">'+x.e+'</span></div>';
+      '<div class="detail">'+x.t+'<span class="err">'+x.e+'</span>'+vidLink(x.n)+'</div>';
     row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});}
   function buildDots(){dots.innerHTML='';ph.forEach(p=>{if(p.t!=='hold')return;const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
   function paint(rem){const p=idx>=0&&idx<ph.length?ph[idx]:null;
@@ -1251,7 +1269,7 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
     ring.style.stroke=p.t==='hold'?'var(--work)':'var(--rest)';
     phs.textContent=p.t==='hold'?'задръж':'смени позицията';nm.textContent=p.l;
     const nh=ph.slice(idx+1).find(q=>q.t==='hold'&&q.l!==p.l);nxt.textContent=nh?'след: '+nh.l:'последна';
-    cue.innerHTML=p.x.t+'<span class="err">'+p.x.e+'</span>';
+    cue.innerHTML=p.x.t+'<span class="err">'+p.x.e+'</span>'+vidLink(p.x.n);
     num.classList.toggle('urgent',p.t==='hold'&&rem<=3);
     let hi=-1;for(let k=0;k<=idx;k++)if(ph[k].t==='hold')hi++;
     document.querySelectorAll('#x-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<hi||(i===hi&&p.t!=='hold'));d.classList.toggle('cur',i===hi&&p.t==='hold');});}
@@ -1389,7 +1407,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261005184041';
+const BUILD='20261005191021';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

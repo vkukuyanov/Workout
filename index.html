@@ -1240,13 +1240,11 @@ function renderHome(){
   const bar=load('wt_bar',true),nEx=bar?10:8;
   let h='<div class="k">По план</div><div class="t">'+planNames[type]+'</div>';
   if(type==='core'){
-    h+='<div class="m">'+nEx+' упражнения · около '+coreMin(nEx)+' минути</div><div class="chips">'+
-      ['кардио','функционално','долна част','горна част','корем'].concat(bar?['с лост']:[]).map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>'+
+    h+='<div class="m">'+nEx+' упражнения · около '+coreMin(nEx)+' минути</div><div style="height:18px"></div>'+
       '<button class="b-main full" data-go="core" data-start="1">Започни</button>';
   }else if(type==='func'){
     const fi=window.__funcInfo?window.__funcInfo():{min:13,n:8};
-    h+='<div class="m">12 упражнения · около '+fi.min+' минути</div><div class="chips">'+
-      ['клек','бутане','един крак','ротация','мощност','корем'].map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>'+
+    h+='<div class="m">12 упражнения · около '+fi.min+' минути</div><div style="height:18px"></div>'+
       '<button class="b-main full" data-go="func" data-start="1">Започни</button>';
   }else if(type==='strength'){
     const plan=window.__strPlan||[];

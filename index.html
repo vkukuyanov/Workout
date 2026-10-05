@@ -1297,6 +1297,19 @@ document.getElementById('test-snd').addEventListener('click',()=>{unlockAudio();
   paintV();b.addEventListener('click',()=>{voiceOn=!voiceOn;store('wt_voice',voiceOn);paintV();
     if(voiceOn){unlockVoice();say('Гласът е включен');}else{try{speechSynthesis.cancel();}catch(e){}}});})();
 initCloud();
+// ---- updates arrive by themselves ----
+// The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
+// it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
+const BUILD='20261005172047';
+function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
+async function checkUpdate(){
+  try{if(busy()||!navigator.onLine)return;
+    const r=await fetch('./?u='+Date.now(),{cache:'no-store'});if(!r.ok)return;
+    const m=(await r.text()).match(/const BUILD='(\d+)'/);
+    if(m&&m[1]!==BUILD&&m[1]>BUILD&&!busy())location.replace('./?v='+m[1]);
+  }catch(e){}}
+setTimeout(checkUpdate,1500);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate();});
 // ---- keeping the training log safe ----
 // 1) ask the browser not to clear this site's storage; 2) a backup file the user can keep in Files/iCloud;
 // 3) restoring only ever ADDS sessions (merge by id), it never deletes anything.

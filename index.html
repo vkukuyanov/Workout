@@ -220,6 +220,7 @@
   .hweek .c{width:22px;height:22px;border-radius:50%;margin:0 auto;border:1.5px solid var(--line);position:relative}
   .hweek .done .c{border-color:var(--gold)}
   .hweek .done .c:after{content:'';position:absolute;left:6.5px;top:3px;width:5px;height:10px;border:solid var(--gold);border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .hweek .rest .c{border-style:dashed;opacity:.5}
   .hweek .today{box-shadow:inset 0 0 0 1.5px var(--gold)} .hweek .today .n{color:var(--ink)}
   .mrow{display:flex;gap:10px;flex-wrap:wrap}
   .mrow .mc{flex:1 1 calc(50% - 5px)}
@@ -697,9 +698,10 @@ const LIB={
 const WINTER=true; // permanent: strength outdoors short, core 40 s
 const WORK_S=WINTER?40:30;
 function coreMin(n){return Math.round((n*WORK_S+(n-1)*15)/60);}
-const dayMap={0:'core',1:'func',2:'strength',3:'core',4:'strength',5:'func',6:'run'};
+const dayMap={0:'rest',1:'func',2:'strength',3:'core',4:'strength',5:'func',6:'run'}; // Sunday: rest (family day)
 const dayNames=['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
-const planNames={core:'Ядро',strength:'Сила',run:'Тичане',func:'Функционална'};
+const planNames={core:'Ядро',strength:'Сила',run:'Тичане',func:'Функционална',rest:'Почивка'};
+const isRestDay=d=>dayMap[d.getDay()]==='rest';
 const today=new Date().getDay();
 function switchTab(n){document.body.classList.add('in-work');window.scrollTo(0,0);
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
@@ -744,17 +746,20 @@ function logSession(type,detail){
   store('wt_log',l);renderHist();renderStreak();renderHome();pushCloud(l);bkState();}
 // streak: built so you don't want to break it — it shows what you'd lose today, and your record to beat
 function streakInfo(){
+  // planned rest days (Sunday) neither count nor break the streak — training on one still counts
   const list=[...new Set(load('wt_log',[]).filter(x=>x.type!=='stretch').map(x=>x.date))].sort();
-  const days=new Set(list),iso=d=>localISO(d),today=iso(new Date());
+  const days=new Set(list),iso=d=>localISO(d),now=new Date(),today=iso(now);
   let n=0;const d=new Date();if(!days.has(today))d.setDate(d.getDate()-1);
-  while(days.has(iso(d))&&n<400){n++;d.setDate(d.getDate()-1);}
-  let best=0,run=0,prev=null;list.forEach(k=>{const t=new Date(k+'T12:00');run=prev&&(t-prev)/864e5<1.5?run+1:1;best=Math.max(best,run);prev=t;});
-  return {n,best,doneToday:days.has(today)};}
+  for(let g=0;g<800;g++){const k=iso(d);if(days.has(k))n++;else if(!isRestDay(d))break;d.setDate(d.getDate()-1);}
+  const linked=(a,b)=>{const x=new Date(a+'T12:00');x.setDate(x.getDate()+1);while(iso(x)<b){if(!isRestDay(x))return false;x.setDate(x.getDate()+1);}return true;};
+  let best=0,run=0,prev=null;list.forEach(k=>{run=prev&&linked(prev,k)?run+1:1;best=Math.max(best,run);prev=k;});
+  return {n,best,doneToday:days.has(today),restToday:isRestDay(now)&&!days.has(today)};}
 function renderStreak(){
-  const {n,best,doneToday}=streakInfo(),el=document.getElementById('streak'),ln=document.getElementById('streak-line');
+  const {n,best,doneToday,restToday}=streakInfo(),el=document.getElementById('streak'),ln=document.getElementById('streak-line');
   el.innerHTML=n>0?'<span class="fl">🔥</span> '+n:'';el.classList.toggle('hot',n>0);
   if(!ln)return;const dn=x=>x+(x===1?' ден':' дни');let t,cls='';
-  if(n===0)t=best?'Започни нова серия днес. Рекордът ти е '+dn(best)+'.':'Започни серия днес — всеки ден по малко.';
+  if(restToday)t=n?'Почивен ден — серията от '+dn(n)+' е в безопасност.':'Почивен ден. Утре започваш серия.';
+  else if(n===0)t=best?'Започни нова серия днес. Рекордът ти е '+dn(best)+'.':'Започни серия днес — всеки ден по малко.';
   else if(!doneToday){t='Серия '+dn(n)+'. Тренирай днес, за да не я загубиш.';cls='warn';}
   else if(n>=best&&n>1)t='Серия '+dn(n)+' — това е твоят рекорд. Утре го подобряваш.';
   else if(best>n)t='Серия '+dn(n)+'. Още '+dn(best-n+1)+' до нов рекорд.';
@@ -1318,7 +1323,7 @@ function showDone(type,info){
   const log=load('wt_log',[]),tr=log.filter(x=>x.type!=='stretch');
   const now=new Date(),mo=(now.getDay()+6)%7,days=new Set(tr.map(x=>x.date));let wk=0;
   for(let i=0;i<=mo;i++){const d=new Date(now);d.setDate(now.getDate()-i);if(days.has(localISO(d)))wk++;}
-  let st=0;const d=new Date();while(days.has(localISO(d))&&st<400){st++;d.setDate(d.getDate()-1);}
+  const st=streakInfo().n;
   const total=tr.length,$=id=>document.getElementById(id);
   const sum={core:'Ядро · '+info.n+' упражнения · '+info.min+' мин',func:'Функционална · '+info.n+' упражнения · '+info.min+' мин',
     strength:'Сила · '+info.hits+' от '+info.total+' серии на целта',stretch:'Разтягане · '+info.min+' мин',
@@ -1363,6 +1368,9 @@ function renderHome(){
       const r=ready?'<div class="r up">по-трудно<small>3 сек спускане</small></div>':'<div class="r">'+e.s+' серии<small>'+e.t.split(' · ')[0]+'</small></div>';
       h+='<div class="tg"><div><div class="n">'+e.n+'</div><div class="s">'+sub+'</div></div>'+r+'</div>';});
     h+='</div><button class="b-main full" data-go="strength">Започни със загрявката</button>';
+  }else if(type==='rest'){
+    h+='<div class="m">Мускулите растат, докато почиват. По желание — разтягане в леглото вечерта.</div><div style="height:18px"></div>'+
+      '<button class="b-alt full" data-go="stretch">Разтягане · '+(window.__stretchMin||9)+' мин</button>';
   }else{
     const lr=log.find(x=>x.type==='run'&&x.detail&&x.detail.km);
     h+='<div class="m">3–4 км · на светло · GPS мери разстоянието и темпото</div>'+
@@ -1374,14 +1382,14 @@ function renderHome(){
   // week (Monday first)
   const days=new Set(log.filter(x=>x.type!=='stretch').map(x=>x.date)),lbl=['пн','вт','ср','чт','пт','сб','нд'],mo=(now.getDay()+6)%7;let done=0,wk='';
   for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-mo+i);const iso=localISO(d),ok=days.has(iso);if(ok)done++;
-    wk+='<div class="d'+(ok?' done':'')+(i===mo?' today':'')+'"><div class="n">'+lbl[i]+'</div><div class="c"></div></div>';}
+    wk+='<div class="d'+(ok?' done':'')+(!ok&&isRestDay(d)?' rest':'')+(i===mo?' today':'')+'"><div class="n">'+lbl[i]+'</div><div class="c"></div></div>';}
   $('h-week').innerHTML=wk;$('h-wk').textContent=done+' от 6';
   $('h-prog').innerHTML=progressHTML(log);
   const tw=(today+1)%7,tt=dayMap[tw];
   $('h-tl').textContent='Утре · '+dayNames[tw];
   const hs=$('h-stretch');if(hs&&window.__stretchMin)hs.querySelector('.s').textContent=window.__stretchMin+' минути · в леглото преди сън';
   const fm=window.__funcInfo?window.__funcInfo().min:13;
-  const meta={func:'12 упражнения · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 12 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло'};
+  const meta={func:'12 упражнения · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън около 12 минути':'уредите в двора · около 35 минути',run:'3–4 км, на светло',rest:'без тренировка · серията не се прекъсва'};
   $('h-tmrw').innerHTML='<div class="t">'+planNames[tt]+'</div><div class="s">'+meta[tt]+'</div>';
   $('h-other').innerHTML=['core','func','strength','run'].filter(t=>t!==type).map(t=>
     '<button class="mc" data-go="'+t+'"><div class="t">'+planNames[t]+'</div><div class="s">'+meta[t]+'</div></button>').join('');
@@ -1407,7 +1415,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261005191021';
+const BUILD='20261005195717';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

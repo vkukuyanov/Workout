@@ -246,7 +246,13 @@
   .done-m{font-size:16px;line-height:1.5;color:var(--ink);margin:14px 4px 22px;font-weight:500}
   @keyframes dfade{from{opacity:0}to{opacity:1}} @keyframes dpop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
   .vid{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
-  .pic{display:flex;gap:3px;margin-top:10px;border-radius:12px;overflow:hidden;max-width:340px}
+  .pic{display:flex;gap:3px;margin:2px 0 10px;border-radius:12px;overflow:hidden;max-width:340px}
+  .cue .pic{margin:0 auto 10px}
+  .pic.fig{display:block;background:var(--card-2);max-width:300px;padding:8px 10px 4px}
+  .fx{display:block;width:100%;aspect-ratio:2/1;overflow:visible}
+  .fx line{stroke-linecap:round;stroke-width:4.5px;vector-effect:non-scaling-stroke}.fx .fx-n{stroke:var(--ink)}.fx .fx-f{stroke:var(--ink);opacity:.35}
+  .fx .fx-h{fill:var(--ink)}.fx .fx-g{stroke:var(--line);stroke-width:2px}.fx .fx-box{fill:var(--muted);opacity:.3}
+  .fx .fx-bar{stroke:var(--gold);stroke-width:4px}.fx .fx-plate{fill:none;stroke:var(--gold);stroke-width:3.5px;vector-effect:non-scaling-stroke}.fx .fx-tw{stroke:var(--gold);stroke-width:3.5px}
   .pic img{width:50%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--line)}
   .lnk.ban{display:block;margin-top:10px;padding:0;font-size:13px;color:var(--muted);text-decoration:underline}
   #work{display:none} body.in-work #work{display:block} body.in-work #home{display:none}
@@ -812,8 +818,155 @@ function renderProgress(){
 
 // "how is it done" — a YouTube search for the exercise, opens next to the app
 const EN={"Скачащи джакове": "jumping jacks", "Високи колене": "high knees exercise", "Алпинисти": "mountain climbers exercise", "Скачане на въже (имитация)": "imaginary jump rope exercise", "Кънкьорски скокове": "skater jumps exercise", "Бързо ходене на място с високи ръце": "marching in place arms overhead", "Мечешко ходене": "bear crawl exercise", "Напади на място": "stationary lunge", "Обратни напади": "reverse lunge", "Мост за седалище": "glute bridge", "Клек до стена (задържане)": "wall sit", "Планк с ходене": "plank walkout inchworm", "Страничен планк": "side plank", "Планк с докосване на рамо": "plank shoulder taps", "Мъртва буболечка": "dead bug exercise", "Супермен": "superman exercise", "Лицеви опори": "push up proper form", "Лицеви опори тип щука": "pike push up", "Бицепсово сгъване с лоста": "ez bar curl", "Раменна преса с лоста": "ez bar overhead press", "Наведено гребане с лоста": "ez bar bent over row", "Румънска мъртва тяга с лоста": "ez bar romanian deadlift", "Тръстър с лоста": "barbell thruster", "Преден клек с лоста": "ez bar front squat", "Напади с лоста": "barbell reverse lunge", "Френско разгъване с лоста": "ez bar skull crusher", "Преса от пода с лоста": "ez bar floor press", "Обратно сгъване с лоста": "ez bar reverse curl", "Добро утро с лоста": "barbell good morning", "Вдигане напред с лоста": "ez bar front raise", "Набирания на лоста": "pull up proper form", "Дипове на успоредката": "parallel bar dips form", "Набирания с обратен хват": "chin up proper form", "Висящо вдигане на крака": "hanging leg raise", "Обърнати гребания": "inverted row", "Мъртва тяга на един крак": "single leg romanian deadlift bodyweight", "Вдигане на крака (уред за корем)": "captains chair leg raise", "Български сплит клек": "bulgarian split squat", "Клек на един крак до стол": "box pistol squat", "Казашки клек": "cossack squat", "Клек с пауза": "pause squat bodyweight", "Мост на един крак": "single leg glute bridge", "Лицеви с бавно спускане": "eccentric push up", "Лицеви с крака на стол": "decline push up", "Диамантени лицеви": "diamond push up", "Архер лицеви": "archer push up", "Щука с крака на стол": "elevated pike push up", "Дипове на стол": "chair dips", "Холоу холд": "hollow body hold", "V-сгъване": "v up exercise", "Планк с ръце напред": "long lever plank", "Страничен планк с вдигане на таза": "side plank hip dips", "Бърпи": "burpee proper form", "Клек със скок": "jump squat", "Напади със скок": "jumping lunges", "Спайдърмен напад с ротация": "world greatest stretch spiderman lunge rotation", "Лицева с T-ротация": "push up with t rotation", "Мечешко пълзене настрани": "lateral bear crawl", "Звяр с изритване": "animal flow kick through", "Краб с достигане": "crab reach exercise", "Напад с ротация": "reverse lunge with rotation", "Страничен напад с докосване": "lateral lunge reach", "Скок напред и назад": "broad jump backpedal", "Клек с лоста над главата": "overhead squat", "Обратен напад с лоста над главата": "overhead reverse lunge", "Качване на стол": "step up exercise", "Ходещи напади": "walking lunges", "Клек „1 и половина“": "1 and a half squat", "Тласък с лоста": "push press", "Хинду лицева": "hindu push up", "Лицева с пляскане": "clap push up", "Мъртва тяга на един крак с лоста": "single leg romanian deadlift barbell", "Скейтър клек": "skater squat", "Обратен напад с коляно нагоре": "reverse lunge knee drive", "Сгъване на задното бедро с кърпа": "towel hamstring curl slider", "Дървосекач с лоста": "barbell wood chop", "Ротационна преса с лоста": "rotational press", "Руски усуквания с лоста": "russian twist", "Планк с издърпване на лоста": "plank pull through", "Страничен планк с провиране": "side plank thread the needle", "Чистачки": "windshield wipers lying", "Колене към гърдите със скок": "tuck jump", "Бърпи със скок напред": "burpee broad jump", "Странични скокове над линия": "lateral line hops", "Скок със завъртане на 180°": "180 jump squat", "Бърз клек с вдигане на пръсти": "squat to calf raise", "Бързо мечешко пълзене": "bear crawl", "Мъртва буболечка с лоста": "dead bug with bar", "Мечешко задържане с вдигане на крак": "bear plank leg lift", "Копенхагенски планк": "copenhagen plank", "Люлеене в холоу позиция": "hollow body rock", "Ходене с лоста над главата": "overhead carry", "Пълзене напред-назад": "Da Rulk forward reverse crawl", "Горила настрани": "Da Rulk side gorilla", "Хопскоч": "Da Rulk hopscotch", "Заложник": "Da Rulk hostage squat", "5 скока + заложник": "Da Rulk 5 jump hostage", "Сит-тру": "Da Rulk sit thru", "Суичове": "Da Rulk switches", "Колене към гърдите": "knees to chest stretch", "Таз на ръба на леглото": "thomas stretch bed", "Гърди на ръба на леглото": "chest stretch lying on bed edge", "Задно бедро с кърпа": "lying hamstring stretch towel", "Фигура 4": "figure 4 stretch lying", "Усукване по гръб": "supine spinal twist", "Прасец с кърпа": "seated calf stretch towel", "Детска поза с посягане настрани": "child pose side reach"};
+// ===== Stick-figure drawings (animated SVG) for exercises without photos =====
+const FIGX=(()=>{
+const UA=12,FA=11,TH=15,SH=15,TL=17,G=74;
+const R=Math.PI/180,dir=a=>[Math.sin(a*R),Math.cos(a*R)];
+const add=(p,v,k=1)=>[p[0]+v[0]*k,p[1]+v[1]*k];
+function ik(root,tg,L1,L2,pref){
+  const dx=tg[0]-root[0],dy=tg[1]-root[1],d=Math.hypot(dx,dy)||0.001,ux=dx/d,uy=dy/d;
+  if(d>=L1+L2-0.05)return [add(root,[ux,uy],L1),add(root,[ux,uy],L1+L2)];
+  const dd=Math.max(d,Math.abs(L1-L2)+0.05),a=Math.atan2(dy,dx),b=Math.acos(Math.min(1,Math.max(-1,(L1*L1+dd*dd-L2*L2)/(2*L1*dd))));
+  const j1=[root[0]+L1*Math.cos(a+b),root[1]+L1*Math.sin(a+b)],j2=[root[0]+L1*Math.cos(a-b),root[1]+L1*Math.sin(a-b)];
+  const m=[(root[0]+tg[0])/2,(root[1]+tg[1])/2],s=j=>(j[0]-m[0])*pref[0]+(j[1]-m[1])*pref[1];
+  return [s(j1)>=s(j2)?j1:j2,tg];
+}
+// pose -> list of primitives with coordinates
+function solveP(p){
+  const fr=!!p.fr,t=p.t??180,hip=p.h,tl=p.tl??TL,neck=add(hip,dir(t),tl);
+  const perp=[-Math.cos(t*R),Math.sin(t*R)];
+  const sN=fr?add(neck,perp,6):neck,sF=fr?add(neck,perp,-6):neck,hN=fr?add(hip,perp,4.5):hip,hF=fr?add(hip,perp,-4.5):hip;
+  const kp=p.kp||(fr?[[1,0],[-1,0]]:[[1,0],[1,0]]),ep=p.ep||(fr?[[1,0],[-1,0]]:[[-1,.2],[-1,.2]]);
+  const aN=ik(sN,p.H[0],UA,FA,ep[0]),aF=ik(sF,p.H[1],UA,FA,ep[1]);
+  const lN=ik(hN,p.F[0],TH,SH,kp[0]),lF=ik(hF,p.F[1],TH,SH,kp[1]);
+  const head=p.hp||add(neck,dir(t+(p.hd||0)),6.5);
+  const foot=(knee,ank)=>{if(fr||p.nofeet)return [ank,ank];const v=[ank[0]-knee[0],ank[1]-knee[1]],l=Math.hypot(...v)||1;let f=[v[1]/l,-v[0]/l];
+    if(p.toe){const c=Math.cos(.8),s=Math.sin(.8);f=[f[0]*c-f[1]*s,f[0]*s+f[1]*c];}return [ank,add(ank,f,4.5)];};
+  const P={hip,neck,sN,sF,hN,hF,head,eN:aN[0],wN:aN[1],eF:aF[0],wF:aF[1],kN:lN[0],aN:lN[1],kF:lF[0],aF:lF[1]};
+  P.ftN=foot(P.kN,P.aN)[1];P.ftF=foot(P.kF,P.aF)[1];
+  // props
+  if(p.bar==='f'){const v=[P.wN[0]-P.wF[0],P.wN[1]-P.wF[1]],l=Math.hypot(...v)||1;P.b1=add(P.wF,v,-7/l);P.b2=add(P.wN,v,7/l);}
+  if(p.bar==='s'){P.bc=[(P.wN[0]+P.wF[0])/2,(P.wN[1]+P.wF[1])/2];}
+  if(p.towel==='h')P.tw=[P.wN,P.aN];
+  // transforms
+  const keys=Object.keys(P);
+  const tf=pt=>{let [x,y]=pt;if(p.mir)x=120-x;if(p.rot){const [a,cx,cy]=p.rot,c=Math.cos(a*R),s=Math.sin(a*R),X=x-cx,Y=y-cy;x=cx+X*c-Y*s;y=cy+X*s+Y*c;}return [x,y];};
+  for(const k of keys){if(k==='tw')P.tw=P.tw.map(tf);else P[k]=tf(P[k]);}
+  return P;
+}
+const ST=(x=60,o={})=>Object.assign({h:[x,44],t:180,H:[[x+1,50],[x-1,50]],F:[[x+2,74],[x-2,74]]},o);
+const SQ=(x=60,o={})=>Object.assign({h:[x,59.5],t:145,H:[[x+30,46],[x+28,47]],F:[[x+13,74],[x+11,74]]},o);
+const PL=(fx=24,o={})=>Object.assign({h:[fx+26.2,59.5],t:119,H:[[fx+41,74],[fx+39,74]],F:[[fx,74],[fx+2,74]]},o);
+const BR=(x=46,o={})=>Object.assign({h:[x,55],t:104,H:[[x+18,74],[x+15,74]],F:[[x-14,74],[x-11,74]],kp:[[.5,1],[.5,1]]},o);
+const LB=(x=62,o={})=>Object.assign({h:[x,71],t:-90,H:[[x+4,74],[x+1,74]],F:[[x+30,72],[x+30,72]]},o);
+const mv=(p,dx,dy=0)=>{const q=JSON.parse(JSON.stringify(p)),s=a=>[a[0]+dx,a[1]+dy];q.h=s(q.h);q.H=q.H.map(s);q.F=q.F.map(s);if(q.hp)q.hp=s(q.hp);if(q.box)q.box=[q.box[0]+dx,q.box[1]+dy,q.box[2],q.box[3]];return q;};
+const W=(o,x)=>Object.assign(JSON.parse(JSON.stringify(o)),x);
+const LUNGE=(x=57,o={})=>Object.assign({h:[x,58],t:180,H:[[x+3,60],[x+1,60]],F:[[x+14,74],[x-17,74]],kp:[[1,0],[0,1]]},o);
+const RDL=(x=60,o={})=>Object.assign({h:[x,45],t:95,H:[[x+18,67],[x+16,67]],F:[[x-30,43],[x+2,74]],kp:[[0,1],[1,0]],ep:[[0,1],[0,1]]},o);
+const HOLLOW={h:[62,70],t:-105,H:[[25,60],[25,62]],F:[[92,63],[92,63]]};
+const SPL={h:[50,66],t:104,H:[[74,74],[52,58]],F:[[22,73],[22,73]],ep:[[0,1],[-1,0]]};
+const FR=(o)=>Object.assign({fr:1},o);
+const STF=(x=60,o={})=>Object.assign({fr:1,h:[x,44],t:180,H:[[x+8,49],[x-8,49]],F:[[x+5,74],[x-5,74]]},o);
+const HH=(sx,sy)=>[[sx-3,sy-6],[sx-5,sy-6]]; // hands behind head (side)
+const D={
+'Скачащи джакове':{d:1.2,f:[STF(60,{H:[[70,50],[50,50]]}),STF(60,{h:[60,42],H:[[74,6],[46,6]],F:[[72,73],[48,73]]})]},
+'Високи колене':{d:.9,f:[ST(60,{H:[[69,33],[50,45]],F:[[74,59],[60,74]],kp:[[1,-1],[1,0]],ep:[[0,1],[-1,0]]}),ST(60,{H:[[50,45],[69,33]],F:[[60,74],[74,59]],kp:[[1,0],[1,-1]],ep:[[-1,0],[0,1]]})]},
+'Кънкьорски скокове':{d:1.4,f:[STF(46,{h:[46,52],t:172,H:[[34,42],[28,50]],F:[[38,68],[44,74]],kp:[[0,1],[-1,0]]}),STF(74,{h:[74,52],t:188,H:[[92,50],[86,42]],F:[[76,74],[82,68]],kp:[[1,0],[0,1]]})]},
+'Бързо ходене на място с високи ръце':{d:1.2,f:[ST(60,{H:[[62,4],[58,4]],F:[[70,64],[60,74]],kp:[[1,-1],[1,0]]}),ST(60,{H:[[62,4],[58,4]],F:[[60,74],[70,64]],kp:[[1,0],[1,-1]]})]},
+'Мечешко ходене':{d:1.6,f:[BR(44,{H:[[66,74],[57,74]],F:[[29,74],[35,74]]}),BR(50,{H:[[66,74],[73,74]],F:[[41,74],[35,74]]})]},
+'Бързо мечешко пълзене':{d:.9,f:[BR(44,{H:[[66,74],[57,74]],F:[[29,74],[35,74]]}),BR(50,{H:[[66,74],[73,74]],F:[[41,74],[35,74]]})]},
+'Пълзене напред-назад':{d:3.2,f:[BR(36,{H:[[57,74],[50,74]],F:[[22,74],[26,74]]}),BR(42,{H:[[57,74],[63,74]],F:[[32,74],[26,74]]}),BR(48,{H:[[69,74],[63,74]],F:[[32,74],[38,74]]}),BR(54,{H:[[69,74],[75,74]],F:[[44,74],[38,74]]}),BR(48,{H:[[69,74],[63,74]],F:[[32,74],[38,74]]}),BR(42,{H:[[57,74],[63,74]],F:[[32,74],[26,74]]})]},
+'Обратни напади':{d:2.2,f:[ST(60,{H:[[63,45],[61,45]]}),LUNGE(57,{H:[[60,59],[58,59]]})]},
+'Клек до стена (задържане)':{f:[{h:[38,59],t:180,H:[[52,57],[50,57]],F:[[53,74],[51,74]],box:[30,8,4,66],ep:[[0,1],[0,1]]}]},
+'Планк с докосване на рамо':{d:1.8,f:[PL(22),PL(22,{H:[[62,53],[61,74]],ep:[[0,1],[-1,.2]]}),PL(22),PL(22,{H:[[63,74],[60,53]],ep:[[-1,.2],[0,1]]})]},
+'Лицеви опори тип щука':{d:2.2,f:[{h:[52,46],t:60,H:[[76,74],[74,74]],F:[[40,74],[38,74]]},{h:[54,46],t:40,H:[[76,74],[74,74]],F:[[40,74],[38,74]],ep:[[-.3,-1],[-.3,-1]]}]},
+'Тръстър с лоста':{d:2.2,f:[SQ(56,{H:[[70,44],[69,44]],ep:[[.3,1],[.3,1]],bar:'s'}),ST(58,{H:[[60,4],[58,4]],bar:'s'})]},
+'Мъртва тяга на един крак':{d:2.6,f:[ST(60,{F:[[60,74],[62,74]]}),RDL(60)]},
+'Мъртва тяга на един крак с лоста':{d:2.6,f:[ST(60,{F:[[60,74],[62,74]],bar:'s'}),RDL(60,{bar:'s'})]},
+'Български сплит клек':{d:2.4,f:[{h:[56,46],t:178,H:[[59,44],[57,44]],F:[[68,74],[34,60]],kp:[[1,0],[0,1]],box:[24,60,16,14]},{h:[54,59],t:172,H:[[57,57],[55,57]],F:[[68,74],[34,60]],kp:[[1,0],[0,1]],box:[24,60,16,14]}]},
+'Клек на един крак до стол':{d:2.8,f:[{h:[54,44],t:180,H:[[78,36],[76,36]],F:[[74,62],[54,74]],kp:[[1,-.3],[1,0]],ep:[[0,1],[0,1]],box:[28,52,14,22]},{h:[43,51],t:150,H:[[78,40],[76,40]],F:[[73,50],[56,74]],kp:[[1,-.3],[1,0]],ep:[[0,1],[0,1]],box:[28,52,14,22]}]},
+'Казашки клек':{d:3,f:[STF(60,{h:[60,47],H:[[63,38],[57,38]],F:[[79,74],[41,74]]}),STF(72,{h:[73,62],t:172,H:[[76,50],[70,50]],F:[[80,74],[40,72]],kp:[[1,-.5],[-1,0]],toe:1}),STF(60,{h:[60,47],H:[[63,38],[57,38]],F:[[79,74],[41,74]]}),STF(48,{h:[47,62],t:188,H:[[50,50],[44,50]],F:[[80,72],[40,74]],kp:[[1,0],[-1,-.5]]})]},
+'Клек с пауза':{d:4,f:[ST(60),SQ(56),SQ(56),ST(60)]},
+'Клек „1 и половина“':{d:3.6,f:[ST(60),SQ(56),ST(58,{h:[58,52],t:160,H:[[84,42],[82,43]],F:[[67,74],[65,74]]}),SQ(56)]},
+'Архер лицеви':{d:3,f:[FR({h:[60,55],t:180,tl:4,hp:[60,47],H:[[74,74],[46,74]],F:[[64,74],[56,74]],hide:1}),FR({h:[50,66],t:180,tl:4,hp:[50,58],H:[[76,74],[44,74]],F:[[64,74],[56,74]],hide:1,ep:[[1,0],[-1,-1]]}),FR({h:[60,55],t:180,tl:4,hp:[60,47],H:[[74,74],[46,74]],F:[[64,74],[56,74]],hide:1}),FR({h:[70,66],t:180,tl:4,hp:[70,58],H:[[76,74],[44,74]],F:[[64,74],[56,74]],hide:1,ep:[[1,-1],[-1,0]]})]},
+'Щука с крака на стол':{d:2.4,f:[{h:[52,34],t:20,H:[[62,74],[61,74]],F:[[32,52],[32,52]],box:[20,52,16,22]},{h:[53,43],t:15,H:[[64,74],[63,74]],F:[[32,52],[32,52]],ep:[[-.3,-1],[-.3,-1]],box:[20,52,16,22]}]},
+'Холоу холд':{f:[HOLLOW]},
+'Люлеене в холоу позиция':{d:1.4,f:[W(HOLLOW,{rot:[7,62,70]}),W(HOLLOW,{rot:[-7,62,70]})]},
+'V-сгъване':{d:2.2,f:[LB(62,{H:[[24,70],[24,71]],F:[[92,71],[92,71]]}),{h:[60,72],t:-140,H:[[75,46],[74,47]],F:[[77,47],[76,47]],ep:[[0,1],[0,1]]}]},
+'Планк с ръце напред':{f:[{h:[51,66],t:104,H:[[85,74],[83,74]],F:[[22,74],[24,74]],ep:[[0,1],[0,1]]}]},
+'Страничен планк с вдигане на таза':{d:2.2,f:[W(SPL,{h:[48,71],t:98}),W(SPL,{h:[50,57],t:76})]},
+'Страничен планк с провиране':{d:2.4,f:[W(SPL,{H:[[74,74],[64,30]],ep:[[0,1],[0,-1]]}),W(SPL,{H:[[74,74],[42,72]],t:110,ep:[[0,1],[0,1]]})]},
+'Копенхагенски планк':{f:[{h:[46,58],t:77,H:[[74,74],[52,56]],F:[[22,52],[30,64]],kp:[[0,-1],[0,1]],ep:[[0,1],[-1,0]],box:[8,52,16,22]}]},
+'Бърпи':{d:3.6,f:[ST(56),{h:[58,62],t:120,H:[[76,74],[74,74]],F:[[62,74],[60,74]],ep:[[1,0],[1,0]]},PL(26),PL(26,{h:[53,68],t:100,ep:[[-.5,-1],[-.5,-1]]}),PL(26),{h:[58,62],t:120,H:[[76,74],[74,74]],F:[[62,74],[60,74]],ep:[[1,0],[1,0]]},ST(58,{h:[58,39],H:[[60,-2],[58,-2]],F:[[59,69],[57,69]],toe:1})]},
+'Бърпи със скок напред':{d:3.6,f:[ST(42),{h:[44,62],t:120,H:[[62,74],[60,74]],F:[[48,74],[46,74]],ep:[[1,0],[1,0]]},PL(12),{h:[44,62],t:120,H:[[62,74],[60,74]],F:[[48,74],[46,74]],ep:[[1,0],[1,0]]},ST(64,{h:[64,38],t:160,H:[[86,22],[84,24]],F:[[58,62],[56,64]],kp:[[1,1],[1,1]],ep:[[0,1],[0,1]]}),SQ(80,{h:[80,59.5]})]},
+'Мечешко пълзене настрани':{d:2,f:[FR({h:[48,56],t:180,tl:6,hp:[48,46],H:[[57,74],[39,74]],F:[[60,74],[36,74]]}),FR({h:[60,56],t:180,tl:6,hp:[60,46],H:[[72,74],[51,74]],F:[[68,74],[50,74]]}),FR({h:[72,56],t:180,tl:6,hp:[72,46],H:[[81,74],[63,74]],F:[[84,74],[60,74]]}),FR({h:[60,56],t:180,tl:6,hp:[60,46],H:[[69,74],[48,74]],F:[[70,74],[52,74]]})]},
+'Звяр с изритване':{d:2.4,f:[BR(46),{h:[56,63],t:-155,H:[[58,32],[40,74]],F:[[88,58],[66,74]],kp:[[0,-1],[.5,-1]],ep:[[1,0],[-1,0]]}]},
+'Сит-тру':{d:2.4,f:[BR(46),{h:[54,67],t:-160,H:[[64,40],[40,74]],F:[[84,72],[66,74]],kp:[[0,-1],[.5,-1]],ep:[[1,0],[-1,0]]}]},
+'Краб с достигане':{d:2.4,f:[{h:[56,60],t:-110,H:[[39,74],[37,74]],F:[[72,74],[70,74]],kp:[[.3,-1],[.3,-1]],ep:[[-1,0],[-1,0]]},{h:[58,52],t:-95,H:[[74,34],[37,74]],F:[[72,74],[70,74]],kp:[[.3,-1],[.3,-1]],ep:[[0,-1],[-1,0]]}]},
+'Напад с ротация':{d:2.4,f:[ST(60,{H:[[70,38],[69,38]],ep:[[0,1],[0,1]]}),LUNGE(57,{H:[[76,50],[74,52]],ep:[[0,1],[0,1]]}),LUNGE(57,{H:[[66,46],[64,46]],ep:[[0,1],[0,1]]})]},
+'Страничен напад с докосване':{d:2.4,f:[STF(60,{H:[[64,38],[56,38]],ep:[[-1,1],[1,1]]}),STF(72,{h:[73,61],t:150,H:[[90,71],[86,72]],F:[[90,74],[46,74]],kp:[[1,-.3],[-1,0]],ep:[[0,1],[1,0]]})]},
+'Скок напред и назад':{d:3.2,f:[SQ(36,{H:[[22,52],[20,54]],ep:[[0,1],[0,1]]}),ST(58,{h:[58,36],t:150,H:[[80,12],[78,14]],F:[[54,64],[52,66]],kp:[[1,1],[1,1]],ep:[[0,1],[0,1]]}),SQ(76),ST(56)]},
+'Обратен напад с лоста над главата':{d:2.4,f:[ST(60,{H:[[61,4],[59,4]],bar:'s'}),LUNGE(57,{H:[[58,18],[56,18]],bar:'s'})]},
+'Хинду лицева':{d:2.6,f:[{h:[50,46],t:55,H:[[80,74],[78,74]],F:[[36,74],[34,74]]},{h:[52,60],t:100,H:[[80,74],[78,74]],F:[[36,74],[34,74]],ep:[[-.3,-1],[-.3,-1]]},{h:[62,70],t:145,H:[[80,74],[78,74]],F:[[34,73],[32,73]],kp:[[0,1],[0,1]],hd:-25},{h:[52,60],t:100,H:[[80,74],[78,74]],F:[[36,74],[34,74]],ep:[[-.3,-1],[-.3,-1]]}]},
+'Скейтър клек':{d:2.6,f:[ST(60,{F:[[48,58],[62,74]],kp:[[0,1],[1,0]],H:[[70,38],[69,38]],ep:[[0,1],[0,1]]}),{h:[56,59],t:140,H:[[84,46],[82,47]],F:[[42,70],[66,74]],kp:[[0,1],[1,0]],ep:[[0,1],[0,1]]}]},
+'Обратен напад с коляно нагоре':{d:2.4,f:[LUNGE(57,{H:[[60,59],[58,59]]}),ST(60,{F:[[73,58],[61,74]],kp:[[1,-1],[1,0]],H:[[52,46],[68,36]],ep:[[-1,0],[0,1]]})]},
+'Сгъване на задното бедро с кърпа':{d:2.6,f:[{h:[62,64],t:-113,H:[[66,74],[64,74]],F:[[90,71],[90,71]],towel:'f'},{h:[60,58],t:-51,H:[[64,74],[62,74]],F:[[74,72],[74,72]],kp:[[.5,-1],[.5,-1]],towel:'f'}]},
+'Дървосекач с лоста':{d:2.2,f:[STF(60,{h:[60,46],H:[[80,10],[74,8]],F:[[70,74],[50,74]],bar:'f'}),STF(60,{h:[60,50],t:192,H:[[46,58],[42,62]],F:[[70,74],[50,74]],bar:'f'})]},
+'Ротационна преса с лоста':{d:2,f:[ST(58,{H:[[68,32],[67,32]],F:[[66,74],[48,74]],ep:[[0,1],[0,1]],bar:'s'}),ST(62,{t:165,H:[[84,10],[83,10]],F:[[66,74],[48,72]],toe:1,bar:'s'})]},
+'Планк с издърпване на лоста':{d:2.4,f:[FR({h:[60,55],t:180,tl:4,hp:[60,47],H:[[72,74],[84,74]],F:[[64,74],[56,74]],hide:1,ep:[[1,0],[1,-1]],bar:'s1'}),FR({h:[62,56],t:180,tl:4,hp:[62,48],H:[[72,74],[38,74]],F:[[64,74],[56,74]],hide:1,bar:'s1'})]},
+'Чистачки':{d:3,f:[FR({h:[60,72],t:180,tl:3,hp:[60,64],H:[[94,72],[26,72]],F:[[62,40],[58,40]],ep:[[0,-1],[0,-1]]}),FR({h:[60,72],t:180,tl:3,hp:[60,64],H:[[94,72],[26,72]],F:[[90,58],[88,62]],kp:[[0,-1],[0,-1]],ep:[[0,-1],[0,-1]]}),FR({h:[60,72],t:180,tl:3,hp:[60,64],H:[[94,72],[26,72]],F:[[62,40],[58,40]],ep:[[0,-1],[0,-1]]}),FR({h:[60,72],t:180,tl:3,hp:[60,64],H:[[94,72],[26,72]],F:[[32,62],[30,58]],kp:[[0,-1],[0,-1]],ep:[[0,-1],[0,-1]]})]},
+'Скок със завъртане на 180°':{d:2.6,f:[SQ(56),ST(60,{h:[60,36],fr:1,H:[[70,46],[50,46]],F:[[63,66],[57,66]]}),SQ(56,{mir:1}),ST(60,{h:[60,36],fr:1,H:[[70,46],[50,46]],F:[[63,66],[57,66]]})]},
+'Бърз клек с вдигане на пръсти':{d:1.3,f:[SQ(56),ST(60,{h:[60,41],H:[[62,-1],[60,-1]],F:[[61,71],[59,71]],toe:1})]},
+'Мъртва буболечка с лоста':{d:3,f:[{h:[62,71],t:-90,H:[[47,48],[45,48]],F:[[77,56],[75,56]],kp:[[-.3,-1],[-.3,-1]],ep:[[1,0],[1,0]],bar:'s'},{h:[62,71],t:-90,H:[[47,48],[45,48]],F:[[92,70],[75,56]],kp:[[0,-1],[-.3,-1]],ep:[[1,0],[1,0]],bar:'s'},{h:[62,71],t:-90,H:[[47,48],[45,48]],F:[[77,56],[75,56]],kp:[[-.3,-1],[-.3,-1]],ep:[[1,0],[1,0]],bar:'s'},{h:[62,71],t:-90,H:[[47,48],[45,48]],F:[[77,56],[92,70]],kp:[[-.3,-1],[0,-1]],ep:[[1,0],[1,0]],bar:'s'}]},
+'Мечешко задържане с вдигане на крак':{d:2.6,f:[BR(46),BR(46,{F:[[20,52],[35,74]],kp:[[0,1],[.5,1]]})]},
+'Ходене с лоста над главата':{d:1.6,f:[ST(56,{H:[[57,4],[55,4]],F:[[64,74],[48,74]],bar:'s'}),ST(64,{H:[[65,4],[63,4]],F:[[56,74],[72,74]],bar:'s'})]},
+'Горила настрани':{d:2.4,f:[FR({h:[44,60],t:180,tl:12,hp:[44,42],H:[[50,74],[38,74]],F:[[56,74],[32,74]]}),FR({h:[62,50],t:180,tl:12,hp:[62,32],H:[[66,74],[58,74]],F:[[72,62],[52,62]]}),FR({h:[78,60],t:180,tl:12,hp:[78,42],H:[[84,74],[72,74]],F:[[90,74],[66,74]]})]},
+'Хопскоч':{d:2.2,f:[LUNGE(40,{h:[40,52],t:165,H:[[28,56],[26,58]],F:[[52,74],[24,74]],kp:[[1,0],[1,1]],ep:[[0,1],[0,1]]}),ST(60,{h:[60,36],t:155,H:[[82,16],[80,18]],F:[[64,64],[56,66]],kp:[[1,1],[1,1]],ep:[[0,1],[0,1]]}),SQ(76,{h:[76,56],t:150,H:[[96,44],[94,45]],F:[[88,74],[86,74]]})]},
+'Заложник':{d:2.2,f:[SQ(44,{h:[44,62],t:150,H:HH(52.5,47),ep:[[1,-.3],[1,-.3]]}),SQ(44,{h:[44,64],t:150,H:HH(52.5,49),ep:[[1,-.3],[1,-.3]]}),SQ(58,{h:[58,56],t:150,H:HH(66.5,41),F:[[70,68],[68,68]],ep:[[1,-.3],[1,-.3]]}),SQ(72,{h:[72,62],t:150,H:HH(80.5,47),ep:[[1,-.3],[1,-.3]]})]},
+'5 скока + заложник':{d:4.2,f:[SQ(56,{H:[[48,54],[46,55]],ep:[[0,1],[0,1]]}),ST(60,{h:[60,39],H:[[62,-2],[60,-2]],F:[[61,69],[59,69]],toe:1}),SQ(56,{H:[[48,54],[46,55]],ep:[[0,1],[0,1]]}),ST(60,{h:[60,39],H:[[62,0],[60,0]],F:[[61,69],[59,69]],toe:1}),SQ(50,{h:[50,62],t:150,H:HH(58.5,47),ep:[[1,-.3],[1,-.3]]}),SQ(64,{h:[64,62],t:150,H:HH(72.5,47),ep:[[1,-.3],[1,-.3]]})]},
+'Суичове':{d:2.2,f:[SQ(58,{h:[58,60],t:150,H:[[80,52],[78,53]],toe:1}),{h:[58,63],t:165,H:[[78,52],[76,53]],F:[[76,74],[38,73]],kp:[[1,0],[0,1]],ep:[[0,1],[0,1]],toe:1},SQ(58,{h:[58,60],t:150,H:[[80,52],[78,53]],toe:1}),{h:[58,63],t:165,H:[[78,52],[76,53]],F:[[38,73],[76,74]],kp:[[0,1],[1,0]],ep:[[0,1],[0,1]],toe:1}]},
+'Таз на ръба на леглото':{f:[{h:[68,48],t:-90,H:[[62,36],[60,36]],F:[[78,74],[60,38]],kp:[[1,0],[.5,-1]],ep:[[0,1],[0,1]],box:[6,50,64,24],nofeet:0}]},
+'Гърди на ръба на леглото':{f:[FR({h:[66,54],t:180,tl:3,hp:[66,45],H:[[91,68],[44,54]],F:[[66,54],[66,54]],hide:1,ep:[[1,-1],[-1,-1]],box:[22,55,58,19]})]},
+'Задно бедро с кърпа':{f:[{h:[62,71],t:-90,H:[[56,50],[54,50]],F:[[70,42],[92,71]],kp:[[1,0],[1,0]],ep:[[0,1],[0,1]],towel:'h'}]},
+};
+function svgOf(n,frame){
+  const E=D[n];if(!E||(frame!=null&&frame>=E.f.length))return '';
+  const fr=frame==null?E.f:[E.f[frame]];
+  const S=fr.map(solveP),p0=fr[0],front=!!p0.fr,hide=!!p0.hide;
+  const dur=(E.d||2)+'s',k=fr.length;
+  const kt=Array.from({length:k+1},(_,i)=>(i/k).toFixed(3)).join(';'),ks=Array(k).fill('.45 0 .55 1').join(';');
+  const val=(get)=>{const v=S.map(get);if(k<2||v.every(x=>Math.abs(x-v[0])<.01))return {s:v[0].toFixed(1)};return {a:v.concat([v[0]]).map(x=>x.toFixed(1)).join(';')};};
+  const at=(name,get)=>{const r=val(get);return r.s!=null?[` ${name}="${r.s}"`,'']:[` ${name}="${r.a.split(';')[0]}"`,`<animate attributeName="${name}" values="${r.a}" keyTimes="${kt}" calcMode="spline" keySplines="${ks}" dur="${dur}" repeatCount="indefinite"/>`];};
+  const line=(a,b,cls)=>{const x1=at('x1',s=>s[a][0]),y1=at('y1',s=>s[a][1]),x2=at('x2',s=>s[b][0]),y2=at('y2',s=>s[b][1]);
+    return `<line class="${cls}"${x1[0]}${y1[0]}${x2[0]}${y2[0]}>${x1[1]}${y1[1]}${x2[1]}${y2[1]}</line>`;};
+  const circ=(a,r,cls)=>{const cx=at('cx',s=>s[a][0]),cy=at('cy',s=>s[a][1]);return `<circle class="${cls}" r="${r}"${cx[0]}${cy[0]}>${cx[1]}${cy[1]}</circle>`;};
+  let o='';
+  if(p0.box)o+=`<rect class="fx-box" x="${p0.box[0]}" y="${p0.box[1]}" width="${p0.box[2]}" height="${p0.box[3]}" rx="2"/>`;
+  const far=front?'fx-n':'fx-f';
+  o+=line('sF','eF',far)+line('eF','wF',far);
+  if(!hide)o+=line('hF','kF',far)+line('kF','aF',far)+(front?'':line('aF','ftF',far));
+  if(front){o+=line('sN','sF','fx-n');if(!hide)o+=line('hN','hF','fx-n');}
+  o+=line('hip','neck','fx-n')+circ('head',4.8,'fx-h');
+  if(!hide)o+=line('hN','kN','fx-n')+line('kN','aN','fx-n')+(front?'':line('aN','ftN','fx-n'));
+  o+=line('sN','eN','fx-n')+line('eN','wN','fx-n');
+  if(p0.bar==='f')o+=line('b1','b2','fx-bar');
+  if(p0.bar==='s')o+=circ('bc',4,'fx-plate');
+  if(p0.bar==='s1')o+=circ('wF',3.6,'fx-plate');
+  if(p0.towel==='h')o+=`<line class="fx-tw"${at('x1',s=>s.tw[0][0])[0]}${at('y1',s=>s.tw[0][1])[0]}${at('x2',s=>s.tw[1][0])[0]}${at('y2',s=>s.tw[1][1])[0]}/>`;
+  if(p0.towel==='f')o+=line('aN','ftN','fx-tw');
+  // crop to the figure (all frames), 2:1 box
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;const inc=(q,r=0)=>{if(!q||isNaN(q[0]))return;x0=Math.min(x0,q[0]-r);y0=Math.min(y0,q[1]-r);x1=Math.max(x1,q[0]+r);y1=Math.max(y1,q[1]+r);};
+  const legK=['hN','hF','kN','kF','aN','aF','ftN','ftF'];
+  S.forEach(P=>{for(const k in P){if(k==='tw'||(hide&&legK.includes(k)))continue;inc(P[k],k==='head'?5:k==='bc'?4.5:2);}});
+  if(p0.box){inc([p0.box[0],p0.box[1]]);inc([p0.box[0]+p0.box[2],p0.box[1]]);}
+  y1=Math.max(y1,75.5);let w=x1-x0+8,h=y1-y0+6;h=Math.max(h,44,w/2);w=Math.max(w,h*2);
+  const cx=(x0+x1)/2,vx=cx-w/2,vy=y1+1-h;
+  return `<svg class="fx" viewBox="${vx.toFixed(1)} ${vy.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}" aria-hidden="true"><line class="fx-g" x1="${(vx+2).toFixed(1)}" y1="74.6" x2="${(vx+w-2).toFixed(1)}" y2="74.6"/>${o}</svg>`;
+}
+return {svg:svgOf,names:Object.keys(D)};
+})();
 const PICS={"Скачане на въже (имитация)":"Rope_Jumping","Алпинисти":"Mountain_Climbers","Ходещи напади":"Bodyweight_Walking_Lunge","Напади на място":"Split_Squats","Мост за седалище":"Butt_Lift_Bridge","Мост на един крак":"Single_Leg_Glute_Bridge","Планк с ходене":"Inchworm","Страничен планк":"Side_Bridge","Мъртва буболечка":"Dead_Bug","Супермен":"Superman","Лицеви опори":"Pushups","Лицеви с крака на стол":"Push-Ups_With_Feet_Elevated","Диамантени лицеви":"Push-Ups_-_Close_Triceps_Position","Бицепсово сгъване с лоста":"EZ-Bar_Curl","Раменна преса с лоста":"Barbell_Shoulder_Press","Наведено гребане с лоста":"Bent_Over_Barbell_Row","Румънска мъртва тяга с лоста":"Romanian_Deadlift","Преден клек с лоста":"Front_Barbell_Squat","Напади с лоста":"Barbell_Lunge","Френско разгъване с лоста":"EZ-Bar_Skullcrusher","Преса от пода с лоста":"Floor_Press","Обратно сгъване с лоста":"Reverse_Barbell_Curl","Добро утро с лоста":"Good_Morning","Вдигане напред с лоста":"Standing_Front_Barbell_Raise_Over_Head","Набирания на лоста":"Pullups","Дипове на успоредката":"Parallel_Bar_Dip","Набирания с обратен хват":"Chin-Up","Висящо вдигане на крака":"Hanging_Leg_Raise","Обърнати гребания":"Inverted_Row","Вдигане на крака (уред за корем)":"Knee_Hip_Raise_On_Parallel_Bars","Дипове на стол":"Bench_Dips","Клек със скок":"Freehand_Jump_Squat","Напади със скок":"Split_Jump","Спайдърмен напад с ротация":"Worlds_Greatest_Stretch","Клек с лоста над главата":"Overhead_Squat","Качване на стол":"Step-up_with_Knee_Raise","Тласък с лоста":"Push_Press","Лицева с пляскане":"Plyo_Push-up","Колене към гърдите със скок":"Knee_Tuck_Jump","Руски усуквания с лоста":"Russian_Twist","Странични скокове над линия":"Lateral_Cone_Hops","Лицева с T-ротация":"Push_Up_to_Side_Plank","Колене към гърдите":"Hug_Knees_To_Chest","Детска поза с посягане настрани":"Childs_Pose","Прасец с кърпа":"Seated_Calf_Stretch","Фигура 4":"Ankle_On_The_Knee","Усукване по гръб":"Knee_Across_The_Body","Лицеви с бавно спускане":"Pushups"};
-function vidLink(n){const p=PICS[n];if(p)return '<span class="pic"><img loading="lazy" src="img/'+p+'_0.jpg" alt=""><img loading="lazy" src="img/'+p+'_1.jpg" alt=""></span>';const q=EN[n];return q?'<a class="vid" href="https://www.youtube.com/results?search_query='+encodeURIComponent(q)+'" target="_blank" rel="noopener">видео</a>':'';}
+function vidLink(n){const p=PICS[n];if(p)return '<span class="pic"><img loading="lazy" src="img/'+p+'_0.jpg" alt=""><img loading="lazy" src="img/'+p+'_1.jpg" alt=""></span>';const f=FIGX.svg(n);if(f)return '<span class="pic fig">'+f+'</span>';const q=EN[n];return q?'<a class="vid" href="https://www.youtube.com/results?search_query='+encodeURIComponent(q)+'" target="_blank" rel="noopener">видео</a>':'';}
 // one-sided exercises ("смени ... по средата"): a beep and "Смени" at half time, also inside the cue track
 const twoSided=n=>!!(LIB[n]&&/по средата/.test(LIB[n].t));
 function sideCue(){vib([120,60,120,60,120]);if(!trackPlaying())play('side');say('Смени страната');}
@@ -871,7 +1024,7 @@ function renderBanned(){const el=document.getElementById('ban-state');if(!el)ret
   function renderList(){list.innerHTML='';ex.forEach((n,i)=>{const L=LIB[n];
     const row=document.createElement('div');row.className='exrow';
     row.innerHTML='<div><div class="n">'+(i+1)+'. '+n+'</div><div class="c">'+L.c+'</div></div><div class="v">'+WORK_S+'с</div>'+
-      '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span>'+vidLink(n)+banLink(n)+'</div>';
+      '<div class="detail">'+vidLink(n)+L.t+'<span class="err">Грешка: '+L.e+'</span>'+banLink(n)+'</div>';
     row.addEventListener('click',e=>{if(onBan(e,()=>{if(!run&&idx<0){build();buildDots();renderList();paint(0);}}))return;row.classList.toggle('open');});list.appendChild(row);});}
   function buildDots(){dots.innerHTML='';ph.forEach(p=>{const d=document.createElement('div');
     d.className='pd';dots.appendChild(d);});}
@@ -883,7 +1036,7 @@ function renderBanned(){const el=document.getElementById('ban-state');if(!el)ret
     if(!p){ // preview: read the first exercise before starting
       phs.textContent='първо упражнение';nm.textContent=ex[0];num.textContent=fmt(ph.reduce((a,q)=>a+q.d,0));
       nxt.textContent=ex.length+' упражнения';ring.setAttribute('stroke-dashoffset','0');
-      if(LIB[ex[0]])cue.innerHTML=LIB[ex[0]].t+'<span class="err">Грешка: '+LIB[ex[0]].e+'</span>'+vidLink(ex[0]);
+      if(LIB[ex[0]])cue.innerHTML=vidLink(ex[0])+LIB[ex[0]].t+'<span class="err">Грешка: '+LIB[ex[0]].e+'</span>';
       ring.style.stroke='var(--work)';setBodyPhase(null);return;}
     phs.textContent=p.t==='work'?('работа · '+p.r+'/'+ex.length):(p.l==='Подготви се'?'подготви се':'почивка');
     nm.textContent=p.l;
@@ -891,8 +1044,8 @@ function renderBanned(){const el=document.getElementById('ban-state');if(!el)ret
     setBodyPhase(p.t);
     const nextP=ph[idx+1];
     nxt.textContent=nextP?('след: '+(nextP.t==='work'?nextP.l:ph[idx+2]?ph[idx+2].l:'край')):'последно';
-    if(p.t==='work'&&LIB[p.l]){cue.innerHTML=LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>'+vidLink(p.l);}
-    else if(nextP&&LIB[nextP.l]){cue.innerHTML='<b>Следва: '+nextP.l+'</b><br>'+LIB[nextP.l].t+vidLink(nextP.l);}
+    if(p.t==='work'&&LIB[p.l]){cue.innerHTML=vidLink(p.l)+LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>';}
+    else if(nextP&&LIB[nextP.l]){cue.innerHTML='<b style=\"display:block;margin-bottom:8px\">Следва: '+nextP.l+'</b>'+vidLink(nextP.l)+LIB[nextP.l].t;}
     num.classList.toggle('urgent',rem<=3);
     document.querySelectorAll('#c-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<idx);d.classList.toggle('cur',i===idx);});
   }
@@ -981,7 +1134,7 @@ function renderBanned(){const el=document.getElementById('ban-state');if(!el)ret
     const row=document.createElement('div');row.className='exrow';row.id='sr-'+i;
     row.innerHTML='<div><div class="n">'+e.n+'</div><div class="c">'+e.t+'</div></div>'+
       '<div class="v" id="sv-'+i+'"><b>0</b>/'+e.s+'</div>'+
-      (L?'<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span>'+vidLink(e.n)+'</div>':'');
+      (L?'<div class="detail">'+vidLink(e.n)+L.t+'<span class="err">Грешка: '+L.e+'</span>'+'</div>':'');
     row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});}
   function refresh(){plan.forEach((e,i)=>{const d=i<ei?e.s:(i===ei?si:0);
     $('sv-'+i).innerHTML='<b>'+d+'</b>/'+e.s;
@@ -1191,20 +1344,20 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
       b.w.forEach(n=>{const L=LIB[n];const row=document.createElement('div');row.className='exrow';
         const pk=['Пълзене напред-назад','Мечешко пълзене настрани','Горила настрани','Хопскоч','Заложник','5 скока + заложник','Сит-тру','Суичове','Звяр с изритване'].includes(n)?'Да Рълк':Object.keys(PAT).find(k=>PAT[k].includes(n));
         row.innerHTML='<div><div class="n">'+n+'</div><div class="c">'+(bi&&pk?pk:'раздвижване')+'</div></div><div class="v">'+(bi?W:WU)+'с</div>'+
-          '<div class="detail">'+L.t+'<span class="err">Грешка: '+L.e+'</span>'+vidLink(n)+banLink(n)+'</div>';
+          '<div class="detail">'+vidLink(n)+L.t+'<span class="err">Грешка: '+L.e+'</span>'+banLink(n)+'</div>';
         row.addEventListener('click',e=>{if(onBan(e,()=>{if(!run&&idx<0){build();buildDots();renderList();paint(0);}}))return;row.classList.toggle('open');});list.appendChild(row);});});}
   function buildDots(){dots.innerHTML='';ph.forEach(p=>{if(p.t!=='work')return;const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
   function paint(rem){const p=idx>=0&&idx<ph.length?ph[idx]:null;
     if(!p){num.textContent=fmt(total());ring.setAttribute('stroke-dashoffset','0');ring.style.stroke='var(--work)';
       phs.textContent='първо упражнение';nm.textContent=ex[0];nxt.textContent='около '+Math.round(total()/60)+' мин · '+(ex.length-2)+' упражнения';
-      if(LIB[ex[0]])cue.innerHTML=LIB[ex[0]].t+'<span class="err">Грешка: '+LIB[ex[0]].e+'</span>'+vidLink(ex[0]);return;}
+      if(LIB[ex[0]])cue.innerHTML=vidLink(ex[0])+LIB[ex[0]].t+'<span class="err">Грешка: '+LIB[ex[0]].e+'</span>';return;}
     num.textContent=fmt(rem);ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/p.d)));
     ring.style.stroke=p.t==='work'?'var(--work)':'var(--rest)';
     phs.textContent=p.t==='work'?(p.bi?'работа · '+p.i+'/'+p.of:'загрявка'):p.l.toLowerCase();
     nm.textContent=p.t==='work'?p.l:(p.l==='Подготви се'?'Подготви се':'Почивка');
     const nw=ph.slice(idx+1).find(q=>q.t==='work');nxt.textContent=nw?'след: '+nw.l:'последно';
-    if(p.t==='work'&&LIB[p.l])cue.innerHTML=LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>'+vidLink(p.l);
-    else if(nw&&LIB[nw.l])cue.innerHTML='<b>Следва: '+nw.l+'</b><br>'+LIB[nw.l].t+vidLink(nw.l);
+    if(p.t==='work'&&LIB[p.l])cue.innerHTML=vidLink(p.l)+LIB[p.l].t+'<span class="err">Грешка: '+LIB[p.l].e+'</span>';
+    else if(nw&&LIB[nw.l])cue.innerHTML='<b style=\"display:block;margin-bottom:8px\">Следва: '+nw.l+'</b>'+vidLink(nw.l)+LIB[nw.l].t;
     num.classList.toggle('urgent',rem<=3);
     let wi=-1;for(let k=0;k<=idx;k++)if(ph[k].t==='work')wi++;
     document.querySelectorAll('#f-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<wi||(i===wi&&p.t!=='work'));d.classList.toggle('cur',i===wi&&p.t==='work');});}
@@ -1267,7 +1420,7 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
   function renderList(){list.innerHTML='';STRETCH.forEach((x,i)=>{
     const row=document.createElement('div');row.className='exrow';
     row.innerHTML='<div><div class="n">'+(i+1)+'. '+x.n+'</div><div class="c">'+(x.s?'всяка страна':'')+'</div></div><div class="v">'+(x.s?'2 × ':'')+x.d+'с</div>'+
-      '<div class="detail">'+x.t+'<span class="err">'+x.e+'</span>'+vidLink(x.n)+'</div>';
+      '<div class="detail">'+vidLink(x.n)+x.t+'<span class="err">'+x.e+'</span>'+'</div>';
     row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});}
   function buildDots(){dots.innerHTML='';ph.forEach(p=>{if(p.t!=='hold')return;const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
   function paint(rem){const p=idx>=0&&idx<ph.length?ph[idx]:null;
@@ -1277,7 +1430,7 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
     ring.style.stroke=p.t==='hold'?'var(--work)':'var(--rest)';
     phs.textContent=p.t==='hold'?'задръж':'смени позицията';nm.textContent=p.l;
     const nh=ph.slice(idx+1).find(q=>q.t==='hold'&&q.l!==p.l);nxt.textContent=nh?'след: '+nh.l:'последна';
-    cue.innerHTML=p.x.t+'<span class="err">'+p.x.e+'</span>'+vidLink(p.x.n);
+    cue.innerHTML=vidLink(p.x.n)+p.x.t+'<span class="err">'+p.x.e+'</span>';
     num.classList.toggle('urgent',p.t==='hold'&&rem<=3);
     let hi=-1;for(let k=0;k<=idx;k++)if(ph[k].t==='hold')hi++;
     document.querySelectorAll('#x-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<hi||(i===hi&&p.t!=='hold'));d.classList.toggle('cur',i===hi&&p.t==='hold');});}
@@ -1418,7 +1571,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261005200342';
+const BUILD='20261005203513';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

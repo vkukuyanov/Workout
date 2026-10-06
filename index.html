@@ -237,13 +237,21 @@
   .lnk{background:none;border:none;color:var(--gold);font:600 14px 'Sofia Sans',sans-serif;padding:4px 0;flex:none;width:auto}
   .done-ov{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(6px)}
   .done-ov.on{display:flex;animation:dfade .35s ease}
-  .done-card{width:100%;max-width:380px;background:var(--card);border-radius:28px;padding:30px 24px 22px;text-align:center;animation:dpop .45s cubic-bezier(.2,1.4,.4,1)}
-  .done-ic{width:64px;height:64px;margin-bottom:10px}
-  .done-t{font-size:30px;font-weight:800;letter-spacing:-.01em}
-  .done-s{font-size:15px;color:var(--ink-2);margin-top:4px}
-  .done-st{display:flex;justify-content:center;gap:22px;margin:20px 0 6px}
-  .done-st div{font-size:12px;color:var(--muted)}.done-st b{display:block;font-size:24px;color:var(--ink);font-weight:800}
-  .done-m{font-size:16px;line-height:1.5;color:var(--ink);margin:14px 4px 22px;font-weight:500}
+  .done-card{position:relative;overflow:hidden;width:100%;max-width:380px;background:var(--card);border-radius:30px;padding:32px 24px 22px;text-align:center;animation:dpop .5s cubic-bezier(.2,1.4,.4,1)}
+  .done-ic{width:84px;height:84px;margin-bottom:12px}
+  .done-ic .dr{stroke-dasharray:214;stroke-dashoffset:214;animation:dring .9s .15s cubic-bezier(.6,0,.2,1) forwards}
+  .done-ic .dc{stroke-dasharray:44;stroke-dashoffset:44;animation:dring .35s .95s ease-out forwards}
+  @keyframes dring{to{stroke-dashoffset:0}}
+  .done-t{font-size:31px;font-weight:800;letter-spacing:-.015em;line-height:1.15}
+  .done-s{font-size:14.5px;color:var(--muted);margin-top:6px}
+  .done-hi{display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:9px 16px;border-radius:999px;background:linear-gradient(135deg,var(--g1),var(--g2));color:var(--on-gold,#fff);font-weight:700;font-size:15px;animation:dpop .5s 1.1s both cubic-bezier(.2,1.4,.4,1)}
+  .done-st{display:flex;justify-content:center;gap:0;margin:22px 0 4px;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2);padding:14px 0}
+  .done-st div{flex:1;font-size:12px;color:var(--muted)}.done-st div+div{border-left:1px solid var(--line-2)}
+  .done-st b{display:block;font-size:26px;color:var(--ink);font-weight:800;line-height:1.1;margin-bottom:2px}.done-st b i{font-style:normal;font-size:15px;color:var(--muted);font-weight:600}
+  .done-m{font-size:17px;line-height:1.45;color:var(--ink);margin:18px 6px 22px;font-weight:500;letter-spacing:-.005em}
+  .done-conf{position:absolute;inset:0;pointer-events:none}
+  .done-conf i{position:absolute;top:-12px;width:7px;height:12px;border-radius:2px;background:var(--gold);opacity:0;animation:dconf 2s ease-in forwards}
+  @keyframes dconf{0%{opacity:1;top:-12px}100%{opacity:0;top:105%;margin-left:30px}}
   @keyframes dfade{from{opacity:0}to{opacity:1}} @keyframes dpop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
   .vid{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
   .pic{display:flex;gap:3px;margin:2px 0 10px;border-radius:12px;overflow:hidden;max-width:340px}
@@ -263,9 +271,11 @@
 </head>
 <body>
 <div id="done-ov" class="done-ov"><div class="done-card">
-  <svg class="done-ic" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="none" stroke="var(--gold)" stroke-width="3"/><path d="M19 33l9 9 17-19" fill="none" stroke="var(--gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="done-conf" id="done-conf"></div>
+  <svg class="done-ic" viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--line)" stroke-width="6"/><circle class="dr" cx="40" cy="40" r="34" fill="none" stroke="var(--gold)" stroke-width="6" stroke-linecap="round" transform="rotate(-90 40 40)"/><path class="dc" d="M26 41l10 10 19-21" fill="none" stroke="var(--gold)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
   <div class="done-t" id="done-t">Браво!</div>
   <div class="done-s" id="done-s"></div>
+  <div class="done-hi" id="done-hi"></div>
   <div class="done-st" id="done-st"></div>
   <div class="done-m" id="done-m"></div>
   <button class="b-main full" id="done-ok">Готово</button>
@@ -1487,25 +1497,40 @@ function showDone(type,info){
   const log=load('wt_log',[]),tr=log.filter(x=>x.type!=='stretch');
   const now=new Date(),mo=(now.getDay()+6)%7,days=new Set(tr.map(x=>x.date));let wk=0;
   for(let i=0;i<=mo;i++){const d=new Date(now);d.setDate(now.getDate()-i);if(days.has(localISO(d)))wk++;}
-  const st=streakInfo().n;
-  const total=tr.length,$=id=>document.getElementById(id);
+  const {n:st,best}=streakInfo(),total=tr.length,$=id=>document.getElementById(id),h=now.getHours();
   const sum={core:'Ядро · '+info.n+' упражнения · '+info.min+' мин',func:'Функционална · '+info.n+' упражнения · '+info.min+' мин',
     strength:'Сила · '+info.hits+' от '+info.total+' серии на целта',stretch:'Разтягане · '+info.min+' мин',
     run:'Тичане · '+(info.km?String(info.km).replace('.',',')+' км · '+fmtPace(info.pace)+' /км':info.min+' мин')}[type];
-  const MS=[5,10,25,50,75,100,150,200,300,500];
-  const pool=['Малко всеки ден бие много веднъж седмично.','Силата се трупа точно в такива обикновени дни.',
-    'Не е нужно да е перфектно. Нужно е да е направено.','Още една тухла в стената.','Тялото запомня всяка тренировка. Тази също.',
-    'Днес си по-добър от вчера. Утре — пак.','Свърши го, докато другите още мислят дали да започнат.','Дисциплината е мостът между целта и резултата.'];
-  let msg=pool[(total*7+now.getDate())%pool.length];
-  if(type==='stretch')msg=now.getHours()>=20?'Лека нощ. Тялото ти ще благодари утре сутринта.':'Гъвкавото тяло се възстановява по-бързо.';
-  else if(total===1)msg='Първата е най-трудната. Вече я имаш.';
-  else if(MS.includes(total))msg=total+'-та тренировка. Това вече е навик.';
-  else if(wk>=6)msg='Пълна седмица. Точно така се гради форма.';
-  else if(st>=3)msg=st+' дни подред. Не прекъсвай веригата.';
-  else if(type==='strength'&&info.hits===info.total)msg='Всички серии на целта. Следващия път — по-трудно.';
-  $('done-t').textContent='Браво, Викторе!';$('done-s').textContent=sum;$('done-m').textContent=msg;
-  $('done-st').innerHTML=(type==='stretch'?'':'<div><b>'+wk+' от 6</b>тази седмица</div><div><b>'+st+'</b>'+(st===1?'ден подред':'дни подред')+'</div>')+'<div><b>'+total+'</b>общо</div>';
-  $('done-ov').classList.add('on');say('Браво! '+msg);}
+  // the one thing worth celebrating today
+  const prev=log.slice(1).find(x=>x.type===type&&x.detail);let hi='',party=false;
+  const ord=k=>k+'-'+(k%100===0?'на':k%10===1&&k%100!==11?'ва':k%10===2&&k%100!==12?'ра':(k%10===7||k%10===8)&&k%100!==17&&k%100!==18?'ма':'та');
+  const MS=[10,25,50,75,100,150,200,250,300,400,500];
+  if(type!=='stretch'&&st>=3&&st>=best){hi='Нов рекорд — '+st+' дни подред';party=true;}
+  else if(MS.includes(total)){hi=ord(total)+' тренировка';party=true;}
+  else if(type==='run'&&prev&&info.km&&prev.detail.pace&&info.pace&&prev.detail.pace-info.pace>=3)hi='С '+Math.round(prev.detail.pace-info.pace)+' сек/км по-бързо от миналия път';
+  else if(type==='run'&&prev&&info.km&&prev.detail.km&&info.km-prev.detail.km>=.3)hi='С '+String(Math.round((info.km-prev.detail.km)*10)/10).replace('.',',')+' км повече от миналия път';
+  else if(type==='strength'&&info.hits===info.total){hi='Всички серии на целта';party=true;}
+  else if(type==='strength'&&prev&&prev.detail.hits!=null&&info.hits>prev.detail.hits)hi='С '+(info.hits-prev.detail.hits)+' серии повече на целта от миналия път';
+  else if(wk>=6){hi='Пълна седмица — 6 от 6';party=true;}
+  else if(type!=='stretch'&&wk>=1)hi=ord(wk)+' тренировка тази седмица';
+  const titles=type==='stretch'?['Готово.']:total===1?['Първата е факт!']:['Браво, Викторе!','Свършено, Викторе!','Силна работа!','Това беше!'];
+  const pool=['Никой не видя тази тренировка. Ще я видят резултатите.','Не чака мотивация. Просто я свърши.',
+    'Още една победа над „от понеделник“.','Тялото ти току-що стана малко по-силно. Буквално.',
+    'Обещание към себе си — изпълнено.','Така се прави: тихо, редовно, без извинения.',
+    'Днешното усилие е утрешната сила.','Формата не идва от една голяма тренировка, а от много като тази.',
+    'Хората, които изглеждат така, както искаш, правят точно това — пак и пак.','Утрешният ти Виктор вече ти благодари.'];
+  let msg=pool[(total*3+now.getDate())%pool.length];
+  if(type==='stretch')msg=h>=20?'Лека нощ. Утре ще станеш по-лек и по-свеж.':'Разтегнатото тяло се възстановява по-бързо.';
+  else if(total===1)msg='Най-трудната тренировка е първата. Вече е зад гърба ти.';
+  else if(h>=21&&!party)msg='Късно е, а ти пак го направи. Това е разликата.';
+  else if(h<9&&!party)msg='Денят започна с победа. Останалото е бонус.';
+  $('done-t').textContent=titles[(total+now.getDate())%titles.length];$('done-s').textContent=sum;$('done-m').textContent='„'+msg+'“';
+  const hiEl=$('done-hi');hiEl.textContent=hi;hiEl.style.display=hi?'inline-flex':'none';
+  $('done-st').innerHTML=(type==='stretch'?'':'<div><b>'+wk+'<i>/6</i></b>седмица</div><div><b>'+st+'</b>'+(st===1?'ден подред':'дни подред')+'</div>')+'<div><b>'+total+'</b>общо</div>';
+  const ov=$('done-ov');ov.classList.remove('on');void ov.offsetWidth;ov.classList.add('on');
+  $('done-conf').innerHTML=party?Array.from({length:28},(_,i)=>'<i style="left:'+(4+Math.random()*92)+'%;animation-delay:'+(Math.random()*.5).toFixed(2)+'s;animation-duration:'+(1.6+Math.random()*1.2).toFixed(2)+'s;transform:rotate('+Math.round(Math.random()*360)+'deg);'+(i%3?'':'background:var(--ink-2);')+'"></i>').join(''):'';
+  vib(party?[60,40,60,40,160]:[80,50,80]);
+  say($('done-t').textContent.replace(/[!.]/g,'')+'. '+(hi?hi+'. ':''));}
 document.getElementById('done-ok').addEventListener('click',()=>{document.getElementById('done-ov').classList.remove('on');
   document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
 function renderHome(){

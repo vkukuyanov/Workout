@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Тренировка">
-<link rel="apple-touch-icon" href="icon-180.png?v=5">
+<link rel="apple-touch-icon" href="icon-180.png?v=6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -189,17 +189,18 @@
   .pd.cur{background:var(--gold);} .exrow.cur .n{color:var(--gold);}
   .sw.on{background:var(--gold);}
   #home .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  #home .brand{display:flex;align-items:center;gap:10px}#home .logo{width:30px;height:30px;border-radius:8px;display:block}
   #home .date{font-size:14px;color:var(--muted);font-weight:500}
   #home .streak{font-size:16px;font-weight:800;color:var(--ink-2)}
   #home .streak.hot{color:var(--gold)}
   #home h1.hh{margin-bottom:4px!important}
   .sline{font-size:14px;color:var(--muted);margin:0 0 16px;font-weight:500}
   .sline.warn{color:var(--gold);font-weight:600}
-  #home h1.hh{font-size:34px;font-weight:800;letter-spacing:-.01em;margin-bottom:18px}
+  #home h1.hh{font-size:28px;font-weight:800;letter-spacing:-.01em;margin-bottom:18px}
   .hero{background:var(--card);border-radius:24px;padding:20px}
   .hero .k{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-  .hero .t{font-size:36px;font-weight:800;margin:3px 0 2px;letter-spacing:-.01em}
-  .hero .m{font-size:15px;color:var(--ink-2);font-weight:500}
+  .hero .t{font-size:29px;font-weight:800;margin:3px 0 2px;letter-spacing:-.01em}
+  .hero .m{font-size:14px;color:var(--ink-2);font-weight:500}
   .chips{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 18px}
   .chip{font-size:12.5px;font-weight:600;background:var(--card-2);color:var(--ink-2);padding:6px 10px;border-radius:20px}
   .tg{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
@@ -282,7 +283,7 @@
 </div></div>
 <div class="wrap">
   <div id="home">
-    <div class="top"><span class="date" id="h-date"></span><span class="streak" id="streak"></span></div>
+    <div class="top"><span class="brand"><img class="logo" src="icon-180.png?v=6" alt=""><span class="date" id="h-date"></span></span><span class="streak" id="streak"></span></div>
     <h1 class="hh">Днес</h1>
     <div id="streak-line" class="sline"></div>
     <div class="hero" id="h-hero"></div>
@@ -1548,15 +1549,7 @@ function renderHome(){
     h+='<div class="m">12 упражнения · около '+fi.min+' минути</div><div style="height:18px"></div>'+
       '<button class="b-main full" data-go="func">Започни</button>';
   }else if(type==='strength'){
-    const plan=window.__strPlan||[];
-    const ses=log.filter(x=>x.type==='strength'&&x.detail&&x.detail.ex);
-    h+='<div class="m">'+(WINTER?'загрей вкъщи · навън около 12 минути':'уредите в двора · около 35 минути')+'</div><div style="margin:10px 0 16px">';
-    plan.forEach(e=>{const past=ses.map(x=>x.detail.ex[e.n]).filter(Boolean);
-      const last=past[0],ready=past.length>=2&&past[0].h>=past[0].s&&past[1].h>=past[1].s;
-      const sub=last?('миналия път '+last.h+'/'+last.s+' серии на целта'):'първи път';
-      const r=ready?'<div class="r up">по-трудно<small>3 сек спускане</small></div>':'<div class="r">'+e.s+' серии<small>'+e.t.split(' · ')[0]+'</small></div>';
-      h+='<div class="tg"><div><div class="n">'+e.n+'</div><div class="s">'+sub+'</div></div>'+r+'</div>';});
-    h+='</div><button class="b-main full" data-go="strength">Започни със загрявката</button>';
+    h+='<div class="m">'+(WINTER?'около 12 минути · първо загрявка вкъщи':'около 35 минути')+'</div><div style="height:18px"></div><button class="b-main full" data-go="strength">Започни</button>';
   }else if(type==='rest'){
     h+='<div class="m">Мускулите растат, докато почиват. По желание — разтягане в леглото вечерта.</div><div style="height:18px"></div>'+
       '<button class="b-alt full" data-go="stretch">Разтягане · '+(window.__stretchMin||9)+' мин</button>';
@@ -1604,7 +1597,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261006164821';
+const BUILD='20261006170349';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

@@ -308,6 +308,9 @@
       <div class="set-row"><div><div class="n">Копие на тренировките</div><div class="s" id="bk-state">Записани на телефона</div></div>
         <div style="display:flex;gap:14px"><button class="lnk" id="bk-save">Свали</button><button class="lnk" id="bk-load">Върни</button></div></div>
       <input type="file" id="bk-file" accept="application/json,.json" style="display:none">
+      <div class="set-row" style="flex-wrap:wrap"><div style="flex:1;min-width:200px"><div class="n">Копие в GitHub</div><div class="s" id="gh-state">Не е свързано</div></div>
+        <button class="lnk" id="gh-off" style="display:none">Изключи</button></div>
+      <div id="gh-form" style="display:none;gap:8px;margin:2px 0 12px"><input id="gh-tok" type="password" autocomplete="off" placeholder="Постави ключа тук" style="flex:1;min-width:0;font:15px 'Sofia Sans',sans-serif;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card-2);color:var(--ink)"><button class="lnk" id="gh-go">Свържи</button></div>
     </div>
   </div>
 
@@ -745,7 +748,7 @@ let dbDoc=null,cloudQ=Promise.resolve(),cloudState='local';
 function setCloud(st){cloudState=st;const el=document.getElementById('cloud-status');
   if(el)el.textContent=st==='synced'?'Записва се в облака — видимо от всяко устройство.':
     st==='error'?'Облакът не отговаря — пазя локално и ще синхронизирам по-късно.':'Записва се на този телефон.';}
-function pushCloud(list){if(!dbDoc)return;
+function pushCloud(list){ghPush();if(!dbDoc)return;
   cloudQ=cloudQ.then(()=>dbDoc.set({sessions:list,updated:Date.now()}))
     .then(()=>setCloud('synced')).catch(()=>setCloud('error'));}
 async function initCloud(){
@@ -1582,6 +1585,42 @@ document.getElementById('home').addEventListener('click',e=>{const b=e.target.cl
 document.getElementById('back').addEventListener('click',()=>{
   ['c-start','r-start','x-start','f-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
   document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
+// ---------- GitHub copy: every workout also goes to the private repo vkukuyanov/workout-data (log.json) ----------
+const GH_URL='https://api.github.com/repos/vkukuyanov/workout-data/contents/log.json';
+let ghSha=null,ghT=null,ghBusy=false;
+const ghTok=()=>load('wt_gh_token','');
+const b64e=t=>btoa(unescape(encodeURIComponent(t))),b64d=t=>decodeURIComponent(escape(atob(t.replace(/\s/g,''))));
+function ghState(msg,err){const el=document.getElementById('gh-state');const on=!!ghTok();
+  const f=document.getElementById('gh-form'),off=document.getElementById('gh-off');
+  if(f)f.style.display=on?'none':'flex';if(off)off.style.display=on?'inline-block':'none';
+  if(!el)return;el.style.color=err?'var(--work)':'';
+  el.textContent=msg||(on?'Свързано · последно записано '+(load('wt_gh_last','')||'—'):'Не е свързано — тренировките са само на телефона');}
+async function ghReq(method,body){const r=await fetch(GH_URL+(method==='GET'?'?t='+Date.now():''),{method,cache:'no-store',
+  headers:{'Authorization':'Bearer '+ghTok(),'Accept':'application/vnd.github+json'},body:body?JSON.stringify(body):undefined});return r;}
+async function ghPull(){if(!ghTok())return false;
+  const r=await ghReq('GET');if(r.status===404){ghSha=null;return true;}
+  if(r.status===401||r.status===403){ghState('Ключът не става — постави нов',true);return false;}
+  if(!r.ok)throw new Error(r.status);
+  const j=await r.json();ghSha=j.sha;let remote=[];try{remote=JSON.parse(b64d(j.content)).sessions||[];}catch(e){}
+  const cur=load('wt_log',[]),merged=mergeLogs(cur,remote);
+  if(merged.length!==cur.length){store('wt_log',merged);renderHist();renderStreak();renderHome();bkState();}
+  return true;}
+async function ghWrite(){const list=load('wt_log',[]);
+  const body={message:'Тренировки '+localISO()+' ('+list.length+')',content:b64e(JSON.stringify({sessions:list,updated:new Date().toISOString()},null,1))};
+  if(ghSha)body.sha=ghSha;const r=await ghReq('PUT',body);
+  if(r.ok){ghSha=(await r.json()).content.sha;const n=new Date();store('wt_gh_last',n.getDate()+'.'+(n.getMonth()+1)+' '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'));return 'ok';}
+  return r.status;}
+async function ghSync(){if(!ghTok()||ghBusy)return;ghBusy=true;
+  try{if(!await ghPull())return;let st=await ghWrite();
+    if(st===409||st===422){await ghPull();st=await ghWrite();}
+    if(st==='ok')ghState();else if(st===401||st===403)ghState('Ключът не става — постави нов',true);else if(st===404)ghState('Няма папка workout-data в GitHub',true);else ghState('GitHub не отговаря — ще пробвам пак',true);
+  }catch(e){ghState('Няма интернет — ще запиша по-късно',true);}finally{ghBusy=false;}}
+function ghPush(){if(!ghTok())return;clearTimeout(ghT);ghT=setTimeout(ghSync,1500);}
+document.getElementById('gh-go').addEventListener('click',async()=>{const v=document.getElementById('gh-tok').value.trim();if(!v)return;
+  store('wt_gh_token',v);document.getElementById('gh-tok').value='';ghState('Свързвам…');await ghSync();});
+document.getElementById('gh-off').addEventListener('click',()=>{localStorage.removeItem('wt_gh_token');ghState();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')ghSync();});
+ghState();setTimeout(ghSync,800);
 // one-time restore of the 4-day streak lost when the home-screen icon was re-added (7 Oct 2026)
 (function(){if(location.protocol!=='https:'||load('wt_restored_1',false))return;
   const t=(d,h)=>new Date(d+'T'+h+':00').getTime();
@@ -1606,7 +1645,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261007154700';
+const BUILD='20261007162952';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

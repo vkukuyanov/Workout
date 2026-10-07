@@ -36,7 +36,7 @@
   html,body{background:var(--bg);color:var(--ink);
     font-family:'Sofia Sans',system-ui,sans-serif;min-height:100vh;
     -webkit-font-smoothing:antialiased;}
-  .wrap{max-width:440px;margin:0 auto;padding:26px 20px calc(44px + env(safe-area-inset-bottom));}
+  .wrap{max-width:440px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 20px calc(44px + env(safe-area-inset-bottom));}
 
   /* header */
   .head{display:flex;justify-content:space-between;align-items:baseline;
@@ -1582,6 +1582,15 @@ document.getElementById('home').addEventListener('click',e=>{const b=e.target.cl
 document.getElementById('back').addEventListener('click',()=>{
   ['c-start','r-start','x-start','f-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
   document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
+// one-time restore of the 4-day streak lost when the home-screen icon was re-added (7 Oct 2026)
+(function(){if(location.protocol!=='https:'||load('wt_restored_1',false))return;
+  const t=(d,h)=>new Date(d+'T'+h+':00').getTime();
+  const R=[{"date":"2026-10-02","detail":{"ex":["Птица-куче","Добро утро с лоста","Лицеви опори тип щука","Странични стъпки клек","Скачане на въже (имитация)","Обратни напади","Ножица с крака","Лицеви опори","Бицепсово сгъване с лоста","Бързо ходене на място с високи ръце"]},"id":"muqiqdfdrcdm","ts":1790918664313,"type":"core"},{"date":"2026-09-25","detail":null,"id":"muggrg72xo70","ts":1790310693566,"type":"core"}].concat([
+    {id:'r-1003',date:'2026-10-03',ts:t('2026-10-03','10:00'),type:'run',detail:{min:25,restored:1}},
+    {id:'r-1005',date:'2026-10-05',ts:t('2026-10-05','19:00'),type:'func',detail:{ex:[],n:12,restored:1}},
+    {id:'r-1006',date:'2026-10-06',ts:t('2026-10-06','18:30'),type:'strength',detail:{hits:9,total:9,ex:{},restored:1}}]);
+  const cur=load('wt_log',[]),have=new Set(cur.filter(x=>x.type!=='stretch').map(x=>x.date));
+  const add=R.filter(x=>!have.has(x.date));store('wt_log',mergeLogs(cur,add));store('wt_restored_1',true);})();
 renderHist();renderStreak();renderHome();
 document.getElementById('test-snd').addEventListener('click',()=>{unlockAudio();unlockVoice();
   setTimeout(()=>{play('work');const st=audioState(),el=document.getElementById('awake-status');
@@ -1597,7 +1606,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261006170349';
+const BUILD='20261007154700';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

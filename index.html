@@ -236,6 +236,12 @@
   .set-row:last-child{border-bottom:none}
   .set-row .n{font-size:14.5px;font-weight:500}.set-row .s{font-size:12.5px;color:var(--muted);margin-top:2px}
   .lnk{background:none;border:none;color:var(--gold);font:600 14px 'Sofia Sans',sans-serif;padding:4px 0;flex:none;width:auto}
+  .tr{display:flex;align-items:center;gap:14px}
+  .gear{background:none;border:none;color:var(--muted);padding:4px;margin:-4px;display:flex;flex:none;width:auto}
+  .set-ov{position:fixed;inset:0;z-index:45;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
+  .set-ov.on{display:block;animation:dfade .2s ease}
+  .set-in{max-width:440px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom))}
+  .set-hd{display:flex;justify-content:space-between;align-items:center;margin:6px 0 16px}.set-hd span{font-size:28px;font-weight:800;letter-spacing:-.01em}
   .done-ov{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(6px)}
   .done-ov.on{display:flex;animation:dfade .35s ease}
   .done-card{position:relative;overflow:hidden;width:100%;max-width:380px;background:var(--card);border-radius:30px;padding:32px 24px 22px;text-align:center;animation:dpop .5s cubic-bezier(.2,1.4,.4,1)}
@@ -271,6 +277,7 @@
 </style>
 </head>
 <body>
+<div id="set-ov" class="set-ov"><div class="set-in"><div class="set-hd"><span>Настройки</span><button class="lnk" id="set-close">Готово</button></div><div id="set-slot"></div></div></div>
 <div id="done-ov" class="done-ov"><div class="done-card">
   <div class="done-conf" id="done-conf"></div>
   <svg class="done-ic" viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--line)" stroke-width="6"/><circle class="dr" cx="40" cy="40" r="34" fill="none" stroke="var(--gold)" stroke-width="6" stroke-linecap="round" transform="rotate(-90 40 40)"/><path class="dc" d="M26 41l10 10 19-21" fill="none" stroke="var(--gold)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -283,7 +290,7 @@
 </div></div>
 <div class="wrap">
   <div id="home">
-    <div class="top"><span class="brand"><img class="logo" src="icon-180.png?v=6" alt=""><span class="date" id="h-date"></span></span><span class="streak" id="streak"></span></div>
+    <div class="top"><span class="brand"><img class="logo" src="icon-180.png?v=6" alt=""><span class="date" id="h-date"></span></span><span class="tr"><span class="streak" id="streak"></span><button class="gear" id="gear" aria-label="Настройки"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></span></div>
     <h1 class="hh">Днес</h1>
     <div id="streak-line" class="sline"></div>
     <div class="hero" id="h-hero"></div>
@@ -298,8 +305,7 @@
     <button class="mc wide" data-go="stretch" id="h-stretch"><div><div class="t">Разтягане</div><div class="s">9 минути · в леглото преди сън</div></div><span class="go">›</span></button>
     <div class="hlbl"><span class="l">Последни сесии</span></div>
     <div class="card" style="padding:6px 18px 14px"><div id="s-hist"><div class="sub">Още няма записани сесии.</div></div></div>
-    <div class="hlbl"><span class="l">Настройки</span></div>
-    <div class="card" style="padding:4px 18px">
+    <div class="card" id="set-card" style="padding:4px 18px">
       <div class="set-row"><div><div class="n">Глас</div><div class="s">Казва упражненията на глас</div></div><button class="lnk" id="voice-btn">Глас</button></div>
       <div class="set-row"><div><div class="n">Звук</div><div class="s" id="snd-state">Провери дали се чува</div></div><button class="lnk" id="test-snd">Тест</button></div>
       <div class="set-row"><div><div class="n">Тих режим</div><div class="s">Без скачане в Ядро и Функционална</div></div><div class="sw" id="c-quiet"></div></div>
@@ -1585,6 +1591,9 @@ document.getElementById('home').addEventListener('click',e=>{const b=e.target.cl
 document.getElementById('back').addEventListener('click',()=>{
   ['c-start','r-start','x-start','f-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
   document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
+document.getElementById('set-slot').appendChild(document.getElementById('set-card'));
+document.getElementById('gear').addEventListener('click',()=>{document.getElementById('set-ov').classList.add('on');});
+document.getElementById('set-close').addEventListener('click',()=>{document.getElementById('set-ov').classList.remove('on');});
 // ---------- GitHub copy: every workout also goes to vkukuyanov/Workout, branch 'data' (log.json); Pages builds only from main ----------
 const GH_URL='https://api.github.com/repos/vkukuyanov/Workout/contents/log.json';
 let ghSha=null,ghT=null,ghBusy=false;
@@ -1600,7 +1609,7 @@ async function ghReq(method,body){const r=await fetch(GH_URL+(method==='GET'?'?r
 async function ghPull(){if(!ghTok())return false;
   const r=await ghReq('GET');if(r.status===404){ghSha=null;return true;}
   if(r.status===401||r.status===403){ghState('Ключът не става — постави нов',true);return false;}
-  if(!r.ok)throw new Error(r.status);
+  if(!r.ok){let m='';try{m=(await r.json()).message||'';}catch(e){}throw new Error('четене '+r.status+' '+m);}
   const j=await r.json();ghSha=j.sha;let remote=[];try{remote=JSON.parse(b64d(j.content)).sessions||[];}catch(e){}
   const cur=load('wt_log',[]),merged=mergeLogs(cur,remote);
   if(merged.length!==cur.length){store('wt_log',merged);renderHist();renderStreak();renderHome();bkState();}
@@ -1609,12 +1618,13 @@ async function ghWrite(){const list=load('wt_log',[]);
   const body={branch:'data',message:'Тренировки '+localISO()+' ('+list.length+')',content:b64e(JSON.stringify({sessions:list,updated:new Date().toISOString()},null,1))};
   if(ghSha)body.sha=ghSha;const r=await ghReq('PUT',body);
   if(r.ok){ghSha=(await r.json()).content.sha;const n=new Date();store('wt_gh_last',n.getDate()+'.'+(n.getMonth()+1)+' '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'));return 'ok';}
+  try{window.__ghErr=r.status+' '+((await r.json()).message||'');}catch(e){window.__ghErr=String(r.status);}
   return r.status;}
 async function ghSync(){if(!ghTok()||ghBusy)return;ghBusy=true;
   try{if(!await ghPull())return;let st=await ghWrite();
     if(st===409||st===422){await ghPull();st=await ghWrite();}
-    if(st==='ok')ghState();else if(st===401||st===403)ghState('Ключът не става — постави нов',true);else if(st===404)ghState('В GitHub липсва мястото за копието',true);else ghState('GitHub не отговаря — ще пробвам пак',true);
-  }catch(e){ghState('Няма интернет — ще запиша по-късно',true);}finally{ghBusy=false;}}
+    if(st==='ok')ghState();else if(st===401||st===403)ghState('Ключът не става — постави нов',true);else if(st===404)ghState('В GitHub липсва мястото за копието',true);else ghState('GitHub отказа: '+(window.__ghErr||st),true);
+  }catch(e){ghState('Не стигам до GitHub: '+(e&&e.message||e),true);}finally{ghBusy=false;}}
 function ghPush(){if(!ghTok())return;clearTimeout(ghT);ghT=setTimeout(ghSync,1500);}
 document.getElementById('gh-go').addEventListener('click',async()=>{const v=document.getElementById('gh-tok').value.trim();if(!v)return;
   store('wt_gh_token',v);document.getElementById('gh-tok').value='';ghState('Свързвам…');await ghSync();});
@@ -1645,7 +1655,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261007164022';
+const BUILD='20261007165500';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

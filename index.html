@@ -543,7 +543,7 @@ function play(k){
 function vib(p){try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
 // ---- cue track: every beep of a timed block rendered into ONE audio file and played like music.
 // iPhone keeps music playing when the screen locks, so the beeps keep coming even if the page sleeps.
-const TR_SR=6000;let trackEl=null,trackUrl=null,trackOn=false;
+const TR_SR=6000;let trackEl=null,trackUrl=null,trackOn=false,trackOwner=null;
 function buildTrack(total,events){
   const n=Math.ceil(total*TR_SR),buf=new ArrayBuffer(44+n),v=new DataView(buf),u8=new Uint8Array(buf);
   const w=(o,str)=>{for(let i=0;i<str.length;i++)v.setUint8(o+i,str.charCodeAt(i));};
@@ -555,14 +555,15 @@ function buildTrack(total,events){
       u8[44+pos+i]=128+Math.round(Math.sin(2*Math.PI*f*i/TR_SR)*90*env);}pos+=m;});});
   return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
 }
-function startTrack(total,events){ // must run inside a tap
+function startTrack(total,events,owner){ // must run inside a tap; owner: which workout the track belongs to
   try{if(!trackEl){trackEl=new Audio();trackEl.setAttribute('playsinline','');trackEl.addEventListener('ended',()=>{trackOn=false;});
       // iOS may pause the track (e.g. when speech starts); then the page must make the sounds itself
       trackEl.addEventListener('pause',()=>{trackOn=false;});}
-    if(trackUrl)URL.revokeObjectURL(trackUrl);trackUrl=buildTrack(total,events);trackEl.src=trackUrl;
+    if(trackUrl)URL.revokeObjectURL(trackUrl);trackUrl=buildTrack(total,events);trackEl.src=trackUrl;trackOwner=owner||null;
     trackOn=true;const p=trackEl.play();if(p&&p.catch)p.catch(()=>{trackOn=false;});}catch(e){trackOn=false;}}
 function resumeTrack(offset){if(!trackEl||!trackUrl)return;
-  try{trackEl.currentTime=Math.max(0,offset);trackOn=true;const p=trackEl.play();if(p&&p.catch)p.catch(()=>{trackOn=false;});}catch(e){trackOn=false;}}
+  try{const seek=()=>{try{trackEl.currentTime=Math.max(0,offset);}catch(e){}};seek();
+    if(trackEl.readyState<1)trackEl.addEventListener('loadedmetadata',seek,{once:true});trackOn=true;const p=trackEl.play();if(p&&p.catch)p.catch(()=>{trackOn=false;});}catch(e){trackOn=false;}}
 function stopTrack(){trackOn=false;try{trackEl&&trackEl.pause();}catch(e){}}
 function trackPlaying(){return !!(trackOn&&trackEl&&!trackEl.paused&&!trackEl.ended);}
 function tickEvents(t0,d,ev){for(let k=3;k>=1;k--)if(d>k)ev.push([t0+d-k,'tick']);}
@@ -1018,13 +1019,20 @@ function onBan(e,after){const b=e.target.closest('[data-ban]');if(!b)return fals
   b.outerHTML='<span class="sub" style="display:block;margin-top:8px">Махнато — няма да го има повече.</span>';renderBanned();if(after)after();return true;}
 function renderBanned(){const el=document.getElementById('ban-state');if(!el)return;const n=banned().length;
   el.textContent=n?n+' махнати упражнения':'Няма махнати';document.getElementById('ban-reset').style.display=n?'':'none';}
+// a started timed workout survives the app being closed: reopened the same day, it waits paused where it stopped
+const dropLive=k=>{try{localStorage.removeItem(k);}catch(e){}};
+function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropLive(k);return null;}
 // ================= CORE =================
 (function(){
   const names=Object.keys(LIB).filter(k=>LIB[k].c);
   const baseCats=['кардио','функционално','долна част','корем','горна част'];
   let bar=load('wt_bar',true);
   const cats=()=>bar?baseCats.concat(['с лост']):baseCats;
-  let quiet=load('wt_quiet',false),ex=[],ph=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,swDone=false;
+  let quiet=load('wt_quiet',false),ex=[],ph=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,swDone=false,liveT=0;
+  const LIVE='wt_live_core';
+  function saveLive(){if(idx<0||idx>=ph.length)return;liveT=Date.now();
+    store(LIVE,{date:localISO(),ex,ph,idx,left:run?Math.max(0,end-Date.now()):paused});}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&run)saveLive();});
   const $=id=>document.getElementById(id);
   const ring=$('c-ring'),num=$('c-num'),nm=$('c-name'),phs=$('c-phase'),nxt=$('c-next'),
     cue=$('c-cue'),dots=$('c-dots'),start=$('c-start'),shuf=$('c-shuffle'),reset=$('c-reset'),
@@ -1091,42 +1099,46 @@ function renderBanned(){const el=document.getElementById('ban-state');if(!el)ret
     if(idx>=ph.length){run=false;clearInterval(h);keepAwake(false);setBodyPhase(null);
       phs.textContent='готово';nm.textContent='Кръгът приключи 💪';num.textContent='00:00';nxt.textContent='';
       cue.textContent='Натисни старт за нов кръг с нови упражнения.';
-      ring.setAttribute('stroke-dashoffset','0');start.textContent='Нов кръг';cueEnd();logSession('core',{ex:ex.slice()});
+      ring.setAttribute('stroke-dashoffset','0');start.textContent='Нов кръг';cueEnd();dropLive(LIVE);logSession('core',{ex:ex.slice()});
       showDone('core',{n:ex.length,min:Math.round(ph.reduce((a,q)=>a+q.d,0)/60)});return;}
     end=Date.now()+ph[idx].d*1000;lastSec=99;swDone=false;
     const cp=ph[idx];
     if(cp.t==='work'){cueWork();say(cp.l);}
     else{cueRest();const nw=ph[idx+1];say(cp.l==='Подготви се'?'Подготви се. Първо: '+(nw?nw.l:''):(nw?('Почивка. Следва '+nw.l):'Почивка'));}
-    paint(cp.d);}
+    paint(cp.d);saveLive();}
   function tick(){if(!run)return;const rem=(end-Date.now())/1000;
     const s=Math.ceil(rem);const cp=ph[idx];
     if(!swDone&&cp&&cp.t==='work'&&twoSided(cp.l)&&rem<=cp.d/2){swDone=true;sideCue();}
     if(s<=3&&s>0&&s!==lastSec){lastSec=s;tickBeep();}
-    if(rem<=0){next();return;}paint(rem);}
+    if(rem<=0){next();return;}paint(rem);if(Date.now()-liveT>3000)saveLive();}
   function phaseStart(i){let t=0;for(let k=0;k<i;k++)t+=ph[k].d;return t;}
   function coreTrack(){const ev=[];let t=0;
     ph.forEach(p=>{ev.push([t,p.t==='work'?'work':'rest']);tickEvents(t,p.d,ev);t+=p.d;});ev.push([t,'end']);sideEvents(ph,ev);
-    startTrack(t+0.8,ev);}
+    startTrack(t+0.8,ev,'core');}
   start.addEventListener('click',()=>{
     if(idx>=ph.length){build(true);buildDots();renderList();idx=-1;}
-    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';return;}
+    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';saveLive();return;}
     run=true;keepAwake(true);start.textContent='Пауза';
     if(idx<0){markSeen();coreTrack();next();}
-    else{const left=paused>0?paused:0;end=Date.now()+left;resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;}
+    else{const left=paused>0?paused:0;end=Date.now()+left;if(trackOwner!=='core')coreTrack();resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;saveLive();}
     h=setInterval(tick,150);});
-  shuf.addEventListener('click',()=>{if(run)return;stopTrack();build(true);buildDots();renderList();idx=-1;paused=0;
+  shuf.addEventListener('click',()=>{if(run)return;stopTrack();dropLive(LIVE);build(true);buildDots();renderList();idx=-1;paused=0;
     start.textContent='Старт';paint(ph[0].d);});
-  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();idx=-1;paused=0;
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();dropLive(LIVE);idx=-1;paused=0;
     start.textContent='Старт';paint(ph[0].d);
     document.querySelectorAll('#c-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
   swb.classList.toggle('on',bar);
   swb.addEventListener('click',()=>{if(run)return;bar=!bar;swb.classList.toggle('on',bar);store('wt_bar',bar);setTimeout(()=>window.renderHome&&renderHome(),0);
-    build();buildDots();renderList();idx=-1;paint(ph[0].d);});
+    dropLive(LIVE);start.textContent='Старт';build();buildDots();renderList();idx=-1;paint(ph[0].d);});
   window.__coreRefresh=()=>{if(run||idx>=0)return;build();buildDots();renderList();paint(ph[0].d);};
   sw.classList.toggle('on',quiet);
   sw.addEventListener('click',()=>{if(run)return;quiet=!quiet;sw.classList.toggle('on',quiet);store('wt_quiet',quiet);
-    build();buildDots();renderList();idx=-1;paint(ph[0].d);});
-  build();buildDots();renderList();paint(ph[0].d);
+    dropLive(LIVE);start.textContent='Старт';build();buildDots();renderList();idx=-1;paint(ph[0].d);});
+  const sv=liveOf(LIVE);
+  if(sv&&Array.isArray(sv.ex)&&sv.ex.every(n=>LIB[n])&&Array.isArray(sv.ph)&&sv.idx>=0&&sv.idx<sv.ph.length){
+    ex=sv.ex;ph=sv.ph;idx=sv.idx;paused=Math.max(1000,sv.left||0);buildDots();renderList();start.textContent='Продължи';paint(paused/1000);
+    window.__resume=window.__resume||'core';}
+  else{dropLive(LIVE);build();buildDots();renderList();paint(ph[0].d);}
 })();
 
 // ================= STRENGTH =================
@@ -1319,7 +1331,11 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
     dots=$('f-dots'),start=$('f-start'),shuf=$('f-shuffle'),reset=$('f-reset'),list=$('f-list');
   const W=40,R=20,BR=30,WU=30;
   let QUIET_ONLY=[],FAM=[],famOf=()=>-1;
-  let blocks=[],ph=[],ex=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,swDone=false;
+  let blocks=[],ph=[],ex=[],idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,swDone=false,liveT=0;
+  const LIVE='wt_live_func';
+  function saveLive(){if(idx<0||idx>=ph.length)return;liveT=Date.now();
+    store(LIVE,{date:localISO(),ex,ph,blocks,idx,left:run?Math.max(0,end-Date.now()):paused});}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&run)saveLive();});
   const all=Object.keys(LIB);
   const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
   function recency(){const r={};
@@ -1402,34 +1418,38 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
   function next(){idx++;
     if(idx>=ph.length){run=false;clearInterval(h);keepAwake(false);phs.textContent='готово';nm.textContent='Тренировката приключи 💪';
       num.textContent='00:00';nxt.textContent='';cue.textContent='Натисни старт за нова с нови упражнения.';start.textContent='Нова тренировка';
-      ring.setAttribute('stroke-dashoffset','0');cueEnd();logSession('func',{ex:ex.slice(),n:ex.length-2});
+      ring.setAttribute('stroke-dashoffset','0');cueEnd();dropLive(LIVE);logSession('func',{ex:ex.slice(),n:ex.length-2});
       showDone('func',{n:ex.length-2,min:Math.round(total()/60)});return;}
     end=Date.now()+ph[idx].d*1000;lastSec=99;swDone=false;const p=ph[idx];
     if(p.t==='work'){cueWork();const prev=ph.slice(0,idx).reverse().find(q=>q.t==='work');
       say(p.l);}
     else{cueRest();const nw=ph[idx+1];say(p.l==='Подготви се'?'Подготви се. Първо: '+(nw?nw.l:''):(nw?'Почивка. Следва '+nw.l:'Почивка'));}
-    paint(p.d);}
+    paint(p.d);saveLive();}
   function tick(){if(!run)return;const rem=(end-Date.now())/1000,s=Math.ceil(rem);const cp=ph[idx];
     if(!swDone&&cp&&cp.t==='work'&&twoSided(cp.l)&&rem<=cp.d/2){swDone=true;sideCue();}
     if(s<=3&&s>0&&s!==lastSec){lastSec=s;tickBeep();}
-    if(rem<=0){next();return;}paint(rem);}
+    if(rem<=0){next();return;}paint(rem);if(Date.now()-liveT>3000)saveLive();}
   function phaseStart(i){let t=0;for(let k=0;k<i;k++)t+=ph[k].d;return t;}
   function track(){const ev=[];let t=0;ph.forEach(p=>{ev.push([t,p.t==='work'?'work':'rest']);tickEvents(t,p.d,ev);t+=p.d;});
-    ev.push([t,'end']);sideEvents(ph,ev);startTrack(t+0.8,ev);}
+    ev.push([t,'end']);sideEvents(ph,ev);startTrack(t+0.8,ev,'func');}
   function markSeen(){const l=load('wt_func_seen',[]);l.unshift(ex.slice());store('wt_func_seen',l.slice(0,10));}
   start.addEventListener('click',()=>{
     if(idx>=ph.length){build(true);buildDots();renderList();idx=-1;}
-    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';return;}
+    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';saveLive();return;}
     run=true;keepAwake(true);start.textContent='Пауза';
     if(idx<0){markSeen();track();next();}
-    else{const left=paused>0?paused:0;end=Date.now()+left;resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;}
+    else{const left=paused>0?paused:0;end=Date.now()+left;if(trackOwner!=='func')track();resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;saveLive();}
     h=setInterval(tick,150);});
-  shuf.addEventListener('click',()=>{if(run)return;stopTrack();build(true);buildDots();renderList();idx=-1;paused=0;start.textContent='Старт';paint(0);});
-  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();idx=-1;paused=0;start.textContent='Старт';buildDots();paint(0);});
+  shuf.addEventListener('click',()=>{if(run)return;stopTrack();dropLive(LIVE);build(true);buildDots();renderList();idx=-1;paused=0;start.textContent='Старт';paint(0);});
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();dropLive(LIVE);idx=-1;paused=0;start.textContent='Старт';buildDots();paint(0);});
   // rebuild unless a session is running or paused halfway (a finished one gets fresh exercises)
   window.__funcRefresh=()=>{if(run||(idx>=0&&idx<ph.length))return;idx=-1;paused=0;start.textContent='Старт';build(true);buildDots();renderList();paint(0);};
   window.__funcInfo=()=>({min:Math.round(total()/60),n:ex.length});
-  build();buildDots();renderList();paint(0);
+  const sv=liveOf(LIVE),okList=l=>Array.isArray(l)&&l.every(n=>LIB[n]);
+  if(sv&&okList(sv.ex)&&Array.isArray(sv.blocks)&&sv.blocks.every(b=>b&&okList(b.w))&&Array.isArray(sv.ph)&&sv.idx>=0&&sv.idx<sv.ph.length){
+    ex=sv.ex;ph=sv.ph;blocks=sv.blocks;idx=sv.idx;paused=Math.max(1000,sv.left||0);buildDots();renderList();start.textContent='Продължи';paint(paused/1000);
+    window.__resume=window.__resume||'func';}
+  else{dropLive(LIVE);build();buildDots();renderList();paint(0);}
 })();
 
 // ================= STRETCH =================
@@ -1454,7 +1474,10 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
   STRETCH.forEach(x=>{const sides=x.s?[' · ляво',' · дясно']:[''];
     sides.forEach((sd,k)=>{ph.push({t:'move',l:x.n+sd,d:CH,x});ph.push({t:'hold',l:x.n+sd,d:x.d,x});});});
   const total=ph.reduce((a,p)=>a+p.d,0);
-  let idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,t0=0;
+  let idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,t0=0,liveT=0;
+  const LIVE='wt_live_stretch';
+  function saveLive(){if(idx<0||idx>=ph.length)return;liveT=Date.now();store(LIVE,{date:localISO(),idx,left:run?Math.max(0,end-Date.now()):paused});}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&run)saveLive();});
   function renderList(){list.innerHTML='';STRETCH.forEach((x,i)=>{
     const row=document.createElement('div');row.className='exrow';
     row.innerHTML='<div><div class="n">'+(i+1)+'. '+x.n+'</div><div class="c">'+(x.s?'всяка страна':'')+'</div></div><div class="v">'+(x.s?'2 × ':'')+x.d+'с</div>'+
@@ -1475,27 +1498,30 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
   function next(){idx++;
     if(idx>=ph.length){run=false;clearInterval(h);keepAwake(false);phs.textContent='готово';nm.textContent='Разтягането приключи';
       num.textContent='00:00';nxt.textContent='';cue.textContent='Добре свършено. Пий вода.';start.textContent='Отначало';
-      cueEnd();logSession('stretch',{min:Math.round(total/60)});showDone('stretch',{min:Math.round(total/60)});return;}
+      cueEnd();dropLive(LIVE);logSession('stretch',{min:Math.round(total/60)});showDone('stretch',{min:Math.round(total/60)});return;}
     end=Date.now()+ph[idx].d*1000;lastSec=99;const p=ph[idx];
     if(p.t==='hold'){cueWork();}else{cueRest();say(p.l);}
-    paint(p.d);}
+    paint(p.d);saveLive();}
   function tick(){if(!run)return;const rem=(end-Date.now())/1000,s=Math.ceil(rem);
     if(s<=3&&s>0&&s!==lastSec&&ph[idx].t==='hold'){lastSec=s;tickBeep();}
-    if(rem<=0){next();return;}paint(rem);}
+    if(rem<=0){next();return;}paint(rem);if(Date.now()-liveT>3000)saveLive();}
   function phaseStart(i){let t=0;for(let k=0;k<i;k++)t+=ph[k].d;return t;}
   function track(){const ev=[];let t=0;ph.forEach(p=>{ev.push([t,p.t==='hold'?'work':'rest']);if(p.t==='hold')tickEvents(t,p.d,ev);t+=p.d;});
-    ev.push([t,'end']);startTrack(t+0.8,ev);}
+    ev.push([t,'end']);startTrack(t+0.8,ev,'stretch');}
   start.addEventListener('click',()=>{
     if(idx>=ph.length){idx=-1;buildDots();}
-    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';return;}
+    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';saveLive();return;}
     run=true;keepAwake(true);start.textContent='Пауза';
     if(idx<0){track();next();}
-    else{const left=paused>0?paused:0;end=Date.now()+left;resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;}
+    else{const left=paused>0?paused:0;end=Date.now()+left;if(trackOwner!=='stretch')track();resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;saveLive();}
     h=setInterval(tick,150);});
-  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();idx=-1;paused=0;
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();dropLive(LIVE);idx=-1;paused=0;
     start.textContent='Старт';buildDots();paint(0);cue.textContent='Бавно дишане, без пружиниране. Задържаш на леко дърпане, не на болка.';});
   window.__stretchMin=Math.round(total/60);
   renderList();buildDots();paint(0);
+  const sv=liveOf(LIVE);
+  if(sv&&sv.idx>=0&&sv.idx<ph.length){idx=sv.idx;paused=Math.max(1000,sv.left||0);start.textContent='Продължи';paint(paused/1000);
+    window.__resume=window.__resume||'stretch';}
 })();
 
 // "How am I doing": three numbers computed from the log on the phone, nothing to enter
@@ -1651,6 +1677,7 @@ ghState();setTimeout(ghSync,800);
   const cur=load('wt_log',[]),have=new Set(cur.filter(x=>x.type!=='stretch').map(x=>x.date));
   const add=R.filter(x=>!have.has(x.date));store('wt_log',mergeLogs(cur,add));store('wt_restored_1',true);})();
 renderHist();renderStreak();renderHome();
+if(window.__resume)switchTab(window.__resume); // an unfinished workout from today: straight back into it, paused
 document.getElementById('test-snd').addEventListener('click',()=>{unlockAudio();unlockVoice();
   setTimeout(()=>{play('work');const st=audioState(),el=document.getElementById('awake-status');
     if(el&&!wantAwake){el.style.color=st==='blocked'?'var(--work)':'var(--rest)';
@@ -1665,15 +1692,21 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261008051329';
+const BUILD='20261008052556';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;
     const r=await fetch('./?u='+Date.now(),{cache:'no-store'});if(!r.ok)return;
     const m=(await r.text()).match(/const BUILD='(\d+)'/);
-    if(m&&m[1]!==BUILD&&m[1]>BUILD&&!busy())location.replace('./?v='+m[1]);
+    if(m&&m[1]!==BUILD&&m[1]>BUILD&&!busy()){
+      // at most one reload per new version, so a slow network with the offline copy can never loop
+      try{if(sessionStorage.getItem('wt_upd')===m[1])return;sessionStorage.setItem('wt_upd',m[1]);}catch(e){}
+      location.replace('./?v='+m[1]);}
   }catch(e){}}
 setTimeout(checkUpdate,1500);
+// ---- works without internet: sw.js keeps a copy of the page; the photos are saved once, in the background ----
+try{if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>caches.open('wt-v1'))
+  .then(c=>Object.values(PICS).forEach(n=>['_0','_1'].forEach(k=>{const u='img/'+n+k+'.jpg';c.match(u).then(m=>{if(!m)c.add(u).catch(()=>{});});}))).catch(()=>{});}catch(e){}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate();});
 // ---- keeping the training log safe ----
 // 1) ask the browser not to clear this site's storage; 2) a backup file the user can keep in Files/iCloud;

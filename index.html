@@ -782,9 +782,9 @@ async function initCloud(){
     if(window.__coreRefresh)window.__coreRefresh();
   }catch(e){setCloud('error');}
 }
-function logSession(type,detail){
-  const entry={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ts:Date.now(),
-    date:localISO(),type,detail:detail||null};
+function logSession(type,detail,when){const t=when||Date.now();
+  const entry={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ts:t,
+    date:localISO(new Date(t)),type,detail:detail||null};
   const l=mergeLogs([entry],load('wt_log',[]));
   store('wt_log',l);renderHist();renderStreak();renderHome();pushCloud(l);bkState();}
 // streak: built so you don't want to break it — it shows what you'd lose today, and your record to beat
@@ -1233,7 +1233,10 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
 (function(){
   const GOAL=4000;
   const ph=[];for(let i=0;i<6;i++){ph.push({t:'work',l:'Бързо темпо',d:60});ph.push({t:'rest',l:'Спокойно',d:120});}
-  let el=0,run=false,st=0,h=null,on=false,ii=-1,pe=0;
+  let el=0,run=false,st=0,h=null,on=false,ii=-1,pe=0,peLeft=0,liveT=0,t0=0;
+  // the run is kept on the phone every few seconds: if the app closes, it comes back paused;
+  // it is recorded by itself on "‹ Днес", and a run left unrecorded is recorded the next time the app opens on a later day
+  const LIVE='wt_live_run';
   let geoId=null,pts=[],dist=0,last=null,splits=[],nextKm=1000,lastKmT=0,gpsOk=false;
   const $=id=>document.getElementById(id);
   const logBtn=$('r-log'),logged=$('r-logged');let isLogged=false;
@@ -1287,7 +1290,11 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
     const card=$('r-last-card');card.style.display=runs.length?'':'none';
     $('r-last').innerHTML=runs.map(r=>{const [y,m,d]=r.date.split('-').map(Number);
       return '<div class="split"><span>'+d+'.'+m+'</span><span>'+String(r.detail.km).replace('.',',')+' км</span><b>'+fmtPace(r.detail.pace)+'</b></div>';}).join('');}
-  function tick(){if(!run)return;el=Date.now()-st;
+  function saveLive(){if(el<=0||isLogged)return;liveT=Date.now();const step=Math.max(1,Math.ceil(pts.length/300));
+    store(LIVE,{date:localISO(new Date(t0||Date.now())),t0,el,dist,splits,nextKm,lastKmT,on,ii,peLeft:run?pe-Date.now():peLeft,
+      pts:pts.filter((q,i)=>i%step===0||i===pts.length-1).map(q=>[+q.lat.toFixed(5),+q.lon.toFixed(5),q.t,Math.round(q.d)])});}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&run)saveLive();});
+  function tick(){if(!run)return;el=Date.now()-st;if(Date.now()-liveT>5000)saveLive();
     if(on){
       if(ii<0){ii=0;pe=Date.now()+ph[0].d*1000;cueWork();say(ph[0].l);lbl.textContent=ph[0].l;}
       else if(Date.now()>=pe){ii++;
@@ -1299,27 +1306,40 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
       document.querySelectorAll('#r-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<ii);d.classList.toggle('cur',i===ii);});}
     paint();}
   start.addEventListener('click',()=>{
-    if(run){run=false;clearInterval(h);keepAwake(false);stopTrack();start.textContent='Продължи';
+    if(run){run=false;clearInterval(h);keepAwake(false);stopTrack();start.textContent='Продължи';peLeft=pe-Date.now();saveLive();
       logBtn.disabled=isLogged||el<60000;if(pts.length>2)drawRoute(pts.map(p=>[p.lat,p.lon]),'Маршрут · '+fmtKm(dist)+' км');return;}
-    if(on){if(el===0){const ev=[];let t=0;ph.forEach(q=>{ev.push([t,q.t==='work'?'work':'rest']);tickEvents(t,q.d,ev);t+=q.d;});
-        ev.push([t,'end']);startTrack(t+0.8,ev);}else resumeTrack(el/1000);}
+    if(on){const mk=()=>{const ev=[];let t=0;ph.forEach(q=>{ev.push([t,q.t==='work'?'work':'rest']);tickEvents(t,q.d,ev);t+=q.d;});
+        ev.push([t,'end']);startTrack(t+0.8,ev,'run');};
+      if(el===0)mk();else{if(trackOwner!=='run')mk();resumeTrack(el/1000);pe=Date.now()+peLeft;}} // the interval clock waits during a pause too
+    if(el===0)t0=Date.now();
     geoStart();last=null; // after a pause, distance walked meanwhile is not counted
     run=true;keepAwake(true);st=Date.now()-el;start.textContent='Пауза';logBtn.disabled=true;
     if(el===0)say('Тръгваме. Ще ти казвам всеки километър.');h=setInterval(tick,250);});
-  logBtn.addEventListener('click',()=>{if(isLogged||run)return;const min=Math.round(el/60000);
-    const km=Math.round(dist/10)/100,pace=dist>=100?Math.round(el/1000/(dist/1000)):0;
-    logSession('run',{min,km,pace,splits:splits.map(Math.round),intervals:on});isLogged=true;logBtn.disabled=true;geoStop();
+  const runDetail=(el,dist,splits,on)=>({min:Math.round(el/60000),km:Math.round(dist/10)/100,pace:dist>=100?Math.round(el/1000/(dist/1000)):0,splits:splits.map(Math.round),intervals:!!on});
+  function saveRun(){if(isLogged||run||el<60000)return;const det=runDetail(el,dist,splits,on),{min,km,pace}=det;
+    logSession('run',det);isLogged=true;logBtn.disabled=true;geoStop();dropLive(LIVE);
     const step=Math.max(1,Math.ceil(pts.length/300));
     store('wt_run_route',pts.filter((p,i)=>i%step===0||i===pts.length-1).map(p=>[+p.lat.toFixed(5),+p.lon.toFixed(5)]));
     logged.textContent='Записано: '+(km?String(km).replace('.',',')+' км · ':'')+min+' мин'+(pace?' · '+fmtPace(pace)+' /км':'');
-    renderLast();showDone('run',{km,pace,min});});
-  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();geoStop();el=0;ii=-1;
+    renderLast();showDone('run',{km,pace,min});}
+  logBtn.addEventListener('click',saveRun);
+  window.__runAutoSave=saveRun;
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();geoStop();dropLive(LIVE);el=0;ii=-1;t0=0;peLeft=0;
     pts=[];dist=0;last=null;splits=[];nextKm=1000;lastKmT=0;isLogged=false;logBtn.disabled=true;logged.textContent='';
     start.textContent='Старт';gps.textContent='GPS се включва при старт';renderSplits();bd();paint();
     drawRoute(load('wt_run_route',null),'Последен маршрут');
     document.querySelectorAll('#r-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
   window.__runDebug=()=>({dist,splits:splits.slice(),pts:pts.length,el});
   paint();renderLast();drawRoute(load('wt_run_route',null),'Последен маршрут');
+  const sv=load(LIVE,null);
+  if(sv&&sv.el>0&&Array.isArray(sv.splits)&&Array.isArray(sv.pts)){
+    if(sv.date!==localISO()){dropLive(LIVE); // from an earlier day: record it now, under its own date
+      if(sv.el>=60000)setTimeout(()=>logSession('run',Object.assign(runDetail(sv.el,sv.dist||0,sv.splits,sv.on),{auto:1}),(sv.t0||Date.now())+sv.el),0);}
+    else{el=sv.el;dist=sv.dist||0;splits=sv.splits;nextKm=sv.nextKm||1000;lastKmT=sv.lastKmT||0;t0=sv.t0||0;
+      on=!!sv.on;ii=sv.ii==null?-1:sv.ii;peLeft=sv.peLeft||0;tg.classList.toggle('on',on);bd();
+      pts=sv.pts.map(q=>({lat:q[0],lon:q[1],t:q[2],d:q[3]}));start.textContent='Продължи';logBtn.disabled=el<60000;
+      paint();renderSplits();if(pts.length>2)drawRoute(pts.map(q=>[q.lat,q.lon]),'Маршрут · '+fmtKm(dist)+' км');
+      window.__resume=window.__resume||'run';}}
 })();
 
 // ================= FUNCTIONAL (Centr-style) =================
@@ -1626,6 +1646,7 @@ document.getElementById('home').addEventListener('click',e=>{const b=e.target.cl
   switchTab(b.dataset.go);if(b.dataset.start){const st=document.getElementById(b.dataset.go==='func'?'f-start':'c-start');if(st.textContent==='Старт')st.click();}});
 document.getElementById('back').addEventListener('click',()=>{
   ['c-start','r-start','x-start','f-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
+  if(document.getElementById('panel-run').classList.contains('active')&&window.__runAutoSave)window.__runAutoSave();
   document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
 document.getElementById('set-slot').appendChild(document.getElementById('set-card'));
 ['logo-b','set-open'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{document.getElementById('set-ov').classList.add('on');}));
@@ -1692,7 +1713,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261008052556';
+const BUILD='20261008062502';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

@@ -207,7 +207,7 @@
   .wl{padding:2px 16px}
   .wr{display:flex;align-items:center;gap:12px;width:100%;flex:none;background:none;border:none;border-bottom:1px solid var(--line-2);border-radius:0;padding:12px 0;text-align:left;font-family:inherit;color:var(--ink)}
   .wr:last-child{border-bottom:none}.wr:active{transform:none;opacity:.6}
-  .wi{flex:none;width:68px;background:var(--card-2);border-radius:11px;padding:3px 4px 0}
+  .wi{flex:none;width:84px;background:var(--card-2);border-radius:11px;padding:3px 4px 0}
   .wt{flex:1;min-width:0}.wt b{display:block;font-size:16px;font-weight:700}.wt small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;font-weight:500;line-height:1.35}
   .tag{flex:none;font-size:11px;font-weight:700;color:var(--gold);border:1px solid var(--gold);border-radius:20px;padding:2px 8px}
   .wr .go{flex:none;font-size:22px;color:var(--muted);line-height:1}
@@ -1023,7 +1023,7 @@ const D={
 'Гърди на ръба на леглото':{f:[FR({h:[66,54],t:180,tl:3,hp:[66,45],H:[[91,68],[38,54]],F:[[66,54],[66,54]],hide:1,ep:[[1,-1],[-1,0]],box:[22,55,58,19]})]},
 'Задно бедро с кърпа':{f:[{h:[62,71],t:-90,H:[[56,50],[54,50]],F:[[70,42],[92,71]],kp:[[1,0],[1,0]],ep:[[0,1],[0,1]],towel:'h'}]},
 };
-function svgOf(n,frame){
+function svgOf(n,frame,fix){ // fix: viewBox height for a fixed scale (icons), else fit the figure
   const E=D[n];if(!E||(frame!=null&&frame>=E.f.length))return '';
   const fr=frame==null?E.f:[E.f[frame]];
   const S=fr.map(solveP),p0=fr[0],front=!!p0.fr,hide=!!p0.hide;
@@ -1056,7 +1056,7 @@ function svgOf(n,frame){
   S.forEach(P=>{for(const k in P){if(k==='tw'||(hide&&legK.includes(k)))continue;inc(P[k],k==='head'?5:k==='bc'?4.5:2);}});
   if(p0.pole)p0.pole.forEach(q=>{inc([q[0],q[1]],1.5);inc([q[2],q[3]],1.5);});
   if(p0.box){inc([p0.box[0],p0.box[1]]);inc([p0.box[0]+p0.box[2],p0.box[1]]);}
-  y1=Math.max(y1,75.5);let w=x1-x0+8,h=y1-y0+6;h=Math.max(h,44,w/2);w=Math.max(w,h*2);
+  y1=Math.max(y1,75.5);let w=x1-x0+8,h=y1-y0+6;h=Math.max(h,fix||44,w/2);w=Math.max(w,h*2);
   const cx=(x0+x1)/2,vx=cx-w/2,vy=y1+1-h;
   return `<svg class="fx" viewBox="${vx.toFixed(1)} ${vy.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}" aria-hidden="true"><line class="fx-g" x1="${(vx+2).toFixed(1)}" y1="74.6" x2="${(vx+w-2).toFixed(1)}" y2="74.6"/>${o}</svg>`;
 }
@@ -1300,6 +1300,7 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
   let geoId=null,pts=[],dist=0,last=null,splits=[],nextKm=1000,lastKmT=0,gpsOk=false;
   const $=id=>document.getElementById(id);
   const logBtn=$('r-log'),logged=$('r-logged');let isLogged=false;
+  const showLog=()=>{const ok=!run&&!isLogged&&el>=60000;logBtn.disabled=!ok;logBtn.parentNode.style.display=ok?'':'none';};
   const num=$('r-num'),start=$('r-start'),reset=$('r-reset'),tg=$('r-toggle'),lbl=$('r-phase'),nxt=$('r-next'),
     dots=$('r-dots'),ring=$('r-ring'),tEl=$('r-time'),pEl=$('r-pace'),aEl=$('r-avg'),gps=$('r-gps');
   const R=6371000,rad=x=>x*Math.PI/180;
@@ -1367,17 +1368,17 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
     paint();}
   start.addEventListener('click',()=>{
     if(run){run=false;clearInterval(h);keepAwake(false);stopTrack();start.textContent='Продължи';peLeft=pe-Date.now();saveLive();
-      logBtn.disabled=isLogged||el<60000;if(pts.length>2)drawRoute(pts.map(p=>[p.lat,p.lon]),'Маршрут · '+fmtKm(dist)+' км');return;}
+      showLog();if(pts.length>2)drawRoute(pts.map(p=>[p.lat,p.lon]),'Маршрут · '+fmtKm(dist)+' км');return;}
     if(on){const mk=()=>{const ev=[];let t=0;ph.forEach(q=>{ev.push([t,q.t==='work'?'work':'rest']);tickEvents(t,q.d,ev);t+=q.d;});
         ev.push([t,'end']);startTrack(t+0.8,ev,'run');};
       if(el===0)mk();else{if(trackOwner!=='run')mk();resumeTrack(el/1000);pe=Date.now()+peLeft;}} // the interval clock waits during a pause too
     if(el===0)t0=Date.now();
     geoStart();last=null; // after a pause, distance walked meanwhile is not counted
-    run=true;keepAwake(true);st=Date.now()-el;start.textContent='Пауза';logBtn.disabled=true;
+    run=true;keepAwake(true);st=Date.now()-el;start.textContent='Пауза';showLog();
     if(el===0)say('Тръгваме. Ще ти казвам всеки километър.');h=setInterval(tick,250);});
   const runDetail=(el,dist,splits,on)=>({min:Math.round(el/60000),km:Math.round(dist/10)/100,pace:dist>=100?Math.round(el/1000/(dist/1000)):0,splits:splits.map(Math.round),intervals:!!on});
   function saveRun(){if(isLogged||run||el<60000)return;const det=runDetail(el,dist,splits,on),{min,km,pace}=det;
-    logSession('run',det);isLogged=true;logBtn.disabled=true;geoStop();dropLive(LIVE);
+    logSession('run',det);isLogged=true;showLog();geoStop();dropLive(LIVE);
     const step=Math.max(1,Math.ceil(pts.length/300));
     store('wt_run_route',pts.filter((p,i)=>i%step===0||i===pts.length-1).map(p=>[+p.lat.toFixed(5),+p.lon.toFixed(5)]));
     logged.textContent='Записано: '+(km?String(km).replace('.',',')+' км · ':'')+min+' мин'+(pace?' · '+fmtPace(pace)+' /км':'');
@@ -1385,19 +1386,19 @@ const sayPace=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s2=sec%60;ret
   logBtn.addEventListener('click',saveRun);
   window.__runAutoSave=saveRun;
   reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();geoStop();dropLive(LIVE);el=0;ii=-1;t0=0;peLeft=0;
-    pts=[];dist=0;last=null;splits=[];nextKm=1000;lastKmT=0;isLogged=false;logBtn.disabled=true;logged.textContent='';
+    pts=[];dist=0;last=null;splits=[];nextKm=1000;lastKmT=0;isLogged=false;showLog();logged.textContent='';
     start.textContent='Старт';gps.textContent='GPS се включва при старт';renderSplits();bd();paint();
     drawRoute(load('wt_run_route',null),'Последен маршрут');
     document.querySelectorAll('#r-dots .pd').forEach(d=>d.classList.remove('done','cur'));});
   window.__runDebug=()=>({dist,splits:splits.slice(),pts:pts.length,el});
-  paint();renderLast();drawRoute(load('wt_run_route',null),'Последен маршрут');
+  paint();renderLast();drawRoute(load('wt_run_route',null),'Последен маршрут');showLog();
   const sv=load(LIVE,null);
   if(sv&&sv.el>0&&Array.isArray(sv.splits)&&Array.isArray(sv.pts)){
     if(sv.date!==localISO()){dropLive(LIVE); // from an earlier day: record it now, under its own date
       if(sv.el>=60000)setTimeout(()=>logSession('run',Object.assign(runDetail(sv.el,sv.dist||0,sv.splits,sv.on),{auto:1}),(sv.t0||Date.now())+sv.el),0);}
     else{el=sv.el;dist=sv.dist||0;splits=sv.splits;nextKm=sv.nextKm||1000;lastKmT=sv.lastKmT||0;t0=sv.t0||0;
       on=!!sv.on;ii=sv.ii==null?-1:sv.ii;peLeft=sv.peLeft||0;tg.classList.toggle('on',on);bd();
-      pts=sv.pts.map(q=>({lat:q[0],lon:q[1],t:q[2],d:q[3]}));start.textContent='Продължи';logBtn.disabled=el<60000;
+      pts=sv.pts.map(q=>({lat:q[0],lon:q[1],t:q[2],d:q[3]}));start.textContent='Продължи';showLog();
       paint();renderSplits();if(pts.length>2)drawRoute(pts.map(q=>[q.lat,q.lon]),'Маршрут · '+fmtKm(dist)+' км');
       window.__resume=window.__resume||'run';}}
 })();
@@ -1669,8 +1670,9 @@ function renderHome(){
   const TF={func:'Звяр с изритване',core:'Планк с докосване на рамо',strength:'Набирания на лоста',run:'Тичане',rest:'Колене към гърдите',stretch:'Колене към гърдите'};
   const fm=window.__funcInfo?window.__funcInfo().min:13;
   const meta={func:'12 упражнения · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън · около 12 минути':'уредите в двора · около 35 минути',run:'3–4 км · на светло'};
-  const sub={func:meta.func,core:meta.core,strength:WINTER?'около 12 минути · първо загрявка вкъщи':'около 35 минути',
-    rest:'Мускулите растат, докато почиват. По желание — разтягане вечерта.',run:'3–4 км · на светло · GPS мери разстоянието и темпото'}[type];
+  const sub={func:'12 упражнения · '+fm+' мин',core:nEx+' упражнения · '+coreMin(nEx)+' мин',strength:WINTER?'12 мин · загрявка вкъщи':'35 мин',
+    rest:'Мускулите растат, докато почиват. По желание — разтягане вечерта.',run:'3–4 км · GPS мери темпото'}[type];
+  const ICON=92; // same scale for every small figure on this screen (the pull-up with its bar is the tallest)
   let h='<div class="hrow"><div class="htx"><div class="k">По план</div><div class="t">'+planNames[type]+'</div><div class="m">'+sub+'</div></div><span class="hfig">'+FIGX.svg(TF[type])+'</span></div>';
   if(type==='run'){const lr=log.find(x=>x.type==='run'&&x.detail&&x.detail.km);
     if(lr)h+='<div class="tg" style="margin-top:8px"><div><div class="n">Миналия път</div><div class="s">'+lr.date.split('-').reverse().slice(0,2).map(Number).join('.')+'</div></div><div class="r">'+String(lr.detail.km).replace('.',',')+' км<small>'+fmtPace(lr.detail.pace)+' /км</small></div></div>';}
@@ -1683,11 +1685,11 @@ function renderHome(){
   $('h-week').innerHTML=wk;$('h-wk').textContent=done+' от 6';
   $('h-prog').innerHTML=progressHTML(log);
   const hs=$('h-stretch');if(hs&&window.__stretchMin)hs.querySelector('.s').textContent=window.__stretchMin+' минути · в леглото преди сън';
-  const sf=$('h-stretch-fig');if(sf&&!sf.firstChild)sf.innerHTML=FIGX.svg(TF.stretch);
+  const sf=$('h-stretch-fig');if(sf&&!sf.firstChild)sf.innerHTML=FIGX.svg(TF.stretch,null,ICON);
   // the other workouts, the next one first; tomorrow's is marked
   const next=[1,2,3,4,5,6].map(k=>dayMap[(today+k)%7]);
   $('h-other').innerHTML=['core','func','strength','run'].filter(t=>t!==type).sort((a,b)=>next.indexOf(a)-next.indexOf(b)).map(t=>
-    '<button class="wr" data-go="'+t+'"><span class="wi">'+FIGX.svg(TF[t])+'</span><span class="wt"><b>'+planNames[t]+'</b><small>'+meta[t]+'</small></span>'+(next[0]===t?'<span class="tag">утре</span>':'')+'<span class="go">›</span></button>').join('');
+    '<button class="wr" data-go="'+t+'"><span class="wi">'+FIGX.svg(TF[t],null,ICON)+'</span><span class="wt"><b>'+planNames[t]+'</b><small>'+meta[t]+'</small></span>'+(next[0]===t?'<span class="tag">утре</span>':'')+'<span class="go">›</span></button>').join('');
 }
 document.getElementById('home').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;
   if(b.dataset.go==='func'&&window.__funcRefresh)window.__funcRefresh();
@@ -1761,7 +1763,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261009054229';
+const BUILD='20261009105041';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

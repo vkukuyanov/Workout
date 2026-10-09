@@ -275,6 +275,7 @@
   .vid{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
   .pic{display:flex;gap:3px;margin:2px 0 10px;border-radius:12px;overflow:hidden;max-width:340px}
   .cue .pic{margin:0 auto 10px}
+  .sfig .pic{margin:2px auto 8px}.sfn{text-align:center;font-size:13px;color:var(--muted);font-weight:600;margin-bottom:16px}
   .pic.fig{display:block;background:var(--card-2);max-width:300px;padding:8px 10px 4px}
   .fx{display:block;width:100%;aspect-ratio:2/1;overflow:visible}
   .fx line{stroke-linecap:round}.fx .fx-n{stroke:var(--ink)}.fx .fx-f{stroke:var(--fx2)}
@@ -382,6 +383,7 @@
           <button class="b-thin" id="s-skip">Пропусни почивката</button>
         </div>
       </div>
+      <div class="sfig" id="s-fig"></div>
       <div class="label">Днес</div>
       <div class="sub" style="margin-bottom:4px;">Докосни за техника</div>
       <div id="s-list"></div>
@@ -1249,7 +1251,9 @@ function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropL
   function refresh(){plan.forEach((e,i)=>{const d=i<ei?e.s:(i===ei?si:0);
     $('sv-'+i).innerHTML='<b>'+d+'</b>/'+e.s;
     $('sr-'+i).classList.toggle('cur',i===ei&&ei<plan.length);
-    $('sr-'+i).classList.toggle('fin',i<ei);});}
+    $('sr-'+i).classList.toggle('fin',i<ei);});
+    setCue($('s-fig'),plan[ei]?vidLink(plan[ei].n)+'<div class="sfn">'+plan[ei].n+' · серия '+(si+1)+' от '+plan[ei].s+'</div>':'');}
+  window.__strActive=()=>ei<plan.length&&$('str-card').style.display!=='none';
   let restLen=0;
   function endRest(fromTimer){clearInterval(rh);box.classList.remove('on');hit.disabled=false;miss.disabled=false;setBodyPhase(null);
     if(fromTimer===true){
@@ -1567,7 +1571,8 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
   function buildDots(){dots.innerHTML='';ph.forEach(p=>{if(p.t!=='hold')return;const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
   function paint(rem){const p=idx>=0&&idx<ph.length?ph[idx]:null;
     if(!p){num.textContent=fmt(total);ring.setAttribute('stroke-dashoffset','0');phs.textContent=Math.round(total/60)+' минути';
-      nm.textContent='Разтягане';nxt.textContent=STRETCH.length+' позиции';return;}
+      nm.textContent='Разтягане';nxt.textContent=STRETCH.length+' позиции';
+      setCue(cue,vidLink(STRETCH[0].n)+'Първо: <b>'+STRETCH[0].n+'</b>. Бавно дишане, без пружиниране. Задържаш на леко дърпане, не на болка.');return;}
     num.textContent=fmt(rem);ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/p.d)));
     ring.style.stroke=p.t==='hold'?'var(--work)':'var(--rest)';
     phs.textContent=p.t==='hold'?'задръж':'смени позицията';nm.textContent=p.l;
@@ -1597,7 +1602,7 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
     else{const left=paused>0?paused:0;end=Date.now()+left;if(trackOwner!=='stretch')track();resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;saveLive();}
     h=setInterval(tick,150);});
   reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();dropLive(LIVE);idx=-1;paused=0;
-    start.textContent='Старт';buildDots();paint(0);cue.textContent='Бавно дишане, без пружиниране. Задържаш на леко дърпане, не на болка.';});
+    start.textContent='Старт';buildDots();paint(0);});
   window.__stretchMin=Math.round(total/60);
   renderList();buildDots();paint(0);
   const sv=liveOf(LIVE);
@@ -1693,10 +1698,11 @@ function renderHome(){
 }
 document.getElementById('home').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;
   if(b.dataset.go==='func'&&window.__funcRefresh)window.__funcRefresh();
-  switchTab(b.dataset.go);if(b.dataset.start){const st=document.getElementById(b.dataset.go==='func'?'f-start':'c-start');if(st.textContent==='Старт')st.click();}});
+  switchTab(b.dataset.go);if(b.dataset.go==='strength'&&window.__strActive&&window.__strActive())keepAwake(true);if(b.dataset.start){const st=document.getElementById(b.dataset.go==='func'?'f-start':'c-start');if(st.textContent==='Старт')st.click();}});
 document.getElementById('back').addEventListener('click',()=>{
   ['c-start','r-start','x-start','f-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
   if(document.getElementById('panel-run').classList.contains('active')&&window.__runAutoSave)window.__runAutoSave();
+  keepAwake(false); // nothing runs on the home screen
   document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
 document.getElementById('set-slot').appendChild(document.getElementById('set-card'));
 ['logo-b','set-open'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{document.getElementById('set-ov').classList.add('on');}));
@@ -1763,7 +1769,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261009105041';
+const BUILD='20261009105714';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

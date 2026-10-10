@@ -159,6 +159,10 @@
   .rstats div{flex:1;text-align:center;background:var(--card-2,rgba(127,127,127,.08));border-radius:14px;padding:10px 4px}
   .rstats b{display:block;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
   .rstats span{font-size:11.5px;color:var(--muted)}
+  .rlast{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .rlast .k{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .rlast .rstats{margin-top:0;gap:6px}.rlast .rstats b{font-size:18px}
+  .rtot{font-size:12.5px;color:var(--muted);margin-top:10px}.rtot b{color:var(--ink-2);font-weight:700}
   .split{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
   .split:last-child{border-bottom:none}
   .split .bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
@@ -1622,7 +1626,7 @@ function progressHTML(log){
   if(l.length){const now=l[0].detail.ex[n],o=(l.find(x=>x.date<=iso(28))||(l.length>1?l[l.length-1]:null));
     const p=e=>e.h/e.s,oe=o&&o.detail.ex[n];h+=tile(now.h+'/'+now.s,'набирания',oe&&p(now)>p(oe),oe&&p(now)<p(oe));}
   const runs=log.filter(x=>x.type==='run'&&x.detail&&x.detail.pace);
-  if(runs.length){const r=runs[0].detail.pace,q=runs[1]&&runs[1].detail.pace;h+=tile(fmtPace(r),'/км',q&&r<q,q&&r>q);}
+  if(runs.length){const r=runs[0].detail.pace,q=runs[1]&&runs[1].detail.pace;h+=tile(fmtPace(r),'мин/км',q&&r<q,q&&r>q);}
   return h;}
 // ---- the screen after a finished workout: what you did + a word of encouragement ----
 function showDone(type,info){
@@ -1679,8 +1683,13 @@ function renderHome(){
     rest:'Мускулите растат, докато почиват. По желание — разтягане вечерта.',run:'3–4 км · GPS мери темпото'}[type];
   const ICON=92; // same scale for every small figure on this screen (the pull-up with its bar is the tallest)
   let h='<div class="hrow"><div class="htx"><div class="k">По план</div><div class="t">'+planNames[type]+'</div><div class="m">'+sub+'</div></div><span class="hfig">'+FIGX.svg(TF[type])+'</span></div>';
-  if(type==='run'){const lr=log.find(x=>x.type==='run'&&x.detail&&x.detail.km);
-    if(lr)h+='<div class="tg" style="margin-top:8px"><div><div class="n">Миналия път</div><div class="s">'+lr.date.split('-').reverse().slice(0,2).map(Number).join('.')+'</div></div><div class="r">'+String(lr.detail.km).replace('.',',')+' км<small>'+fmtPace(lr.detail.pace)+' /км</small></div></div>';}
+  if(type==='run'){const runs=log.filter(x=>x.type==='run'&&x.detail&&x.detail.km),lr=runs[0];
+    if(lr){const d=lr.detail,f=v=>String(v).replace('.',','),mon=localISO(now).slice(0,7),
+      mk=Math.round(runs.filter(x=>x.date.slice(0,7)===mon).reduce((a,x)=>a+x.detail.km,0)*100)/100,best=Math.max(...runs.map(x=>x.detail.km));
+      h+='<div class="rlast"><div class="k">'+(lr.date===localISO(now)?'Днес ✓':'Миналия път · '+lr.date.split('-').reverse().slice(0,2).map(Number).join('.'))+'</div>'+
+        '<div class="rstats"><div><b>'+f(d.km)+'</b><span>км</span></div><div><b>'+(d.min||'–')+'</b><span>мин</span></div>'+
+        '<div><b>'+fmtPace(d.pace)+'</b><span>мин/км</span></div><div><b>'+(d.pace?f(Math.round(36000/d.pace)/10):'–')+'</b><span>км/ч</span></div></div>'+
+        '<div class="rtot">Този месец <b>'+f(mk)+' км</b> · най-дълго <b>'+f(best)+' км</b></div></div>';}}
   h+='<div style="height:18px"></div>'+(type==='rest'?'<button class="b-alt full" data-go="stretch">Разтягане · '+(window.__stretchMin||9)+' мин</button>':'<button class="b-main full" data-go="'+type+'">Започни</button>');
   $('h-hero').innerHTML=h;
   // week (Monday first)
@@ -1769,7 +1778,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261009105714';
+const BUILD='20261010084125';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

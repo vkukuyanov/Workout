@@ -1,6 +1,19 @@
 {
  "sessions": [
   {
+   "id": "mv22lv16mvi8",
+   "ts": 1791617174106,
+   "date": "2026-10-10",
+   "type": "run",
+   "detail": {
+    "min": 8,
+    "km": 0.38,
+    "pace": 1311,
+    "splits": [],
+    "intervals": false
+   }
+  },
+  {
    "id": "muzq28sg4unv",
    "ts": 1791475171072,
    "date": "2026-10-08",
@@ -105,5 +118,5 @@
    "type": "core"
   }
  ],
- "updated": "2026-10-10T07:25:31.103Z"
+ "updated": "2026-10-10T07:26:16.278Z"
 }

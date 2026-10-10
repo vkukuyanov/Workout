@@ -751,10 +751,20 @@ const LIB={
 const WINTER=true; // permanent: strength outdoors short, core 40 s
 const WORK_S=WINTER?40:30;
 function coreMin(n){return Math.round((n*WORK_S+(n-1)*15)/60);}
-const dayMap={0:'rest',1:'func',2:'strength',3:'core',4:'strength',5:'func',6:'run'}; // Sunday: rest (family day)
+const dayMap={0:'rest',1:'func',2:'strength',3:'core',4:'strength',5:'func',6:'run'}; // Sunday: whatever the week still owes, else rest
 const dayNames=['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
 const planNames={core:'Ядро',strength:'Сила',run:'Тичане',func:'Функционална',rest:'Почивка'};
-const isRestDay=d=>dayMap[d.getDay()]==='rest';
+// one rest day a week (Mon–Sun), on whichever day: the first day without training doesn't break the streak, a second one does
+const WEEK=[1,2,3,4,5,6].map(i=>dayMap[i]);
+const monOf=d=>{const x=new Date(d);x.setDate(x.getDate()-(x.getDay()+6)%7);return localISO(x);};
+const trainDays=()=>new Set(load('wt_log',[]).filter(x=>x.type!=='stretch').map(x=>x.date));
+function restUsed(now){const days=trainDays(),d=new Date(now),k=localISO(now);d.setDate(d.getDate()-(d.getDay()+6)%7); // first day this week without training
+  for(;localISO(d)<k;d.setDate(d.getDate()+1))if(!days.has(localISO(d)))return localISO(d);return null;}
+function planFor(date){ // Mon–Sat by the plan; Sunday makes up the workout the week missed (none missed → rest)
+  if(date.getDay()!==0)return dayMap[date.getDay()];
+  const mon=monOf(date),k=localISO(date),left=WEEK.slice();
+  load('wt_log',[]).forEach(x=>{if(x.date>=mon&&x.date<k){const i=left.indexOf(x.type);if(i>=0)left.splice(i,1);}});
+  return left[0]||'rest';}
 const today=new Date().getDay();
 function switchTab(n){document.body.classList.add('in-work');window.scrollTo(0,0);
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
@@ -804,21 +814,24 @@ function logSession(type,detail,when){const t=when||Date.now();
   store('wt_log',l);renderHist();renderStreak();renderHome();pushCloud(l);bkState();}
 // streak: built so you don't want to break it — it shows what you'd lose today, and your record to beat
 function streakInfo(){
-  // planned rest days (Sunday) neither count nor break the streak — training on one still counts
-  const list=[...new Set(load('wt_log',[]).filter(x=>x.type!=='stretch').map(x=>x.date))].sort();
-  const days=new Set(list),iso=d=>localISO(d),now=new Date(),today=iso(now);
-  let n=0;const d=new Date();if(!days.has(today))d.setDate(d.getDate()-1);
-  for(let g=0;g<800;g++){const k=iso(d);if(days.has(k))n++;else if(!isRestDay(d))break;d.setDate(d.getDate()-1);}
-  const linked=(a,b)=>{const x=new Date(a+'T12:00');x.setDate(x.getDate()+1);while(iso(x)<b){if(!isRestDay(x))return false;x.setDate(x.getDate()+1);}return true;};
-  let best=0,run=0,prev=null;list.forEach(k=>{run=prev&&linked(prev,k)?run+1:1;best=Math.max(best,run);prev=k;});
-  return {n,best,doneToday:days.has(today),restToday:isRestDay(now)&&!days.has(today)};}
+  // the week's rest day neither counts nor breaks the streak; today isn't over, so it can't break it either
+  const days=trainDays(),list=[...days].sort(),now=new Date(),today=localISO(now);
+  let n=0,best=0,wk='',off=0;
+  if(list.length)for(const d=new Date(list[0]+'T12:00');localISO(d)<=today;d.setDate(d.getDate()+1)){
+    const k=localISO(d),w=monOf(d);if(w!==wk){wk=w;off=0;}
+    if(days.has(k)){n++;best=Math.max(best,n);}
+    else if(k===today){}
+    else if(n&&!off)off=1;
+    else{n=0;off=0;}}
+  return {n,best,doneToday:days.has(today),restFree:!restUsed(now)};}
 function renderStreak(){
-  const {n,best,doneToday,restToday}=streakInfo(),el=document.getElementById('streak'),ln=document.getElementById('streak-line');
+  const {n,best,doneToday,restFree}=streakInfo(),el=document.getElementById('streak'),ln=document.getElementById('streak-line');
   el.innerHTML=n>0?'<span class="fl">🔥</span> '+n:'';el.classList.toggle('hot',n>0);
   if(!ln)return;const dn=x=>x+(x===1?' ден':' дни');let t,cls='';
-  if(restToday)t=n?'Почивен ден — серията от '+dn(n)+' е в безопасност.':'Почивен ден. Утре започваш серия.';
-  else if(n===0)t=best?'Започни нова серия днес. Рекордът ти е '+dn(best)+'.':'Започни серия днес — всеки ден по малко.';
-  else if(!doneToday){t='Серия '+dn(n)+'. Тренирай днес, за да не я загубиш.';cls='warn';}
+  if(n===0)t=best?'Започни нова серия днес. Рекордът ти е '+dn(best)+'.':'Започни серия днес — всеки ден по малко.';
+  else if(!doneToday&&planFor(new Date())==='rest')t='Пълна седмица. Днес почивка — серията е в безопасност.';
+  else if(!doneToday&&restFree)t='Серия '+dn(n)+'. Имаш 1 почивен ден тази седмица.';
+  else if(!doneToday){t='Серия '+dn(n)+'. Почивката за седмицата е взета — тренирай днес.';cls='warn';}
   else if(n>=best&&n>1)t='Серия '+dn(n)+' — това е твоят рекорд. Утре го подобряваш.';
   else if(best>n)t='Серия '+dn(n)+'. Още '+dn(best-n+1)+' до нов рекорд.';
   else t='Серия '+dn(n)+'. Утре я продължаваш.';
@@ -1673,7 +1686,7 @@ function renderHome(){
   const $=id=>document.getElementById(id);
   const now=new Date();let ds=now.toLocaleDateString('bg-BG',{weekday:'long',day:'numeric',month:'long'});
   $('h-date').textContent=ds.charAt(0).toUpperCase()+ds.slice(1);
-  const type=dayMap[today],log=load('wt_log',[]);
+  const type=planFor(now),log=load('wt_log',[]);
   const bar=load('wt_bar',true),nEx=bar?10:8;
   // the figure that stands for each kind of workout
   const TF={func:'Звяр с изритване',core:'Планк с докосване на рамо',strength:'Набирания на лоста',run:'Тичане',rest:'Колене към гърдите',stretch:'Колене към гърдите'};
@@ -1694,14 +1707,15 @@ function renderHome(){
   $('h-hero').innerHTML=h;
   // week (Monday first)
   const days=new Set(log.filter(x=>x.type!=='stretch').map(x=>x.date)),lbl=['пн','вт','ср','чт','пт','сб','нд'],mo=(now.getDay()+6)%7;let done=0,wk='';
+  const rd=restUsed(now); // the day that became this week's rest
   for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-mo+i);const iso=localISO(d),ok=days.has(iso);if(ok)done++;
-    wk+='<div class="d'+(ok?' done':'')+(!ok&&isRestDay(d)?' rest':'')+(i===mo?' today':'')+'"><div class="n">'+lbl[i]+'</div><div class="c"></div></div>';}
+    wk+='<div class="d'+(ok?' done':'')+(iso===rd?' rest':'')+(i===mo?' today':'')+'"><div class="n">'+lbl[i]+'</div><div class="c"></div></div>';}
   $('h-week').innerHTML=wk;$('h-wk').textContent=done+' от 6';
   $('h-prog').innerHTML=progressHTML(log);
   const hs=$('h-stretch');if(hs&&window.__stretchMin)hs.querySelector('.s').textContent=window.__stretchMin+' минути · в леглото преди сън';
   const sf=$('h-stretch-fig');if(sf&&!sf.firstChild)sf.innerHTML=FIGX.svg(TF.stretch,null,ICON);
   // the other workouts, the next one first; tomorrow's is marked
-  const next=[1,2,3,4,5,6].map(k=>dayMap[(today+k)%7]);
+  const next=[1,2,3,4,5,6].map(k=>{const d=new Date(now);d.setDate(now.getDate()+k);return planFor(d);});
   $('h-other').innerHTML=['core','func','strength','run'].filter(t=>t!==type).sort((a,b)=>next.indexOf(a)-next.indexOf(b)).map(t=>
     '<button class="wr" data-go="'+t+'"><span class="wi">'+FIGX.svg(TF[t],null,ICON)+'</span><span class="wt"><b>'+planNames[t]+'</b><small>'+meta[t]+'</small></span>'+(next[0]===t?'<span class="tag">утре</span>':'')+'<span class="go">›</span></button>').join('');
 }
@@ -1778,7 +1792,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261010084125';
+const BUILD='20261010091416';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

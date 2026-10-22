@@ -1339,9 +1339,9 @@ function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropL
     {id:'maxdip',n:'Максимум дипове',kind:'max',fig:'Дипове на успоредката',d:'Колкото дипове можеш наведнъж, дълбоко и без замах. Въведи колко са.'},
     {id:'hang',n:'Висене на лоста',kind:'hold',fig:'Висящо вдигане на крака',d:'Увиси на лоста с изпънати ръце. Спри часовника, когато пуснеш.'},
     {id:'push2',n:'Лицеви опори за 2 минути',kind:'amrap',sec:120,fig:'Лицеви опори',d:'Колкото чисти лицеви опори можеш за 2 минути. Може да спираш горе. После въведи колко са.'},
-    {id:'wall',n:'Клек до стена',kind:'hold',fig:'Клек до стена (задържане)',d:'Гръб на стената, бедрата успоредно на пода. Спри часовника, когато станеш.'},
+    {id:'burpee30',n:'30 бърпи',kind:'time',fig:'Бърпи',d:'30 бърпи колкото се може по-бързо, с лицева опора долу и скок горе. Колкото по-малко време, толкова по-добре.'},
     {id:'run2',n:'2 км тичане',kind:'time',fig:'Тичане',d:'2 км навън с максимално темпо. Пусни часовника на старта и го спри на финала.'},
-    {id:'jj',n:'Скачащи джакове за 3 минути',kind:'amrap',sec:180,fig:'Скачащи джакове',d:'3 минути скачащи джакове без спиране, колкото можеш. Един пълен джак е 1. После въведи колко са.'},
+    {id:'climb2',n:'Алпинисти за 2 минути',kind:'amrap',sec:120,fig:'Алпинисти',d:'2 минути алпинисти, колкото можеш. Всяко докосване на коляно е 1 повторение. После въведи колко са.'},
   ];
   const $=id=>document.getElementById(id);
   const cur=d=>{d=d||new Date();return CH[(d.getMonth()+(d.getFullYear()-2026)*5+120)%CH.length];};
@@ -1893,7 +1893,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261022131006';
+const BUILD='20261022131406';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

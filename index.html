@@ -146,9 +146,6 @@
   .restbox.on{display:block;}
   .restbox .ring-phase{margin-bottom:6px;}
   .restbox .ring-num{font-size:46px;color:var(--rest);}
-  .levelup{display:none;border-left:2px solid var(--work);padding:2px 0 2px 14px;
-    font-size:13px;line-height:1.6;color:var(--ink-2);margin-top:18px;}
-  .levelup.on{display:block;}
   .finish{display:none;text-align:center;padding:26px 8px 6px;}
   .finish.on{display:block;}
   .finish .big{font-size:21px;font-weight:600;}
@@ -393,7 +390,6 @@
       <div id="s-list"></div>
       <div class="ctrl"><button class="b-main full" id="s-hit">Сет готово</button></div>
       <div class="ctrl" style="margin-top:6px;"><button class="b-thin full" id="s-miss">Не стигнах целта</button></div>
-      <div class="levelup" id="s-levelup"></div>
       <div class="finish" id="s-finish"><div class="big">Готово</div><div class="sm" id="s-finish-d"></div></div>
     </div>
 
@@ -852,13 +848,19 @@ function renderHist(){
     el.appendChild(r);});}
   const cs=document.createElement('div');cs.className='cloud';cs.id='cloud-status';el.appendChild(cs);setCloud(cloudState);
 }
+// progression: two full sessions in a row on an exercise = its rep target goes up by 1 (both ends of the range)
+function repLevels(){const lv={},st={};
+  load('wt_log',[]).filter(x=>x.type==='strength'&&x.detail&&x.detail.ex).slice().reverse().forEach(s=>{
+    Object.keys(s.detail.ex).forEach(n=>{const e=s.detail.ex[n];
+      if(e.h>=e.s){st[n]=(st[n]||0)+1;if(st[n]>=2){lv[n]=Math.min(5,(lv[n]||0)+1);st[n]=0;}}else st[n]=0;});});
+  return lv;}
+const shiftReps=(t,k)=>k?t.replace(/^(\d+)(?:-(\d+))?/,(m,a,b)=>(+a+k)+(b?'-'+(+b+k):'')):t;
 function renderProgress(){
   const el=document.getElementById('s-prog');if(!el)return;
   const ses=load('wt_log',[]).filter(x=>x.type==='strength'&&x.detail&&x.detail.ex).slice(0,6).reverse();
   if(!ses.length){el.innerHTML='<div class="sub">Появява се след първата силова сесия.</div>';return;}
   const names=[];ses.forEach(s=>Object.keys(s.detail.ex).forEach(n=>{if(!names.includes(n))names.push(n);}));
   el.innerHTML='';
-  const ready=[];
   names.forEach(n=>{
     const row=document.createElement('div');row.className='prow';
     let cells='';const recent=[];
@@ -870,13 +872,7 @@ function renderProgress(){
     row.innerHTML='<div class="pn">'+n+'</div><div style="display:flex;align-items:center;gap:10px;"><div class="cells">'+cells+'</div>'+
       '<div class="sub" style="font-variant-numeric:tabular-nums;min-width:28px;text-align:right;">'+(last?last.h+'/'+last.s:'')+'</div></div>';
     el.appendChild(row);
-    const l2=recent.slice(-2);
-    if(l2.length===2&&l2.every(e=>e.h>=e.s))ready.push(n);
   });
-  const lvl=document.getElementById('s-levelup');
-  if(lvl){if(ready.length){lvl.classList.add('on');
-      lvl.innerHTML='Готови за по-тежко (две поредни сесии на пълна цел): <b>'+ready.join(', ')+'</b>. Добави 3 сек бавно спускане, после тежест в раница.';}
-    else lvl.classList.remove('on');}
 }
 
 // "how is it done" — a YouTube search for the exercise, opens next to the app
@@ -1233,13 +1229,14 @@ function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropL
   const LR={n:'Висящо вдигане на крака',t:'8-12 повт.',s:3,r:60};
   const lastEx=(load('wt_log',[]).find(x=>x.type==='strength'&&x.detail&&x.detail.ex)||{detail:{ex:{}}}).detail.ex;
   const third=resume&&saved.third?(saved.third===LR.n?LR:CH):(lastEx[CH.n]?LR:CH);
+  const RL=repLevels();
   const plan=[
     {n:'Набирания на лоста',t:'5-8 повт. · 1 в резерв',s:3,r:90},
     {n:'Дипове на успоредката',t:'8-12 повт.',s:3,r:75},
     third,
     post,
     {n:'Вдигане на крака (уред за корем)',t:'12-18 повт.',s:3,r:45},
-  ].filter(e=>!WINTER||['Набирания на лоста','Дипове на успоредката',third.n].includes(e.n));
+  ].map(e=>({...e,t:shiftReps(e.t,RL[e.n]||0)})).filter(e=>!WINTER||['Набирания на лоста','Дипове на успоредката',third.n].includes(e.n));
   const hasPost=plan.includes(post);
   if(resume&&!plan.every(e=>saved.exHits&&saved.exHits[e.n]))resume=false; // saved under an older plan
   window.__strPlan=plan;
@@ -1255,7 +1252,7 @@ function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropL
   function saveLive(){store('wt_str_live',{date:localISO(),ei,si,hits,exHits,post:post.n,third:third.n});}
   const $=id=>document.getElementById(id);
   const list=$('s-list'),hit=$('s-hit'),miss=$('s-miss'),box=$('s-restbox'),rn=$('s-restnum'),
-    skip=$('s-skip'),fin=$('s-finish'),find=$('s-finish-d'),lvl=$('s-levelup'),undo=$('s-undo');
+    skip=$('s-skip'),fin=$('s-finish'),find=$('s-finish-d'),undo=$('s-undo');
   if(resume&&ei>0||resume&&si>0){$('warm-ok').textContent='Продължи започнатата тренировка';}
   $('warm-ok').addEventListener('click',()=>{$('warm-card').style.display='none';
     $('str-card').style.display='block';keepAwake(true);say((ei>0||si>0?'Продължаваме. ':'Започваме. ')+plan[ei].n);});
@@ -1792,7 +1789,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261010091416';
+const BUILD='20261022130515';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

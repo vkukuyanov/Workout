@@ -310,7 +310,7 @@
   <div class="chal-t" id="chal-t" style="display:none"></div>
   <div class="chal-st" id="chal-st" style="display:none"><button class="b-alt" id="chal-m">−</button><b id="chal-v">0</b><button class="b-alt" id="chal-p">+</button></div>
   <div class="chal-rec" id="chal-rec"></div>
-  <div class="chal-act"><button class="b-main full" id="chal-go">Старт</button><button class="b-alt full" id="chal-alt" style="display:none"></button></div>
+  <div class="chal-act"><button class="b-main full" id="chal-go">Старт</button><button class="b-alt full" id="chal-alt" style="display:none"></button><button class="lnk" id="chal-no" style="margin-top:10px">Не ми харесва — смени го</button></div>
 </div></div>
 <div id="done-ov" class="done-ov"><div class="done-card">
   <div class="done-conf" id="done-conf"></div>
@@ -1344,7 +1344,10 @@ function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropL
     {id:'climb2',n:'Алпинисти за 2 минути',kind:'amrap',sec:120,fig:'Алпинисти',d:'2 минути алпинисти, колкото можеш. Всяко докосване на коляно е 1 повторение. После въведи колко са.'},
   ];
   const $=id=>document.getElementById(id);
-  const cur=d=>{d=d||new Date();return CH[(d.getMonth()+(d.getFullYear()-2026)*5+120)%CH.length];};
+  // the one for this month; ones Виктор removed (wt_banned, 'chal:id') are skipped
+  const cur=d=>{d=d||new Date();const i=d.getMonth()+(d.getFullYear()-2026)*5+120,ban=load('wt_banned',[]);
+    for(let k=0;k<CH.length;k++){const c=CH[(i+k)%CH.length];if(!ban.includes('chal:'+c.id))return c;}
+    return CH[i%CH.length];};
   const fmtT=t=>{t=Math.max(0,Math.round(t));const h=Math.floor(t/3600),m=Math.floor(t%3600/60),sc=t%60;
     return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(sc).padStart(2,'0');};
   const res=(c,v)=>c.kind==='time'||c.kind==='hold'?fmtT(v):v+' повт.';
@@ -1360,16 +1363,17 @@ function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropL
         '<span class="wi">'+FIGX.svg(c.fig,null,92)+'</span><span class="wt"><b>'+c.n+'</b><small>'+(dn?'✓ '+res(c,dn.detail.v)+' · следващото през месеца':'веднъж този месец')+'</small></span>'+(dn?'':'<span class="go">›</span>')+'</button></div>';}
   };
   let c=null,t0=0,h=null,stage='',val=0;
-  const ov=$('chal-ov'),go=$('chal-go'),alt=$('chal-alt'),tEl=$('chal-t'),st=$('chal-st'),vEl=$('chal-v'),rec=$('chal-rec');
+  const ov=$('chal-ov'),go=$('chal-go'),alt=$('chal-alt'),tEl=$('chal-t'),st=$('chal-st'),vEl=$('chal-v'),rec=$('chal-rec'),no=$('chal-no');
   function stopTick(){clearInterval(h);h=null;}
   function paintV(){vEl.textContent=val;}
   function intro(){stage='intro';stopTick();keepAwake(false);
-    tEl.style.display='none';st.style.display='none';alt.style.display='none';go.style.display='';
+    tEl.style.display='none';st.style.display='none';alt.style.display='none';go.style.display='';no.style.display='';
+    $('chal-fig').innerHTML=FIGX.svg(c.fig);$('chal-n').textContent=c.n;
     $('chal-d').textContent=c.d;
     const b=bestOf(c),last=entries(c)[0];
     rec.textContent=b==null?'Още нямаш резултат — първият е рекорд.':'Рекорд: '+res(c,b)+(last&&last.detail.v!==b?' · последно: '+res(c,last.detail.v):'');
     go.textContent=c.kind==='max'?'Започвам':'Старт';}
-  function startClock(){stage='run';t0=Date.now();keepAwake(true);
+  function startClock(){stage='run';no.style.display='none';t0=Date.now();keepAwake(true);
     $('chal-d').textContent=c.kind==='amrap'?'Давай! Звук и вибрация, когато времето изтече.':c.kind==='hold'?'Дръж! Спри, когато не можеш повече.':'Давай! Спри часовника на последното повторение.';
     tEl.style.display='';rec.textContent='';
     go.textContent=c.kind==='hold'?'Пуснах':c.kind==='amrap'?'Спри по-рано':'Готово';
@@ -1382,7 +1386,7 @@ function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropL
         if(rem<=0){stopTick();play('go');vib([200,80,200,80,300]);say('Време');askNum();}}
       else tEl.textContent=fmtT(el);};
     paint();h=setInterval(paint,200);}
-  function askNum(){stage='num';stopTick();keepAwake(false);
+  function askNum(){stage='num';no.style.display='none';stopTick();keepAwake(false);
     tEl.style.display='none';st.style.display='flex';alt.style.display='none';paintV();
     $('chal-d').textContent=c.kind==='max'?'Направи ги наведнъж, колкото можеш. После въведи колко са.':'Колко повторения направи?';
     rec.textContent='';go.style.display='';go.textContent='Запиши';}
@@ -1397,11 +1401,13 @@ function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropL
       if(c.kind==='amrap'){stopTick();askNum();}else{stopTick();keepAwake(false);if(el>=1)finish(el);else intro();}}
     else if(stage==='num'){if(val>0)finish(val);}});
   alt.addEventListener('click',()=>{stopTick();intro();});
+  no.addEventListener('click',()=>{const l=load('wt_banned',[]);if(!l.includes('chal:'+c.id)){l.push('chal:'+c.id);store('wt_banned',l);}
+    c=cur();intro();renderHome();if(typeof renderBanned==='function')renderBanned();});
   $('chal-m').addEventListener('click',()=>{val=Math.max(0,val-1);paintV();});
   $('chal-p').addEventListener('click',()=>{val=Math.min(999,val+1);paintV();});
   $('chal-close').addEventListener('click',()=>{stopTick();keepAwake(false);ov.classList.remove('on');});
   $('home').addEventListener('click',e=>{if(!e.target.closest('[data-chal]'))return;
-    c=cur();$('chal-fig').innerHTML=FIGX.svg(c.fig);$('chal-n').textContent=c.n;intro();ov.classList.add('on');ov.scrollTop=0;});
+    c=cur();intro();ov.classList.add('on');ov.scrollTop=0;});
 })();
 
 // ================= RUN =================
@@ -1893,7 +1899,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261022131406';
+const BUILD='20261022131552';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

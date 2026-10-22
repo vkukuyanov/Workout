@@ -255,6 +255,20 @@
   .set-ov.on{display:block;animation:dfade .2s ease}
   .set-in{max-width:440px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom))}
   .set-hd{display:flex;justify-content:space-between;align-items:center;margin:6px 0 16px}.set-hd span{font-size:28px;font-weight:800;letter-spacing:-.01em}
+  .chal-ov{position:fixed;inset:0;z-index:46;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
+  .chal-ov.on{display:block;animation:dfade .2s ease}
+  .chal-in{max-width:440px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom));text-align:center}
+  .chal-in .set-hd{text-align:left}
+  .chal-fig{height:150px;display:flex;justify-content:center;margin:6px 0 4px}
+  .chal-fig svg{height:100%;width:auto}
+  .chal-n{font-size:26px;font-weight:800;letter-spacing:-.01em;line-height:1.15}
+  .chal-d{color:var(--ink-2);font-size:15px;line-height:1.5;margin:10px 0 0}
+  .chal-rec{color:var(--muted);font-size:14px;margin:14px 0 0}
+  .chal-t{font-family:'Sofia Sans Condensed','Sofia Sans',sans-serif;font-size:96px;font-weight:400;line-height:1;margin:26px 0 8px;font-variant-numeric:tabular-nums}
+  .chal-st{display:flex;align-items:center;justify-content:center;gap:14px;margin:26px 0 8px}
+  .chal-st b{font-family:'Sofia Sans Condensed','Sofia Sans',sans-serif;font-size:84px;font-weight:400;min-width:130px;font-variant-numeric:tabular-nums}
+  .chal-st button{width:58px;height:58px;border-radius:50%;font-size:26px;padding:0;flex:none}
+  .chal-act{display:flex;flex-direction:column;gap:10px;margin-top:22px}
   .done-ov{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(6px)}
   .done-ov.on{display:flex;animation:dfade .35s ease}
   .done-card{position:relative;overflow:hidden;width:100%;max-width:380px;background:var(--card);border-radius:30px;padding:32px 24px 22px;text-align:center;animation:dpop .5s cubic-bezier(.2,1.4,.4,1)}
@@ -291,6 +305,13 @@
 </head>
 <body>
 <div id="set-ov" class="set-ov"><div class="set-in"><div class="set-hd"><span>Настройки</span><button class="lnk" id="set-close">Готово</button></div><div id="set-slot"></div></div></div>
+<div id="chal-ov" class="chal-ov"><div class="chal-in"><div class="set-hd"><span>Предизвикателство</span><button class="lnk" id="chal-close">Назад</button></div>
+  <div class="chal-fig" id="chal-fig"></div><div class="chal-n" id="chal-n"></div><div class="chal-d" id="chal-d"></div>
+  <div class="chal-t" id="chal-t" style="display:none"></div>
+  <div class="chal-st" id="chal-st" style="display:none"><button class="b-alt" id="chal-m">−</button><b id="chal-v">0</b><button class="b-alt" id="chal-p">+</button></div>
+  <div class="chal-rec" id="chal-rec"></div>
+  <div class="chal-act"><button class="b-main full" id="chal-go">Старт</button><button class="b-alt full" id="chal-alt" style="display:none"></button></div>
+</div></div>
 <div id="done-ov" class="done-ov"><div class="done-card">
   <div class="done-conf" id="done-conf"></div>
   <svg class="done-ic" viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--line)" stroke-width="6"/><circle class="dr" cx="40" cy="40" r="34" fill="none" stroke="var(--gold)" stroke-width="6" stroke-linecap="round" transform="rotate(-90 40 40)"/><path class="dc" d="M26 41l10 10 19-21" fill="none" stroke="var(--gold)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -312,6 +333,7 @@
     <div id="h-prog" class="pline"></div>
     <div class="hlbl"><span class="l">Другите тренировки</span></div>
     <div class="card wl" id="h-other"></div>
+    <div id="h-chal"></div>
     <div class="hlbl"><span class="l">Възстановяване</span></div>
     <div class="card wl"><button class="wr" data-go="stretch" id="h-stretch"><span class="wi" id="h-stretch-fig"></span><span class="wt"><b>Разтягане</b><small class="s">9 минути · в леглото преди сън</small></span><span class="go">›</span></button></div>
     <div class="hlbl"><span class="l">Последни сесии</span></div>
@@ -749,7 +771,7 @@ const WORK_S=WINTER?40:30;
 function coreMin(n){return Math.round((n*WORK_S+(n-1)*15)/60);}
 const dayMap={0:'rest',1:'func',2:'strength',3:'core',4:'strength',5:'func',6:'run'}; // Sunday: whatever the week still owes, else rest
 const dayNames=['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
-const planNames={core:'Ядро',strength:'Сила',run:'Тичане',func:'Функционална',rest:'Почивка'};
+const planNames={core:'Ядро',strength:'Сила',run:'Тичане',func:'Функционална',rest:'Почивка',challenge:'Предизвикателство'};
 // one rest day a week (Mon–Sun), on whichever day: the first day without training doesn't break the streak, a second one does
 const WEEK=[1,2,3,4,5,6].map(i=>dayMap[i]);
 const monOf=d=>{const x=new Date(d);x.setDate(x.getDate()-(x.getDay()+6)%7);return localISO(x);};
@@ -843,6 +865,7 @@ function renderHist(){
     else if(s.type==='core'||s.type==='func')det=Array.isArray(x.ex)&&(x.n||x.ex.length)?(x.n||x.ex.length)+' упражнения':'';
     else if(s.type==='run')det=x.km?String(x.km).replace('.',',')+' км · '+fmtPace(x.pace)+' /км':(x.min||0)+' мин';
     else if(s.type==='stretch')det=(x.min||0)+' мин';
+    else if(s.type==='challenge')det=window.__chal?window.__chal.line(x):'';
     const r=document.createElement('div');r.className='hist';
     r.innerHTML='<div class="hw"><b>'+(planNames[s.type]||'Разтягане')+'</b>'+(det?'<small>'+det+'</small>':'')+'</div><span class="hd">'+['нд','пн','вт','ср','чт','пт','сб'][d.getDay()]+' '+d.getDate()+'.'+(d.getMonth()+1)+'</span>';
     el.appendChild(r);});}
@@ -1302,6 +1325,85 @@ function liveOf(k){const v=load(k,null);if(v&&v.date===localISO())return v;dropL
   build();refresh();
 })();
 
+// ================= MONTHLY CHALLENGE =================
+// one a month, a different kind each time; counts as a training day; the best result is kept (time: lower is better, the rest: higher)
+(function(){
+  // kind: time = fixed work, stopwatch · hold = as long as you can, stopwatch · max = most in one go, number · amrap = most in fixed time, countdown + number
+  const CH=[
+    {id:'pull50',n:'50 набирания',kind:'time',fig:'Набирания на лоста',d:'Направи 50 набирания на лоста колкото се може по-бързо. Почивай колкото трябва — часовникът върви. Колкото по-малко време, толкова по-добре.'},
+    {id:'push100',n:'100 лицеви опори',kind:'time',fig:'Лицеви опори',d:'100 лицеви опори на колкото серии искаш. Спира се само когато стигнеш 100.'},
+    {id:'plank',n:'Планк докъде издържиш',kind:'hold',fig:'Планк с ходене',d:'Планк на лакти, тялото като дъска. Спри часовника в момента, в който таза падне или спреш.'},
+    {id:'maxpull',n:'Максимум набирания',kind:'max',fig:'Набирания на лоста',d:'Колкото набирания можеш наведнъж, без да пускаш лоста и без замах. Въведи колко са.'},
+    {id:'burpee5',n:'Бърпи за 5 минути',kind:'amrap',sec:300,fig:'Бърпи',d:'5 минути бърпи, колкото можеш. Почивай, когато трябва, но времето тече. После въведи колко са.'},
+    {id:'squat100',n:'100 клека',kind:'time',fig:'Клек с пауза',d:'100 клека с тежестта на тялото, дълбоко. Колкото по-бързо, толкова по-добре.'},
+    {id:'maxdip',n:'Максимум дипове',kind:'max',fig:'Дипове на успоредката',d:'Колкото дипове можеш наведнъж, дълбоко и без замах. Въведи колко са.'},
+    {id:'hang',n:'Висене на лоста',kind:'hold',fig:'Висящо вдигане на крака',d:'Увиси на лоста с изпънати ръце. Спри часовника, когато пуснеш.'},
+    {id:'push2',n:'Лицеви опори за 2 минути',kind:'amrap',sec:120,fig:'Лицеви опори',d:'Колкото чисти лицеви опори можеш за 2 минути. Може да спираш горе. После въведи колко са.'},
+    {id:'wall',n:'Клек до стена',kind:'hold',fig:'Клек до стена (задържане)',d:'Гръб на стената, бедрата успоредно на пода. Спри часовника, когато станеш.'},
+    {id:'run2',n:'2 км тичане',kind:'time',fig:'Тичане',d:'2 км навън с максимално темпо. Пусни часовника на старта и го спри на финала.'},
+    {id:'jj',n:'Скачащи джакове за 3 минути',kind:'amrap',sec:180,fig:'Скачащи джакове',d:'3 минути скачащи джакове без спиране, колкото можеш. Един пълен джак е 1. После въведи колко са.'},
+  ];
+  const $=id=>document.getElementById(id);
+  const cur=d=>{d=d||new Date();return CH[(d.getMonth()+(d.getFullYear()-2026)*5+120)%CH.length];};
+  const fmtT=t=>{t=Math.max(0,Math.round(t));const h=Math.floor(t/3600),m=Math.floor(t%3600/60),sc=t%60;
+    return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(sc).padStart(2,'0');};
+  const res=(c,v)=>c.kind==='time'||c.kind==='hold'?fmtT(v):v+' повт.';
+  const better=(c,a,b)=>c.kind==='time'?a<b:a>b;
+  const entries=c=>load('wt_log',[]).filter(x=>x.type==='challenge'&&x.detail&&x.detail.id===c.id&&typeof x.detail.v==='number');
+  const bestOf=c=>entries(c).reduce((b,x)=>b==null||better(c,x.detail.v,b)?x.detail.v:b,null);
+  const doneThisMonth=c=>{const mon=localISO().slice(0,7);return entries(c).find(x=>x.date.slice(0,7)===mon);};
+  window.__chal={
+    line(x){const c=CH.find(k=>k.id===x.id);return c&&typeof x.v==='number'?c.n+' · '+res(c,x.v):'';},
+    card(){const c=cur(),dn=doneThisMonth(c);
+      const mon=new Date().toLocaleDateString('bg-BG',{month:'long'});
+      return '<div class="hlbl"><span class="l">Предизвикателство · '+mon+'</span></div><div class="card wl chal-card"><button class="wr" '+(dn?'':'data-chal="1" ')+'style="'+(dn?'cursor:default':'')+'">'+
+        '<span class="wi">'+FIGX.svg(c.fig,null,92)+'</span><span class="wt"><b>'+c.n+'</b><small>'+(dn?'✓ '+res(c,dn.detail.v)+' · следващото през месеца':'веднъж този месец')+'</small></span>'+(dn?'':'<span class="go">›</span>')+'</button></div>';}
+  };
+  let c=null,t0=0,h=null,stage='',val=0;
+  const ov=$('chal-ov'),go=$('chal-go'),alt=$('chal-alt'),tEl=$('chal-t'),st=$('chal-st'),vEl=$('chal-v'),rec=$('chal-rec');
+  function stopTick(){clearInterval(h);h=null;}
+  function paintV(){vEl.textContent=val;}
+  function intro(){stage='intro';stopTick();keepAwake(false);
+    tEl.style.display='none';st.style.display='none';alt.style.display='none';go.style.display='';
+    $('chal-d').textContent=c.d;
+    const b=bestOf(c),last=entries(c)[0];
+    rec.textContent=b==null?'Още нямаш резултат — първият е рекорд.':'Рекорд: '+res(c,b)+(last&&last.detail.v!==b?' · последно: '+res(c,last.detail.v):'');
+    go.textContent=c.kind==='max'?'Започвам':'Старт';}
+  function startClock(){stage='run';t0=Date.now();keepAwake(true);
+    $('chal-d').textContent=c.kind==='amrap'?'Давай! Звук и вибрация, когато времето изтече.':c.kind==='hold'?'Дръж! Спри, когато не можеш повече.':'Давай! Спри часовника на последното повторение.';
+    tEl.style.display='';rec.textContent='';
+    go.textContent=c.kind==='hold'?'Пуснах':c.kind==='amrap'?'Спри по-рано':'Готово';
+    alt.style.display='';alt.textContent='Откажи';
+    say('Старт');vib([120]);
+    let last=99;
+    const paint=()=>{const el=(Date.now()-t0)/1000;
+      if(c.kind==='amrap'){const rem=c.sec-el,s=Math.ceil(rem);tEl.textContent=fmtT(Math.max(0,rem));
+        if(s<=3&&s>0&&s!==last){last=s;tickBeep();}
+        if(rem<=0){stopTick();play('go');vib([200,80,200,80,300]);say('Време');askNum();}}
+      else tEl.textContent=fmtT(el);};
+    paint();h=setInterval(paint,200);}
+  function askNum(){stage='num';stopTick();keepAwake(false);
+    tEl.style.display='none';st.style.display='flex';alt.style.display='none';paintV();
+    $('chal-d').textContent=c.kind==='max'?'Направи ги наведнъж, колкото можеш. После въведи колко са.':'Колко повторения направи?';
+    rec.textContent='';go.style.display='';go.textContent='Запиши';}
+  function finish(v){
+    const prev=bestOf(c),rc=prev==null||better(c,v,prev);
+    logSession('challenge',{id:c.id,kind:c.kind,v});
+    ov.classList.remove('on');document.body.classList.remove('in-work');renderHome();
+    showDone('challenge',{title:c.n,res:res(c,v),rec:rc&&prev!=null});}
+  go.addEventListener('click',()=>{
+    if(stage==='intro'){val=0;if(c.kind==='max')askNum();else startClock();}
+    else if(stage==='run'){const el=Math.round((Date.now()-t0)/1000);
+      if(c.kind==='amrap'){stopTick();askNum();}else{stopTick();keepAwake(false);if(el>=1)finish(el);else intro();}}
+    else if(stage==='num'){if(val>0)finish(val);}});
+  alt.addEventListener('click',()=>{stopTick();intro();});
+  $('chal-m').addEventListener('click',()=>{val=Math.max(0,val-1);paintV();});
+  $('chal-p').addEventListener('click',()=>{val=Math.min(999,val+1);paintV();});
+  $('chal-close').addEventListener('click',()=>{stopTick();keepAwake(false);ov.classList.remove('on');});
+  $('home').addEventListener('click',e=>{if(!e.target.closest('[data-chal]'))return;
+    c=cur();$('chal-fig').innerHTML=FIGX.svg(c.fig);$('chal-n').textContent=c.n;intro();ov.classList.add('on');ov.scrollTop=0;});
+})();
+
 // ================= RUN =================
 // GPS distance, current/average pace, a voice split every km, route trace and a comparison with earlier runs.
 // iPhone only reports position while the page is open: the screen stays awake during the run.
@@ -1645,13 +1747,14 @@ function showDone(type,info){
   for(let i=0;i<=mo;i++){const d=new Date(now);d.setDate(now.getDate()-i);if(days.has(localISO(d)))wk++;}
   const {n:st,best}=streakInfo(),total=tr.length,$=id=>document.getElementById(id),h=now.getHours();
   const sum={core:'Ядро · '+info.n+' упражнения · '+info.min+' мин',func:'Функционална · '+info.n+' упражнения · '+info.min+' мин',
-    strength:'Сила · '+info.hits+' от '+info.total+' серии на целта',stretch:'Разтягане · '+info.min+' мин',
+    strength:'Сила · '+info.hits+' от '+info.total+' серии на целта',stretch:'Разтягане · '+info.min+' мин',challenge:info.title+' · '+info.res,
     run:'Тичане · '+(info.km?String(info.km).replace('.',',')+' км · '+fmtPace(info.pace)+' /км':info.min+' мин')}[type];
   // the one thing worth celebrating today
   const prev=log.slice(1).find(x=>x.type===type&&x.detail);let hi='',party=false;
   const ord=k=>k+'-'+(k%100===0?'на':k%10===1&&k%100!==11?'ва':k%10===2&&k%100!==12?'ра':(k%10===7||k%10===8)&&k%100!==17&&k%100!==18?'ма':'та');
   const MS=[10,25,50,75,100,150,200,250,300,400,500];
-  if(type!=='stretch'&&st>=3&&st>=best){hi='Нов рекорд — '+st+' дни подред';party=true;}
+  if(type==='challenge'&&info.rec){hi='Нов личен рекорд';party=true;}
+  else if(type!=='stretch'&&st>=3&&st>=best){hi='Нов рекорд — '+st+' дни подред';party=true;}
   else if(MS.includes(total)){hi=ord(total)+' тренировка';party=true;}
   else if(type==='run'&&prev&&info.km&&prev.detail.pace&&info.pace&&prev.detail.pace-info.pace>=3)hi='С '+Math.round(prev.detail.pace-info.pace)+' сек/км по-бързо от миналия път';
   else if(type==='run'&&prev&&info.km&&prev.detail.km&&info.km-prev.detail.km>=.3)hi='С '+String(Math.round((info.km-prev.detail.km)*10)/10).replace('.',',')+' км повече от миналия път';
@@ -1709,6 +1812,7 @@ function renderHome(){
     wk+='<div class="d'+(ok?' done':'')+(iso===rd?' rest':'')+(i===mo?' today':'')+'"><div class="n">'+lbl[i]+'</div><div class="c"></div></div>';}
   $('h-week').innerHTML=wk;$('h-wk').textContent=done+' от 6';
   $('h-prog').innerHTML=progressHTML(log);
+  if(window.__chal)$('h-chal').innerHTML=window.__chal.card();
   const hs=$('h-stretch');if(hs&&window.__stretchMin)hs.querySelector('.s').textContent=window.__stretchMin+' минути · в леглото преди сън';
   const sf=$('h-stretch-fig');if(sf&&!sf.firstChild)sf.innerHTML=FIGX.svg(TF.stretch,null,ICON);
   // the other workouts, the next one first; tomorrow's is marked
@@ -1789,7 +1893,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261022130515';
+const BUILD='20261022131006';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

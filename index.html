@@ -296,6 +296,15 @@
   .fx line{stroke-linecap:round}.fx .fx-n{stroke:var(--ink)}.fx .fx-f{stroke:var(--fx2)}
   .fx .fx-h{fill:var(--ink)}.fx .fx-g{stroke:var(--line);stroke-width:2px;vector-effect:non-scaling-stroke}.fx .fx-box{fill:var(--muted);opacity:.3}
   .fx .fx-pole{stroke:var(--muted);stroke-width:2.5}.fx .fx-bar{stroke:var(--gold);stroke-width:3}.fx .fx-plate{fill:var(--gold)}.fx .fx-tw{stroke:var(--gold);stroke-width:2.5}
+  /* mobility: test ratings + zone map */
+  .mgrp{margin-top:16px}.mgrp .ml{font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .rt{display:flex;gap:6px}.rt button{padding:13px 0;font-size:13.5px;font-weight:600;letter-spacing:0;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:12px;min-width:0}
+  .rt button.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+  .mtag{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;color:var(--gold);letter-spacing:.04em}
+  .mdose{text-align:center;font-size:15px;font-weight:600;margin:6px 0 10px;color:var(--ink)}
+  .mzs{font-size:13px;color:var(--ink-2);line-height:1.6;margin-top:10px}
+  .exrow .v.weak{color:var(--work);font-weight:600}.exrow .v.none{opacity:.5}
+  #panel-mob .exrow{cursor:default}
   .lnk.ban{display:block;margin-top:10px;padding:0;font-size:13px;color:var(--muted);text-decoration:underline}
   #work{display:none} body.in-work #work{display:block} body.in-work #home{display:none}
   .wbar{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 18px;min-height:30px}
@@ -477,6 +486,15 @@
       <div class="label">Позиции</div>
       <div class="sub" style="margin-bottom:4px;">Докосни за техника</div>
       <div id="x-list"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-mob">
+    <div class="card" id="m-card"></div>
+    <div class="card">
+      <div class="label">Зоните</div>
+      <div class="sub" style="margin-bottom:4px;">Последен резултат · ляво и дясно</div>
+      <div id="m-zones"></div>
     </div>
   </div>
 
@@ -769,9 +787,9 @@ const LIB={
 const WINTER=true; // permanent: strength outdoors short, core 40 s
 const WORK_S=WINTER?40:30;
 function coreMin(n){return Math.round((n*WORK_S+(n-1)*15)/60);}
-const dayMap={0:'rest',1:'func',2:'strength',3:'core',4:'strength',5:'func',6:'run'}; // Sunday: whatever the week still owes, else rest
+const dayMap={0:'rest',1:'func',2:'strength',3:'mob',4:'strength',5:'func',6:'run'}; // Wednesday: mobility (test + exercises); Sunday: whatever the week still owes, else stretching ('rest')
 const dayNames=['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
-const planNames={core:'Ядро',strength:'Сила',run:'Тичане',func:'Функционална',rest:'Почивка',challenge:'Предизвикателство'};
+const planNames={core:'Ядро',strength:'Сила',run:'Тичане',func:'Функционална',mob:'Подвижност',rest:'Разтягане',challenge:'Предизвикателство'};
 // one rest day a week (Mon–Sun), on whichever day: the first day without training doesn't break the streak, a second one does
 const WEEK=[1,2,3,4,5,6].map(i=>dayMap[i]);
 const monOf=d=>{const x=new Date(d);x.setDate(x.getDate()-(x.getDay()+6)%7);return localISO(x);};
@@ -865,6 +883,7 @@ function renderHist(){
     else if(s.type==='core'||s.type==='func')det=Array.isArray(x.ex)&&(x.n||x.ex.length)?(x.n||x.ex.length)+' упражнения':'';
     else if(s.type==='run')det=x.km?String(x.km).replace('.',',')+' км · '+fmtPace(x.pace)+' /км':(x.min||0)+' мин';
     else if(s.type==='stretch')det=(x.min||0)+' мин';
+    else if(s.type==='mob')det=x.line||'';
     else if(s.type==='challenge')det=window.__chal?window.__chal.line(x):'';
     const r=document.createElement('div');r.className='hist';
     r.innerHTML='<div class="hw"><b>'+(planNames[s.type]||'Разтягане')+'</b>'+(det?'<small>'+det+'</small>':'')+'</div><span class="hd">'+['нд','пн','вт','ср','чт','пт','сб'][d.getDay()]+' '+d.getDate()+'.'+(d.getMonth()+1)+'</span>';
@@ -1732,6 +1751,177 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
     window.__resume=window.__resume||'stretch';}
 })();
 
+// ================= MOBILITY (Wednesday) =================
+// 16 body zones in 3 groups. A test per zone (left/right: ок · ограничено · болка) and exercises only for the weak zones.
+// Results live in wt_log (type 'mob', detail.res) — "last result per zone" and "weak zones" are computed from there, so the
+// GitHub copy and the backup already carry them. Order: first the untested groups (one per Wednesday), then the 3 weakest
+// zones get exercises; a weak zone not tested for 14 days is re-tested first. No weak zones → the oldest group is re-tested.
+const MG=['Долна част','Център','Горна част'],MR=['ок','ограничено','болка'];
+const MZ=[
+{id:'ank',g:0,n:'Глезени и прасци',pri:1,sides:1,
+ test:{n:'Коляно до стената',t:'Стъпалото е на 10 см от стената, петата остава на пода. Буташ коляното напред към стената. Ляво и дясно.',ok:'Докосва при 10 см или повече, без вдигане на петата и без опъване в ахилеса.',yt:'knee to wall ankle mobility test'},
+ ex:[{n:'Прасец с изправено коляно',dose:'2×40 сек на страна',d:40,t:'Седнал, единият крак изпънат, кърпа около предната част на стъпалото. Придърпваш пръстите към себе си.',fig:'Прасец с кърпа'},
+  {n:'Прасец със свито коляно',dose:'2×40 сек на страна',d:40,t:'Ръце на стена, единият крак назад с леко свито коляно и пета на пода. Накланяш се към стената, докато усетиш ахилеса.',yt:'soleus stretch bent knee wall'},
+  {n:'Бавно спускане на петата',dose:'3×12',t:'На пръсти на стъпало; на 3–4 броя се спускаш бавно с петата под нивото на стъпалото.',yt:'eccentric heel drop achilles'}]},
+{id:'foot',g:0,n:'Стъпала',sides:1,
+ test:{n:'Къс крак',t:'На един крак повдигаш арката, без да свиваш пръстите. После, с пети на пода, повдигаш само палеца.',ok:'Арката се вдига, пръстите остават отпуснати. Палецът се вдига сам, без другите пръсти.',yt:'short foot exercise arch'},
+ ex:[{n:'Къс крак',dose:'3×10, задържане 5 сек',t:'Стоиш на един крак. Придърпваш палеца към петата, така че арката се вдига, без да свиваш пръстите.',yt:'short foot exercise arch'},
+  {n:'Повдигане на палеца',dose:'2×10 на крак',t:'Петата и другите пръсти са на пода. Повдигаш само палеца, после само другите пръсти.',yt:'big toe lift exercise'},
+  {n:'Ходене на пръсти и на пети',dose:'2×20 м',t:'20 метра на пръсти, 20 метра на пети.',yt:'toe walk heel walk'}]},
+{id:'knee',g:0,n:'Колене и клек',sides:0,
+ test:{n:'Дълбок клек',t:'Клек с ръце пред гърдите, 5 повторения, краката на ширината на раменете, пети на пода.',ok:'Петите не се вдигат, коленете не се събират, гърбът не се закръглява.',fig:'Клек с пауза'},
+ ex:[{n:'Клек с пауза долу',dose:'3×8, пауза 3 сек долу',t:'Бавно слизаш възможно най-ниско и стоиш 3 секунди долу. Коленете следват пръстите.',fig:'Клек с пауза'},
+  {n:'Бедра 90/90',dose:'2×8 на страна',t:'Седнал на пода, двете колена свити на 90°. Въртиш бедрата от едната страна на другата без ръце.',yt:'90/90 hip switches'},
+  {n:'Клек с плоча под петите',dose:'3×8',t:'Клек с малка плоча или книга под петите. Намаляваш височината, когато глезенът се отпусне.',yt:'heel elevated squat'}]},
+{id:'hipf',g:0,n:'Бедрени флексори',sides:1,
+ test:{n:'Тест на Томас',t:'Легнал на ръба на леглото, дърпаш едното коляно към гърдите. Гледаш другото бедро.',ok:'Другото бедро остава на нивото на леглото, а коляното е свито към 90°.',fig:'Таз на ръба на леглото'},
+ ex:[{n:'Бедрен флексор на ръба на леглото',dose:'2×40 сек на страна',d:40,t:'По гръб на ръба на леглото. Прегръщаш едното коляно, а другият крак виси свободно от ръба.',fig:'Таз на ръба на леглото'},
+  {n:'Мост с пауза горе',dose:'3×10',t:'Мост за седалището с пауза 2 сек горе.',fig:'Мост за седалище'}]},
+{id:'quad',g:0,n:'Предна част на бедрото',sides:1,
+ test:{n:'Пета към седалището',t:'Легнал по корем, дърпаш петата към седалището.',ok:'Петата стига до седалището, без да се вдига тазът и без болка в коляното.',yt:'prone knee bend quad flexibility test'},
+ ex:[{n:'Разтягане на квадрицепс',dose:'2×40 сек на страна',d:40,t:'Легнал на една страна, хващаш глезена на горния крак и дърпаш петата към седалището. Тазът напред.',yt:'side lying quad stretch'},
+  {n:'Клек с пауза',dose:'3×8',t:'Бавен клек с пауза 3 сек долу.',fig:'Клек с пауза'}]},
+{id:'ham',g:0,n:'Задна част на бедрото',sides:1,
+ test:{n:'Вдигане на крак по гръб',t:'Легнал по гръб, вдигаш изправен крак без помощ. Другият крак остава на пода.',ok:'Кракът стига около 80° (почти вертикално) с изправено коляно.',yt:'active straight leg raise test'},
+ ex:[{n:'Задно бедро с колан',dose:'2×40 сек на страна',d:40,t:'По гръб, колан или кърпа около стъпалото. Изпъваш крака нагоре и леко го придърпваш.',fig:'Задно бедро с кърпа'},
+  {n:'Румънска тяга с лек товар',dose:'3×8',t:'Изправен, леко свити колене. Накланяш се напред от таза с прав гръб, докато усетиш задното бедро.',fig:'Румънска мъртва тяга с лоста'}]},
+{id:'add',g:0,n:'Вътрешна страна на бедрата',sides:0,
+ test:{n:'Жаба',t:'На четири опори разтваряш коленете встрани и пращаш таза назад над петите.',ok:'Тазът отива назад без заобляне на кръста и без остра болка във вътрешната страна или коляното.',yt:'frog stretch adductors'},
+ ex:[{n:'Жаба с леко люлеене',dose:'2×40 сек',d:40,t:'В същата позиция леко люлееш таза напред-назад, без да извиваш кръста.',yt:'frog stretch adductors'},
+  {n:'Странична стъпка в клек',dose:'2×8 на страна',t:'Широк стоеж. Слизаш в клек върху единия крак, другият е изпънат встрани.',fig:'Казашки клек'}]},
+{id:'glute',g:1,n:'Таз и седалище',sides:1,
+ test:{n:'Мост на един крак',t:'Мост на един крак, 10 повторения на страна.',ok:'Тазът не се накланя, усещаш седалището, а не кръста и задната част на бедрото. Двете страни са равни.'},
+ ex:[{n:'Мост на един крак',dose:'3×10 на страна',t:'По гръб, едното стъпало на пода, другият крак изпънат нагоре. Повдигаш таза с усилие от седалището.'},
+  {n:'Странично повдигане на крак',dose:'2×15 на страна',t:'Легнал на една страна, повдигаш горния крак встрани с изпънато коляно, без да въртиш таза.',yt:'side lying leg raise'},
+  {n:'Раковина',dose:'2×15 на страна',t:'Легнал на една страна, коленете свити, краката събрани. Повдигаш горното коляно, без да се търкаля тазът.',yt:'clamshell exercise'}]},
+{id:'core',g:1,n:'Кръст и ядро',pri:1,sides:1,
+ test:{n:'Страничен планк',t:'Страничен планк, 30 сек на страна. После птица-куче, 10 повторения на страна.',ok:'Страничният планк издържа 30 сек и разликата между страните е под 20%. При птица-куче тазът не се люлее.'},
+ ex:[{n:'Птица-куче',dose:'3×8, пауза 5 сек',t:'На четири опори. Изпъваш едната ръка напред и срещуположния крак назад, без да люлееш таза. Пауза 5 сек.',yt:'bird dog exercise'},
+  {n:'Страничен планк',dose:'3×20–30 сек на страна',d:30,t:'На лакът, тялото в права линия, тазът високо.'},
+  {n:'Мъртва буболечка',dose:'3×8',t:'По гръб, ръце нагоре, колене на 90°. Бавно спускаш срещуположна ръка и крак, без да се отлепя кръстът.'}]},
+{id:'thor',g:1,n:'Гръден кош',sides:1,
+ test:{n:'Конец през иглата',t:'На четири опори, едната ръка минава под тялото, после се отваря нагоре. Ляво и дясно.',ok:'Рамото стига близо до пода, а отварянето нагоре минава на 45° или повече без кръстът да се върти.',yt:'thread the needle thoracic rotation'},
+ ex:[{n:'Конец през иглата',dose:'2×8 на страна',t:'На четири опори. Ръката минава под тялото, после се отваря нагоре, погледът я следва.',yt:'thread the needle thoracic rotation'},
+  {n:'Отваряне на книга',dose:'2×10 на страна',t:'Легнал на една страна, коленете свити. Горната ръка се отваря на другата страна, погледът я следва.',yt:'open book thoracic rotation'},
+  {n:'Котка-крава',dose:'2×10',t:'На четири опори. Бавно изкривяваш гърба нагоре, после надолу.',yt:'cat cow stretch'}]},
+{id:'bal',g:1,n:'Баланс',sides:1,
+ test:{n:'Стоене на един крак',t:'Стоене на един крак със затворени очи, до 30 сек. Ляво и дясно.',ok:'30 сек без хващане. Разликата между краката е малка.',yt:'single leg stance balance test eyes closed'},
+ ex:[{n:'Стоене на един крак',dose:'3×30 сек на крак',d:30,t:'Първо с отворени очи, после с поглед нагоре. Тазът остава прав.',yt:'single leg balance exercise'},
+  {n:'Докосване с крак във всички посоки',dose:'2×8 на крак',t:'На един крак докосваш с другия пода напред, встрани и назад.',yt:'single leg reach balance star excursion'}]},
+{id:'shl',g:2,n:'Рамене и лопатки',sides:1,
+ test:{n:'Ръка зад гърба и стена-ангел',t:'Едната ръка отгоре, другата отдолу зад гърба, пръстите се опитват да се срещнат. После стена-ангел: гръб, глава и лакти до стената, ръцете нагоре.',ok:'Пръстите са на по-малко от длан разстояние. При ангела лакти и длани остават на стената, без извиване на кръста.',yt:'shoulder mobility reach behind back test'},
+ ex:[{n:'Стена-ангели',dose:'2×10',t:'Гръб, глава и седалище до стената. Плъзгаш ръцете нагоре и надолу, лактите остават на стената.',yt:'wall angels'},
+  {n:'Разтваряне на лента',dose:'3×15',t:'Изправен, лента в изпънати ръце пред гърдите. Разтваряш ръцете встрани, лопатките се събират.',yt:'band pull apart'}]},
+{id:'chest',g:2,n:'Гърди',sides:0,
+ test:{n:'Т-позиция по гръб',t:'Легнал по гръб със свити колене, ръце разтворени встрани на 90° като буква Т. Лактите слизат към пода.',ok:'Лактите и китките лежат на пода без извиване на кръста и без болка в предната част на рамото.',yt:'chest mobility lying T position'},
+ ex:[{n:'Гърди на рамка на врата',dose:'2×40 сек',d:40,t:'Предмишницата е на рамката, лактите на височината на раменете. Стъпваш напред, докато усетиш гърдите.',yt:'doorway chest stretch'},
+  {n:'W-повдигане по корем',dose:'2×10',t:'Легнал по корем, ръцете във форма W. Повдигаш лактите и лопатките от пода.',yt:'prone W raise'}]},
+{id:'lat',g:2,n:'Широк гръбен и хват',sides:0,
+ test:{n:'Мъртво висене',t:'Висиш на лост до 45 сек, ръцете изпънати.',ok:'Издържаш 45 сек с пълно изпънати лакти и без ребрата да се вдигат. Ако ръцете отказват преди раменете, слаб е хватът.',yt:'dead hang'},
+ ex:[{n:'Висене',dose:'3×20–30 сек',d:30,t:'Висиш на лоста с изпънати ръце, лопатките леко надолу.',yt:'dead hang'},
+  {n:'Широк гръбен: детска поза',dose:'2×40 сек',d:40,t:'Коленете широко, седалището към петите. Двете ръце изпънати напред.',fig:'Детска поза с посягане настрани'}]},
+{id:'neck',g:2,n:'Шия',sides:1,
+ test:{n:'Въртене на главата',t:'Бавно въртиш главата наляво и надясно. После брадичка към гърдите.',ok:'Ротацията е еднаква в двете посоки (около 80°), брадичката докосва гърдите, без болка или изтръпване.',yt:'neck rotation range of motion'},
+ ex:[{n:'Прибиране на брадичката',dose:'2×10',t:'Дърпаш брадичката право назад (като двойна брадичка), без да навеждаш главата.',yt:'chin tuck exercise'},
+  {n:'Накланяне на главата встрани',dose:'2×30 сек на страна',d:30,t:'Бавно накланяш ухото към рамото, другото рамо остава ниско.',yt:'neck side stretch'}]},
+{id:'wrist',g:2,n:'Китки и предмишници',sides:1,
+ test:{n:'Длани на пода',t:'На колене, длани на пода, пръсти напред, тежестта леко напред.',ok:'Цялата длан остава на пода, без болка в китката или лакътя.',yt:'wrist extension mobility test'},
+ ex:[{n:'Кръгове с китките',dose:'2×10 на посока',t:'Дланите на пода, бавни кръгове с китките в двете посоки.',yt:'wrist circles'},
+  {n:'Разтягане на длан и предмишница',dose:'2×30 сек на страна',d:30,t:'Ръка изпъната напред с длан нагоре. Другата ръка придърпва пръстите към тялото.',yt:'wrist flexor stretch'}]},
+];
+(function(){
+  const $=id=>document.getElementById(id),card=$('m-card'),zl=$('m-zones');
+  const zw=n=>n===1?'зона':'зони';
+  // no drawing yet → a YouTube link under the text instead
+  const pic=o=>{const f=FIGX.svg(o.fig||o.n);return f?'<span class="pic fig">'+f+'</span>':'';};
+  const lnk=o=>!FIGX.svg(o.fig||o.n)&&o.yt?'<a class="vid" style="display:block;margin:10px 0 0" href="https://www.youtube.com/results?search_query='+encodeURIComponent(o.yt)+'" target="_blank" rel="noopener">Как се прави (видео)</a>':'';
+  function results(){const r={};load('wt_log',[]).filter(x=>x.type==='mob'&&x.detail&&x.detail.res).slice().sort((a,b)=>(a.ts||0)-(b.ts||0))
+    .forEach(s=>Object.keys(s.detail.res).forEach(k=>{r[k]={v:s.detail.res[k],date:s.date};}));return r;}
+  const worst=r=>Math.max(...r.v),score=r=>worst(r)*10+(r.v.length>1?Math.abs(r.v[0]-r.v[1]):0);
+  const age=d=>Math.round((Date.now()-new Date(d+'T12:00').getTime())/864e5);
+  function mk(mode,g,steps,weak){
+    const secs=steps.reduce((a,s)=>a+(s.k==='t'?100:90),0),min=Math.max(3,Math.round(secs/60)),zs=[];
+    steps.forEach(s=>{if(!zs.includes(s.z))zs.push(s.z);});
+    const key=mode+':'+steps.map(s=>s.k+s.z.id+(s.e?s.e.n:'')).join(',');let label,title,desc,sub;
+    if(mode==='test'){label='Тест';title=MG[g];sub='Тест · '+MG[g].toLowerCase()+' · '+zs.length+' '+zw(zs.length)+' · '+min+' мин';
+      desc='Оценяваш всяко движение за ляво и дясно: ок, ограничено или болка. Без бързане и без форсиране.';}
+    else if(mode==='ex'){label='Упражнения';title=zs.length+' слаби '+zw(zs.length);sub='Упражнения за '+zs.length+' слаби '+zw(zs.length)+' · '+min+' мин';
+      desc='Упражнения за зоните, които излязоха най-слаби в последния тест.';}
+    else{label='Повторен тест и упражнения';title='Слабите зони';sub='Повторен тест и упражнения · '+min+' мин';
+      desc='Първо кратък повторен тест на слабите зони, после упражненията за тях.';}
+    return {mode,g,steps,key,min,label,title,desc,sub,list:zs.map(z=>z.n).join(' · ')};}
+  function plan(){const res=results(),T=z=>({k:'t',z}),E=(z,e)=>({k:'e',z,e});
+    for(let g=0;g<3;g++){const zs=MZ.filter(z=>z.g===g&&!res[z.id]);if(zs.length)return mk('test',g,zs.map(T));}
+    const weak=MZ.filter(z=>worst(res[z.id])>0).sort((a,b)=>score(res[b.id])-score(res[a.id])||(res[a.id].date<res[b.id].date?-1:1)).slice(0,3);
+    if(!weak.length){const old=g=>Math.min(...MZ.filter(z=>z.g===g).map(z=>+res[z.id].date.replace(/-/g,'')));
+      let g=0;for(let k=1;k<3;k++)if(old(k)<old(g))g=k;return mk('test',g,MZ.filter(z=>z.g===g).map(T));}
+    const due=weak.filter(z=>age(res[z.id].date)>=14),steps=due.map(T);
+    weak.forEach(z=>z.ex.slice(0,2).forEach(e=>steps.push(E(z,e))));
+    return mk(due.length?'both':'ex',null,steps,weak);}
+  let S={plan:null,i:-1,res:{},tm:null,end:0,last:99};
+  const LIVE='wt_mob_live';
+  const saveLive=()=>store(LIVE,{date:localISO(),key:S.plan.key,i:S.i,res:S.res});
+  function clearT(){if(S.tm){clearInterval(S.tm);S.tm=null;}}
+  function timer(d){const btn=$('m-tm');if(!btn)return;
+    if(S.tm){clearT();btn.textContent='Таймер · '+d+' сек';return;}
+    S.end=Date.now()+d*1000;S.last=99;cueWork();btn.textContent=fmt(d)+' · стоп';
+    S.tm=setInterval(()=>{const b=$('m-tm');if(!b){clearT();return;}const rem=(S.end-Date.now())/1000,s=Math.ceil(rem);
+      if(s<=3&&s>0&&s!==S.last){S.last=s;tickBeep();}
+      if(rem<=0){clearT();cueEnd();b.textContent='Още веднъж';return;}
+      b.textContent=fmt(rem)+' · стоп';},200);}
+  function needed(st){return st.z.sides?2:1;}
+  function rated(st){const r=S.res[st.z.id]||[];for(let k=0;k<needed(st);k++)if(r[k]==null)return false;return true;}
+  function render(){const P=S.plan,n=P.steps.length;
+    if(S.i<0){card.innerHTML='<div class="label">'+P.label+'</div><div class="now-name" style="margin-top:6px">'+P.title+'</div>'+
+      '<div class="cue">'+P.desc+'<div class="mzs">'+P.list+'</div></div>'+
+      '<div class="ctrl"><button class="b-main full" data-a="start">Старт · '+P.min+' мин</button></div>';return;}
+    const st=P.steps[S.i],z=st.z,dots=P.steps.map((_,k)=>'<div class="pd'+(k<S.i?' done':k===S.i?' cur':'')+'"></div>').join('');
+    let h;
+    if(st.k==='t'){const t=z.test,r=S.res[z.id]||[];
+      const grp=(side,lab)=>'<div class="mgrp"><div class="ml">'+lab+'</div><div class="rt">'+MR.map((x,v)=>'<button data-a="rate" data-side="'+side+'" data-v="'+v+'"'+(r[side]===v?' class="on"':'')+'>'+x[0].toUpperCase()+x.slice(1)+'</button>').join('')+'</div></div>';
+      h='<div class="label">Тест · '+(S.i+1)+' от '+n+'<span class="mtag">'+MG[z.g]+'</span></div>'+
+        '<div class="now-name" style="margin-top:8px">'+z.n+'</div><div class="sub" style="text-align:center;margin-top:4px">'+t.n+'</div>'+
+        '<div class="cue" style="margin-top:14px">'+pic({n:t.n,fig:t.fig})+t.t+lnk({n:t.n,fig:t.fig,yt:t.yt})+'<span class="err">Ок: '+t.ok+'</span></div>'+
+        (z.sides?grp(0,'Ляво')+grp(1,'Дясно'):grp(0,'Резултат'));}
+    else{const e=st.e;
+      h='<div class="label">Упражнение · '+(S.i+1)+' от '+n+'<span class="mtag">'+z.n+'</span></div>'+
+        '<div class="now-name" style="margin-top:8px">'+e.n+'</div><div class="mdose">'+e.dose+'</div>'+
+        '<div class="cue" style="margin-top:6px">'+pic(e)+e.t+lnk(e)+'</div>'+
+        (e.d?'<div class="ctrl" style="margin-top:14px"><button class="b-alt full" id="m-tm" data-a="tm" data-d="'+e.d+'">Таймер · '+e.d+' сек</button></div>':'');}
+    h+='<div class="progress-dots">'+dots+'</div>'+
+      '<div class="ctrl"><button class="b-alt" data-a="back">Назад</button><button class="b-main" id="m-next" data-a="next"'+(st.k==='t'&&!rated(st)?' disabled':'')+'>'+(S.i+1>=n?'Готово':'Напред')+'</button></div>';
+    card.innerHTML=h;}
+  function finish(){clearT();keepAwake(false);dropLive(LIVE);
+    const res={},ez=[];
+    S.plan.steps.forEach(s=>{if(s.k==='t'){const v=S.res[s.z.id];if(v)res[s.z.id]=v.slice(0,needed(s)).map(x=>x==null?0:x);}
+      else if(!ez.includes(s.z.id))ez.push(s.z.id);});
+    const nt=Object.keys(res).length,line=(nt?'тест · '+nt+' '+zw(nt):'')+(nt&&ez.length?' + ':'')+(ez.length?'упражнения · '+ez.length+' '+zw(ez.length):'');
+    logSession('mob',{mode:S.plan.mode,g:S.plan.g,res,ex:ez,line});showDone('mob',{line});}
+  card.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,n=S.plan.steps.length;
+    if(a==='start'){keepAwake(true);S.i=0;saveLive();render();window.scrollTo(0,0);}
+    else if(a==='rate'){const st=S.plan.steps[S.i],id=st.z.id,r=S.res[id]||(S.res[id]=[]);r[+b.dataset.side]=+b.dataset.v;
+      b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+      const nx=$('m-next');if(nx)nx.disabled=!rated(st);saveLive();}
+    else if(a==='next'){clearT();if(S.i+1>=n)finish();else{S.i++;saveLive();render();window.scrollTo(0,0);}}
+    else if(a==='back'){clearT();S.i--;saveLive();render();window.scrollTo(0,0);}
+    else if(a==='tm')timer(+b.dataset.d);});
+  $('back').addEventListener('click',()=>{clearT();});
+  function paintZones(){const res=results();
+    zl.innerHTML=MG.map((gn,g)=>MZ.filter(z=>z.g===g).map((z,k)=>{const r=res[z.id];let v,cls='';
+      if(!r){v='още не е тествана';cls=' none';}
+      else if(r.v.length>1&&r.v[0]!==r.v[1])v='ляво: '+MR[r.v[0]]+' · дясно: '+MR[r.v[1]];
+      else v=MR[r.v[0]];
+      if(r&&worst(r)>0)cls=' weak';
+      return '<div class="exrow"><div><div class="n">'+z.n+'</div><div class="c">'+gn+(z.pri?' · твой приоритет':'')+'</div></div><div class="v'+cls+'">'+v+'</div></div>';}).join('')).join('');}
+  function open(){clearT();S.plan=plan();S.res={};S.i=-1;
+    const lv=load(LIVE,null);
+    if(lv&&lv.date===localISO()&&lv.key===S.plan.key){S.res=lv.res||{};S.i=Math.max(-1,Math.min(lv.i,S.plan.steps.length-1));}
+    render();paintZones();}
+  window.__mobOpen=open;
+  window.__mobInfo=()=>{const p=plan();return {sub:p.sub,min:p.min};};
+  S.plan=plan();render();paintZones();
+})();
+
 // "How am I doing": three numbers computed from the log on the phone, nothing to enter
 function progressHTML(log){
   const iso=n=>localISO(new Date(Date.now()-n*864e5)),tr=log.filter(x=>x.type!=='stretch');
@@ -1753,7 +1943,7 @@ function showDone(type,info){
   for(let i=0;i<=mo;i++){const d=new Date(now);d.setDate(now.getDate()-i);if(days.has(localISO(d)))wk++;}
   const {n:st,best}=streakInfo(),total=tr.length,$=id=>document.getElementById(id),h=now.getHours();
   const sum={core:'Ядро · '+info.n+' упражнения · '+info.min+' мин',func:'Функционална · '+info.n+' упражнения · '+info.min+' мин',
-    strength:'Сила · '+info.hits+' от '+info.total+' серии на целта',stretch:'Разтягане · '+info.min+' мин',challenge:info.title+' · '+info.res,
+    strength:'Сила · '+info.hits+' от '+info.total+' серии на целта',stretch:'Разтягане · '+info.min+' мин',mob:'Подвижност · '+info.line,challenge:info.title+' · '+info.res,
     run:'Тичане · '+(info.km?String(info.km).replace('.',',')+' км · '+fmtPace(info.pace)+' /км':info.min+' мин')}[type];
   // the one thing worth celebrating today
   const prev=log.slice(1).find(x=>x.type===type&&x.detail);let hi='',party=false;
@@ -1795,11 +1985,12 @@ function renderHome(){
   const type=planFor(now),log=load('wt_log',[]);
   const bar=load('wt_bar',true),nEx=bar?10:8;
   // the figure that stands for each kind of workout
-  const TF={func:'Звяр с изритване',core:'Планк с докосване на рамо',strength:'Набирания на лоста',run:'Тичане',rest:'Колене към гърдите',stretch:'Колене към гърдите'};
+  const TF={func:'Звяр с изритване',core:'Планк с докосване на рамо',strength:'Набирания на лоста',run:'Тичане',rest:'Колене към гърдите',stretch:'Колене към гърдите',mob:'Казашки клек'};
   const fm=window.__funcInfo?window.__funcInfo().min:13;
-  const meta={func:'12 упражнения · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън · около 12 минути':'уредите в двора · около 35 минути',run:'3–4 км · на светло'};
+  const mi=window.__mobInfo?window.__mobInfo():{sub:'16 зони · тест и упражнения',min:12};
+  const meta={func:'12 упражнения · около '+fm+' минути',core:nEx+' упражнения · около '+coreMin(nEx)+' минути',strength:WINTER?'навън · около 12 минути':'уредите в двора · около 35 минути',run:'3–4 км · на светло',mob:mi.sub};
   const sub={func:'12 упражнения · '+fm+' мин',core:nEx+' упражнения · '+coreMin(nEx)+' мин',strength:WINTER?'12 мин · загрявка вкъщи':'35 мин',
-    rest:'Мускулите растат, докато почиват. По желание — разтягане вечерта.',run:'3–4 км · GPS мери темпото'}[type];
+    mob:mi.sub,rest:'Лек ден без тренировка. Разтягане, около '+(window.__stretchMin||9)+' минути.',run:'3–4 км · GPS мери темпото'}[type];
   const ICON=92; // same scale for every small figure on this screen (the pull-up with its bar is the tallest)
   let h='<div class="hrow"><div class="htx"><div class="k">По план</div><div class="t">'+planNames[type]+'</div><div class="m">'+sub+'</div></div><span class="hfig">'+FIGX.svg(TF[type])+'</span></div>';
   if(type==='run'){const runs=log.filter(x=>x.type==='run'&&x.detail&&x.detail.km),lr=runs[0];
@@ -1823,11 +2014,13 @@ function renderHome(){
   const sf=$('h-stretch-fig');if(sf&&!sf.firstChild)sf.innerHTML=FIGX.svg(TF.stretch,null,ICON);
   // the other workouts, the next one first; tomorrow's is marked
   const next=[1,2,3,4,5,6].map(k=>{const d=new Date(now);d.setDate(now.getDate()+k);return planFor(d);});
-  $('h-other').innerHTML=['core','func','strength','run'].filter(t=>t!==type).sort((a,b)=>next.indexOf(a)-next.indexOf(b)).map(t=>
+  const nx=t=>{const i=next.indexOf(t);return i<0?99:i;};
+  $('h-other').innerHTML=['core','func','strength','run','mob'].filter(t=>t!==type).sort((a,b)=>nx(a)-nx(b)).map(t=>
     '<button class="wr" data-go="'+t+'"><span class="wi">'+FIGX.svg(TF[t],null,ICON)+'</span><span class="wt"><b>'+planNames[t]+'</b><small>'+meta[t]+'</small></span>'+(next[0]===t?'<span class="tag">утре</span>':'')+'<span class="go">›</span></button>').join('');
 }
 document.getElementById('home').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;
   if(b.dataset.go==='func'&&window.__funcRefresh)window.__funcRefresh();
+  if(b.dataset.go==='mob'&&window.__mobOpen)window.__mobOpen();
   switchTab(b.dataset.go);if(b.dataset.go==='strength'&&window.__strActive&&window.__strActive())keepAwake(true);if(b.dataset.start){const st=document.getElementById(b.dataset.go==='func'?'f-start':'c-start');if(st.textContent==='Старт')st.click();}});
 document.getElementById('back').addEventListener('click',()=>{
   ['c-start','r-start','x-start','f-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
@@ -1899,7 +2092,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261022131552';
+const BUILD='20261112084143';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

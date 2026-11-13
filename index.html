@@ -305,6 +305,7 @@
   .mzs{font-size:13px;color:var(--ink-2);line-height:1.6;margin-top:10px}
   .exrow .v.weak{color:var(--work);font-weight:600}.exrow .v.none{opacity:.5}
   #panel-mob .exrow{cursor:default}
+  .fx path{fill:none;stroke-linecap:round;stroke-linejoin:round}
   .lnk.ban{display:block;margin-top:10px;padding:0;font-size:13px;color:var(--muted);text-decoration:underline}
   #work{display:none} body.in-work #work{display:block} body.in-work #home{display:none}
   .wbar{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 18px;min-height:30px}
@@ -1105,9 +1106,90 @@ const D={
 'Накланяне на главата встрани':{d:4,f:[STF(60,{}),STF(60,{hd:30}),STF(60,{}),STF(60,{hd:-30})]},
 'Прибиране на брадичката':{d:2.4,f:[ST(60,{hd:-25}),ST(60,{hd:12})]},
 'Странично повдигане на крак':{d:2.6,f:[FR({h:[60,68],t:-90,H:[[52,66],[34,74]],F:[[90,66],[92,73]]}),FR({h:[60,68],t:-90,H:[[52,66],[34,74]],F:[[88,52],[92,73]]})]},
+// ---- mobility: the details (foot, wrist, spine, view from above) ----
+'Къс крак':{raw:{d:3,p:[
+  {t:'l',c:'fx-n',w:3.9,v:[[50,24,50,60],[50,24,50,55]]},
+  {t:'l',c:'fx-n',w:3.4,v:[[40,72,50,60],[40,72,50,55]]},
+  {t:'p',c:'fx-n',w:3.4,v:['M50 60 Q66 64 82 71','M50 55 Q66 58 82 71']},
+  {t:'p',c:'fx-n',w:3.6,v:['M40 72 Q60 72 82 72','M40 72 Q60 60 82 72']},
+  {t:'l',c:'fx-n',w:3.6,v:[[82,72,96,72]]}]}},
+'Повдигане на палеца':{raw:{d:2.6,p:[
+  {t:'l',c:'fx-n',w:3.9,v:[[50,24,50,60]]},
+  {t:'l',c:'fx-n',w:3.4,v:[[40,72,50,60]]},
+  {t:'p',c:'fx-n',w:3.4,v:['M50 60 Q66 64 82 71']},
+  {t:'l',c:'fx-n',w:3.6,v:[[40,72,82,72]]},
+  {t:'l',c:'fx-f',w:3.4,v:[[82,72,96,72]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[82,72,96,72],[82,72,94,60]]}]}},
+'Бедра 90/90':{raw:{d:3.6,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[60,40]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[60,70,60,49]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[60,53,55,64]]},{t:'l',c:'fx-n',w:3.1,v:[[55,64,50,72]]},
+  {t:'l',c:'fx-f',w:4.6,v:[[60,70,63,73],[60,70,57,73]]},{t:'l',c:'fx-f',w:3.9,v:[[63,73,36,73],[57,73,84,73]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[60,70,86,70],[60,70,34,70]]},{t:'l',c:'fx-n',w:3.9,v:[[86,70,88,74],[34,70,32,74]]}]}},
+'Жаба':{raw:{g:0,d:3.2,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[60,26]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[60,32,60,56],[60,32,60,63]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[55,36,55,21]]},{t:'l',c:'fx-n',w:3.6,v:[[65,36,65,21]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[55,56,28,50],[55,63,28,50]]},{t:'l',c:'fx-n',w:3.9,v:[[28,50,12,62]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[65,56,92,50],[65,63,92,50]]},{t:'l',c:'fx-n',w:3.9,v:[[92,50,108,62]]}]}},
+'Котка-крава':{raw:{d:4.4,p:[
+  {t:'p',c:'fx-n',w:5.4,v:['M48 59 Q55 54 62 50','M48 57 Q55 43 63 54','M48 59 Q55 63 64 45','M48 59 Q55 54 62 50']},
+  {t:'c',c:'fx-h',r:4.5,v:[[67,45],[67,60],[70,40],[67,45]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[60,51.4,62,74],[59.6,56,62,74],[62,46,62,74],[60,51.4,62,74]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[48,59,48,73],[48,57,48,73],[48,59,48,73],[48,59,48,73]]},
+  {t:'l',c:'fx-n',w:3.9,v:[[48,73,33,74]]}]}},
+'Отваряне на книга':{raw:{d:4,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[14,66]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[20,66,50,68]]},
+  {t:'l',c:'fx-f',w:4.6,v:[[50,70,80,72]]},{t:'l',c:'fx-f',w:3.9,v:[[80,72,58,73]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[50,66,80,68]]},{t:'l',c:'fx-n',w:3.9,v:[[80,68,58,71]]},
+  {t:'l',c:'fx-f',w:3.6,v:[[26,70,40,73]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[26,64,38,69],[26,64,28,42],[26,64,12,56],[26,64,28,42]]}]}},
+'Въртене на главата':{raw:{d:4,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[60,24]]},
+  {t:'l',c:'fx-n',w:2.8,v:[[56,25,51,26.5],[60,28.5,60,30],[64,25,69,26.5],[60,28.5,60,30]]},
+  {t:'l',c:'fx-n',w:5.2,v:[[48,36,72,36]]},{t:'l',c:'fx-n',w:5.6,v:[[60,31,60,58]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[48,36,44,56]]},{t:'l',c:'fx-n',w:3.6,v:[[72,36,76,56]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[56,58,54,74]]},{t:'l',c:'fx-n',w:4.6,v:[[64,58,66,74]]}]}},
+'Раковина':{raw:{d:3,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[14,66]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[20,66,50,68]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[26,64,34,71]]},{t:'l',c:'fx-f',w:3.6,v:[[26,70,12,72]]},
+  {t:'l',c:'fx-f',w:4.6,v:[[50,70,80,72]]},{t:'l',c:'fx-f',w:3.9,v:[[80,72,58,73]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[50,66,80,68],[50,66,80,52],[50,66,80,68]]},
+  {t:'l',c:'fx-n',w:3.9,v:[[80,68,58,71],[80,52,58,71],[80,68,58,71]]}]}},
+'Кръгове с китките':{raw:{g:0,d:3,p:[
+  {t:'e',c:'fx-f',w:1.5,v:[75,48,6,11]},
+  {t:'l',c:'fx-n',w:4.8,v:[[10,48,60,48]]},
+  {t:'l',c:'fx-n',w:4.2,v:[[60,48,72,37],[60,48,75,48],[60,48,72,59],[60,48,75,48]]}]}},
+'Разтягане на длан и предмишница':{raw:{g:0,d:3.4,p:[
+  {t:'l',c:'fx-n',w:4.8,v:[[10,46,60,46]]},
+  {t:'l',c:'fx-n',w:4.2,v:[[60,46,76,46],[60,46,72,59]]},
+  {t:'l',c:'fx-f',w:3.6,v:[[98,72,80,52],[98,72,75,62]]},
+  {t:'c',c:'fx-f',r:3.5,v:[[78,50],[73,60]]}]}},
 };
+// hand-made drawings for what the figure solver can't do (a foot, a wrist, a curved spine, a view from above):
+// primitives l(ine) c(ircle) p(ath) e(llipse, static), one value per frame (1 value = static); same line style as the figures
+function rawSvg(S,frame){
+  const K=Math.max(...S.p.map(q=>q.v.length));
+  if(frame!=null&&frame>=K)return '';
+  const dur=(S.d||3)+'s',kt=Array.from({length:K+1},(_,i)=>(i/K).toFixed(3)).join(';'),ks=Array(K).fill('.45 0 .55 1').join(';');
+  const at=(name,vals)=>{const f=frame!=null;if(f||vals.length<2)return [' '+name+'="'+vals[f?Math.min(frame,vals.length-1):0]+'"',''];
+    return [' '+name+'="'+vals[0]+'"','<animate attributeName="'+name+'" values="'+vals.concat([vals[0]]).join(';')+'" keyTimes="'+kt+'" calcMode="'+(S.lin?'linear':'spline')+'"'+(S.lin?'':' keySplines="'+ks+'"')+' dur="'+dur+'" repeatCount="indefinite"/>'];};
+  let o=S.g===0?'':'<line class="fx-g" x1="2" y1="74.6" x2="118" y2="74.6"/>';
+  S.p.forEach(q=>{
+    if(q.t==='l'){const a=['x1','y1','x2','y2'].map((nm,i)=>at(nm,q.v.map(r=>r[i])));
+      o+='<line class="'+q.c+'" stroke-width="'+q.w+'"'+a.map(x=>x[0]).join('')+'>'+a.map(x=>x[1]).join('')+'</line>';}
+    else if(q.t==='c'){const a=[at('cx',q.v.map(r=>r[0])),at('cy',q.v.map(r=>r[1]))];
+      o+='<circle class="'+q.c+'" r="'+q.r+'"'+a.map(x=>x[0]).join('')+'>'+a.map(x=>x[1]).join('')+'</circle>';}
+    else if(q.t==='p'){const a=at('d',q.v);o+='<path class="'+q.c+'" stroke-width="'+q.w+'"'+a[0]+'>'+a[1]+'</path>';}
+    else if(q.t==='e')o+='<ellipse class="'+q.c+'" stroke-width="'+q.w+'" stroke-dasharray="2 3" fill="none" cx="'+q.v[0]+'" cy="'+q.v[1]+'" rx="'+q.v[2]+'" ry="'+q.v[3]+'"/>';
+  });
+  return '<svg class="fx" viewBox="0 15 120 60" aria-hidden="true">'+o+'</svg>';
+}
 function svgOf(n,frame,fix){ // fix: viewBox height for a fixed scale (icons), else fit the figure
-  const E=D[n];if(!E||(frame!=null&&frame>=E.f.length))return '';
+  const E=D[n];if(E&&E.raw)return rawSvg(E.raw,frame);
+  if(!E||(frame!=null&&frame>=E.f.length))return '';
   const fr=frame==null?E.f:[E.f[frame]];
   const S=fr.map(solveP),p0=fr[0],front=!!p0.fr,hide=!!p0.hide;
   const dur=(E.d||2)+'s',k=fr.length;
@@ -1813,7 +1895,7 @@ const MZ=[
   {n:'Румънска тяга с лек товар',dose:'3×8',t:'Изправен, леко свити колене. Накланяш се напред от таза с прав гръб, докато усетиш задното бедро.',fig:'Румънска мъртва тяга с лоста'}]},
 {id:'add',g:0,n:'Вътрешна страна на бедрата',sides:0,
  test:{n:'Жаба',t:'На четири опори разтваряш коленете встрани и пращаш таза назад над петите.',ok:'Тазът отива назад без заобляне на кръста и без остра болка във вътрешната страна или коляното.',yt:'frog stretch adductors'},
- ex:[{n:'Жаба с леко люлеене',dose:'2×40 сек',d:40,t:'В същата позиция леко люлееш таза напред-назад, без да извиваш кръста.',yt:'frog stretch adductors'},
+ ex:[{n:'Жаба с леко люлеене',fig:'Жаба',dose:'2×40 сек',d:40,t:'В същата позиция леко люлееш таза напред-назад, без да извиваш кръста.',yt:'frog stretch adductors'},
   {n:'Странична стъпка в клек',dose:'2×8 на страна',t:'Широк стоеж. Слизаш в клек върху единия крак, другият е изпънат встрани.',fig:'Казашки клек'}]},
 {id:'glute',g:1,n:'Таз и седалище',sides:1,
  test:{n:'Мост на един крак',t:'Мост на един крак, 10 повторения на страна.',ok:'Тазът не се накланя, усещаш седалището, а не кръста и задната част на бедрото. Двете страни са равни.'},
@@ -2118,7 +2200,7 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261112094719';
+const BUILD='20261113095617';
 function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;

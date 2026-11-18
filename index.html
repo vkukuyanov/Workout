@@ -306,6 +306,8 @@
   .exrow .v.weak{color:var(--work);font-weight:600}.exrow .v.none{opacity:.5}
   #panel-mob .exrow{cursor:default}
   .fx path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .mwrap{display:flex;flex-direction:column;gap:18px}.mwrap.first{order:-1}
+  .rt button{padding:13px 4px;font-size:13px;line-height:1.2}
   .nm{display:flex;gap:10px}.ni{flex:1;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);min-width:0}
   .ni input{flex:1;min-width:0;font:16px 'Sofia Sans',sans-serif;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card-2);color:var(--ink)}
   .ni i{font-style:normal}
@@ -495,10 +497,37 @@
   </div>
 
   <div class="panel" id="panel-mob">
-    <div class="card" id="m-card"></div>
+    <div id="mr-wrap" class="mwrap">
+      <div class="card">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="44"></circle>
+            <circle class="ring-fg" id="mr-ring" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"></circle>
+          </svg>
+          <div class="ring-inner">
+            <div class="ring-phase" id="mr-phase">Подвижност</div>
+            <div class="ring-num" id="mr-num">12:00</div>
+            <div class="ring-next" id="mr-next"></div>
+          </div>
+        </div>
+        <div class="now-name" id="mr-name">Подвижност</div>
+        <div class="cue" id="mr-cue"></div>
+        <div class="progress-dots" id="mr-dots"></div>
+        <div class="ctrl">
+          <button class="b-main" id="mr-start">Старт</button>
+          <button class="b-alt" id="mr-reset">Нулирай</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Днешната рутина</div>
+        <div class="sub" style="margin-bottom:4px;">Всяка сряда е различна · докосни за техника</div>
+        <div id="mr-list"></div>
+      </div>
+    </div>
+    <div id="ma-wrap" class="mwrap"><div class="card" id="m-card"></div></div>
     <div class="card">
       <div class="label">Зоните</div>
-      <div class="sub" style="margin-bottom:4px;">Последен резултат · ляво и дясно</div>
+      <div class="sub" style="margin-bottom:4px;">Последно оценяване · ляво и дясно</div>
       <div id="m-zones"></div>
     </div>
   </div>
@@ -805,7 +834,7 @@ function planFor(date){ // Mon–Sat by the plan; Sunday makes up the workout th
   if(date.getDay()!==0)return dayMap[date.getDay()];
   const mon=monOf(date),k=localISO(date),left=WEEK.slice();
   load('wt_log',[]).forEach(x=>{if(x.date>=mon&&x.date<k){const i=left.indexOf(x.type);if(i>=0)left.splice(i,1);}});
-  return left[0]||'rest';}
+  return left[0]||(window.__mobAssessDue&&window.__mobAssessDue()?'mob':'rest');}
 const today=new Date().getDay();
 function switchTab(n){document.body.classList.add('in-work');window.scrollTo(0,0);
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
@@ -1180,6 +1209,65 @@ const D={
   {t:'l',c:'fx-n',w:4.2,v:[[60,46,76,46],[60,46,72,59]]},
   {t:'l',c:'fx-f',w:3.6,v:[[98,72,80,52],[98,72,75,62]]},
   {t:'c',c:'fx-f',r:3.5,v:[[78,50],[73,60]]}]}},
+// ---- the Wednesday routine: more exercises ----
+'Крак по рамка на врата':{d:3,f:[{h:[54,71],t:-90,H:[[64,72],[62,72]],F:[[58,41],[92,72]],kp:[[1,0],[1,0]],ep:[[0,1],[0,1]],pole:[[64,36,64,74]]},{h:[58,71],t:-90,H:[[68,72],[66,72]],F:[[62,41],[92,72]],kp:[[1,0],[1,0]],ep:[[0,1],[0,1]],pole:[[64,36,64,74]]}]},
+'Пета на стол':{d:3.4,f:[ST(50,{h:[50,44],t:176,H:[[70,50],[66,52]],F:[[80,58],[48,74]],kp:[[1,0],[1,0]],ep:[[0,1],[0,1]],box:[76,58,14,16]}),ST(50,{h:[50,45],t:140,H:[[72,55],[70,57]],F:[[80,58],[48,74]],kp:[[1,0],[1,0]],ep:[[0,1],[0,1]],box:[76,58,14,16]})]},
+'Седнал, наклон напред':{raw:{d:3.4,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[40,42],[68,54]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[40,72,40,50],[40,72,64,60]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[40,54,56,66],[64,60,84,69]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[40,72,92,72]]},
+  {t:'l',c:'fx-f',w:4.2,v:[[40,72,52,62]]},{t:'l',c:'fx-f',w:3.6,v:[[52,62,44,72]]}]}},
+'Наклон с прав гръб':{d:2.8,f:[ST(60,{H:[[61,53],[60,53]]}),{h:[53,46],t:113,H:[[68,64],[67,64]],F:[[62,74],[60,74]]}]},
+'Нервно плъзгане седнал':{raw:{d:3.4,p:[
+  {t:'r',c:'fx-box',v:[26,59,28,15]},
+  {t:'c',c:'fx-h',r:4.5,v:[[44,30],[40,26]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[40,56,40,36],[40,56,40,34]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[40,40,50,53]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[40,56,64,56]]},
+  {t:'l',c:'fx-n',w:3.9,v:[[64,56,62,73],[64,56,88,56]]}]}},
+'Пеперуда':{raw:{d:3.6,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[60,30]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[60,38,60,62]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[54,42,46,62]]},{t:'l',c:'fx-n',w:3.6,v:[[66,42,74,62]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[60,64,34,66],[60,64,34,72]]},{t:'l',c:'fx-n',w:4.6,v:[[60,64,86,66],[60,64,86,72]]},
+  {t:'l',c:'fx-n',w:3.9,v:[[34,66,60,73],[34,72,60,73]]},{t:'l',c:'fx-n',w:3.9,v:[[86,66,60,73],[86,72,60,73]]}]}},
+'Седнал разкрачен':{raw:{d:3.6,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[60,32],[60,47]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[60,64,60,40],[60,64,60,52]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[60,64,22,72]]},{t:'l',c:'fx-n',w:4.6,v:[[60,64,98,72]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[54,44,46,62],[54,54,42,68]]},{t:'l',c:'fx-n',w:3.6,v:[[66,44,74,62],[66,54,78,68]]}]}},
+'Люлеене встрани':{raw:{d:3.4,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[60,24],[59,30]]},
+  {t:'l',c:'fx-n',w:5.2,v:[[50,36,70,36]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[50,36,50,72]]},{t:'l',c:'fx-n',w:3.6,v:[[70,36,70,72]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[60,36,60,52],[60,42,58,60]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[54,52,66,52],[52,60,64,60]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[54,52,54,66],[52,60,52,68]]},{t:'l',c:'fx-n',w:3.9,v:[[54,66,50,73],[52,68,48,73]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[66,52,102,72],[64,60,102,72]]}]}},
+'Разкрачен на стената':{raw:{d:3.6,p:[
+  {t:'r',c:'fx-box',v:[8,16,104,58]},
+  {t:'c',c:'fx-h',r:4.5,v:[[60,68]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[60,64,60,58]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[60,58,32,24],[60,58,22,34]]},{t:'l',c:'fx-n',w:4.6,v:[[60,58,88,24],[60,58,98,34]]}]}},
+'Бедрен флексор на колене':{d:3.4,f:[{h:[54,58],t:180,H:[[60,56],[58,56]],F:[[70,74],[37,72]],kp:[[1,0],[0,1]]},{h:[58,59],t:182,H:[[64,57],[62,57]],F:[[70,74],[37,72]],kp:[[1,0],[0,1]]}]},
+'Бедрен флексор на диван':{d:3.4,f:[{h:[47,63],t:180,H:[[58,58],[56,58]],F:[[62,74],[28,60]],kp:[[1,0],[0,1]],box:[6,46,22,28]},{h:[51,62],t:182,H:[[62,58],[60,58]],F:[[62,74],[28,60]],kp:[[1,0],[0,1]],box:[6,46,22,28]}]},
+'Напад с ръце нагоре':{d:3.4,f:[{h:[54,58],t:180,H:[[56,22],[54,23]],F:[[70,74],[37,72]],kp:[[1,0],[0,1]],ep:[[0,-1],[0,-1]]},{h:[57,59],t:190,H:[[60,20],[58,21]],F:[[70,74],[37,72]],kp:[[1,0],[0,1]],ep:[[0,-1],[0,-1]]}]},
+'Търкаляне на топка':{raw:{d:3,p:[
+  {t:'l',c:'fx-n',w:3.9,v:[[50,22,50,54]]},
+  {t:'l',c:'fx-n',w:3.4,v:[[40,64,50,54]]},
+  {t:'p',c:'fx-n',w:3.4,v:['M50 54 Q66 56 82 62']},
+  {t:'l',c:'fx-n',w:3.6,v:[[40,64,84,64]]},
+  {t:'c',c:'fx-plate',r:5,v:[[56,69],[74,69]]}]}},
+'Ходене пета-пръст':{d:2.4,f:[ST(58,{h:[58,44],H:[[70,50],[46,50]],F:[[64,74],[52,74]],kp:[[1,0],[1,0]],ep:[[0,1],[0,1]]}),ST(58,{h:[58,44],H:[[70,50],[46,50]],F:[[52,74],[64,74]],kp:[[1,0],[1,0]],ep:[[0,1],[0,1]]})]},
+'Изместване на таза':{raw:{d:3.4,p:[
+  {t:'c',c:'fx-h',r:4.5,v:[[60,26],[64,26]]},
+  {t:'l',c:'fx-n',w:5.2,v:[[50,38,70,38]]},
+  {t:'l',c:'fx-n',w:3.6,v:[[50,38,50,72]]},{t:'l',c:'fx-n',w:3.6,v:[[70,38,70,72]]},
+  {t:'l',c:'fx-n',w:5.6,v:[[60,38,60,54],[60,38,70,54]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[52,54,68,54],[62,54,78,54]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[68,54,68,68],[78,54,78,68]]},{t:'l',c:'fx-n',w:3.9,v:[[68,68,72,73],[78,68,82,73]]},
+  {t:'l',c:'fx-n',w:4.6,v:[[52,54,52,68],[62,54,58,68]]},{t:'l',c:'fx-n',w:3.9,v:[[52,68,48,73],[58,68,54,72]]}]}},
 };
 // hand-made drawings for what the figure solver can't do (a foot, a wrist, a curved spine, a view from above):
 // primitives l(ine) c(ircle) p(ath) e(llipse, static), one value per frame (1 value = static); same line style as the figures
@@ -1881,7 +1969,7 @@ const STRETCH=[ // in bed before sleep; chosen for: desk + car sitting, pull-ups
 // Results live in wt_log (type 'mob', detail.res) — "last result per zone" and "weak zones" are computed from there, so the
 // GitHub copy and the backup already carry them. Order: first the untested groups (one per Wednesday), then the 3 weakest
 // zones get exercises; a weak zone not tested for 14 days is re-tested first. No weak zones → the oldest group is re-tested.
-const MG=['Долна част','Център','Горна част'],MR=['ок','ограничено','болка'];
+const MG=['Долна част','Център','Горна част'],MR=['ок','ограничено','много ограничено'];
 const MZ=[
 {id:'ank',g:0,n:'Глезени и прасци',pri:1,sides:1,
  test:{n:'Коляно до стената',t:'Стъпалото е на 10 см от стената, петата остава на пода. Буташ коляното напред към стената. Ляво и дясно.',ok:'Докосва при 10 см или повече, без вдигане на петата и без опъване в ахилеса.',yt:'knee to wall ankle mobility test'},
@@ -1975,28 +2063,31 @@ const MZ=[
     const secs=steps.reduce((a,s)=>a+(s.k==='t'?100:90),0),min=Math.max(3,Math.round(secs/60)),zs=[];
     steps.forEach(s=>{if(!zs.includes(s.z))zs.push(s.z);});
     const key=mode+':'+steps.map(s=>s.k+s.z.id+(s.e?s.e.n:'')).join(',');let label,title,desc,sub;
-    if(mode==='test'){label='Тест';title=MG[g];sub='Тест · '+MG[g].toLowerCase()+' · '+zs.length+' '+zw(zs.length)+' · '+min+' мин';
-      desc='Оценяваш всяко движение за ляво и дясно: ок, ограничено или болка. Без бързане и без форсиране.';}
+    if(mode==='test'){label='Оценяване';title=MG[g];sub='Оценяване · '+MG[g].toLowerCase()+' · '+zs.length+' '+zw(zs.length)+' · '+min+' мин';
+      desc='Оценяваш всяко движение за ляво и дясно: ок, ограничено или много ограничено. Без бързане и без форсиране.';}
     else if(mode==='ex'){label='Упражнения';title=zs.length+' слаби '+zw(zs.length);sub='Упражнения за '+zs.length+' слаби '+zw(zs.length)+' · '+min+' мин';
       desc='Упражнения за зоните, които излязоха най-слаби в последния тест.';}
-    else if(mode==='retest'){label='Повторен тест';title=zs.length+' '+zw(zs.length);sub='Повторен тест · '+zs.length+' '+zw(zs.length)+' · '+min+' мин';
-      desc='Тестваш пак зоните, които не си проверявал от 2 седмици (слабите) или от 6 седмици (останалите). Така се вижда какво се е подобрило.';}
+    else if(mode==='retest'){label='Повторно оценяване';title=zs.length+' '+zw(zs.length);sub='Повторно оценяване · '+zs.length+' '+zw(zs.length)+' · '+min+' мин';
+      desc='Оценяваш пак зоните, които не си проверявал от 4 седмици (ограничените) или от 8 седмици (останалите). Така се вижда какво се е подобрило.';}
     else{label='Повторен тест и упражнения';title='Слабите зони';sub='Повторен тест и упражнения · '+min+' мин';
       desc='Първо кратък повторен тест на слабите зони, после упражненията за тях.';}
     return {mode,g,steps,key,min,label,title,desc,sub,list:zs.map(z=>z.n).join(' · ')};}
-  function plan(){const res=results(),T=z=>({k:'t',z}),E=(z,e)=>({k:'e',z,e});
+  // the assessment never has exercises (the Wednesday routine is separate): first the groups that were never assessed,
+  // then the zones that are due (limited ones after 4 weeks, ok ones after 8; limited first, then the oldest), at most 7
+  function plan(){const res=results(),T=z=>({k:'t',z});
     for(let g=0;g<3;g++){const zs=MZ.filter(z=>z.g===g&&!res[z.id]);if(zs.length)return mk('test',g,zs.map(T));}
-    const weak=MZ.filter(z=>worst(res[z.id])>0).sort((a,b)=>score(res[b.id])-score(res[a.id])||(res[a.id].date<res[b.id].date?-1:res[a.id].date>res[b.id].date?1:0)).slice(0,3);
-    // a weak zone is re-tested after 2 weeks, a zone that was ok after 6 weeks; weak first, then the oldest
-    const due=MZ.filter(z=>age(res[z.id].date)>=(worst(res[z.id])>0?14:42)).sort((a,b)=>(worst(res[b.id])>0)-(worst(res[a.id])>0)||(res[a.id].date<res[b.id].date?-1:res[a.id].date>res[b.id].date?1:0));
-    if(due.length>=4)return mk('retest',null,due.slice(0,7).map(T));
-    const steps=due.map(T);
-    weak.forEach(z=>z.ex.slice(0,2).forEach(e=>steps.push(E(z,e))));
-    if(weak.length)return mk(due.length?'both':'ex',null,steps,weak);
-    if(due.length)return mk('retest',null,steps);
-    // everything fine and recent: look at the oldest group again, so the picture stays current
+    const due=MZ.filter(z=>age(res[z.id].date)>=(worst(res[z.id])>0?28:56)).sort((a,b)=>(worst(res[b.id])>0)-(worst(res[a.id])>0)||(res[a.id].date<res[b.id].date?-1:res[a.id].date>res[b.id].date?1:0));
+    if(due.length)return mk('retest',null,due.slice(0,7).map(T));
+    // nothing is due: the oldest group again, only if you want to
     const old=g=>Math.min(...MZ.filter(z=>z.g===g).map(z=>+res[z.id].date.replace(/-/g,'')));
-    let g=0;for(let k=1;k<3;k++)if(old(k)<old(g))g=k;return mk('test',g,MZ.filter(z=>z.g===g).map(T));}
+    let g=0;for(let k=1;k<3;k++)if(old(k)<old(g))g=k;
+    const p=mk('test',g,MZ.filter(z=>z.g===g).map(T));p.optional=true;return p;}
+  // the rhythm: an assessment is due when a group was never assessed or 4 weeks passed; it is done on Sunday
+  const assessDays=()=>load('wt_log',[]).filter(x=>x.type==='mob'&&x.detail&&x.detail.res).map(x=>x.date).sort();
+  function nextAssess(){const d=assessDays();if(!d.length)return localISO();const t=new Date(d[d.length-1]+'T12:00');t.setDate(t.getDate()+28);return localISO(t);}
+  const untested=()=>{const r=results();return MZ.filter(z=>!r[z.id]).length;};
+  const assessDue=()=>untested()>0||localISO()>=nextAssess();
+  const kindNow=()=>(new Date().getDay()===0&&assessDue())?'assess':'routine';
   let S={plan:null,i:-1,res:{},num:{},tm:null,end:0,last:99};
   const LIVE='wt_mob_live';
   const saveLive=()=>store(LIVE,{date:localISO(),key:S.plan.key,i:S.i,res:S.res,num:S.num});
@@ -2016,16 +2107,16 @@ const MZ=[
     return '<div class="mgrp"><div class="ml">По желание · '+m.q+'</div><div class="nm">'+(z.sides?inp(0,'Ляво')+inp(1,'Дясно'):inp(0,''))+'</div>'+(pn?'<div class="sub" style="margin-top:6px">Миналия път: '+fmtN(pn,m)+'</div>':'')+'</div>';}
   function render(){const P=S.plan,n=P.steps.length;
     if(S.i<0){card.innerHTML='<div class="label">'+P.label+'</div><div class="now-name" style="margin-top:6px">'+P.title+'</div>'+
-      '<div class="cue">'+P.desc+'<div class="mzs">'+P.list+'</div></div>'+
+      '<div class="cue">'+P.desc+'<div class="mzs">'+P.list+'</div>'+(P.optional?'<div class="mzs">Нищо не е за оценяване до '+dm(nextAssess())+'. Ако искаш, можеш да прегледаш най-старата група сега.</div>':'')+'</div>'+
       '<div class="ctrl"><button class="b-main full" data-a="start">Старт · '+P.min+' мин</button></div>';return;}
     const st=P.steps[S.i],z=st.z,dots=P.steps.map((_,k)=>'<div class="pd'+(k<S.i?' done':k===S.i?' cur':'')+'"></div>').join('');
     let h;
     if(st.k==='t'){const t=z.test,r=S.res[z.id]||[];
       const grp=(side,lab)=>'<div class="mgrp"><div class="ml">'+lab+'</div><div class="rt">'+MR.map((x,v)=>'<button data-a="rate" data-side="'+side+'" data-v="'+v+'"'+(r[side]===v?' class="on"':'')+'>'+x[0].toUpperCase()+x.slice(1)+'</button>').join('')+'</div></div>';
-      h='<div class="label">Тест · '+(S.i+1)+' от '+n+'<span class="mtag">'+MG[z.g]+'</span></div>'+
+      h='<div class="label">Оценка · '+(S.i+1)+' от '+n+'<span class="mtag">'+MG[z.g]+'</span></div>'+
         '<div class="now-name" style="margin-top:8px">'+z.n+'</div><div class="sub" style="text-align:center;margin-top:4px">'+t.n+'</div>'+
         '<div class="cue" style="margin-top:14px">'+pic({n:t.n,fig:t.fig})+t.t+lnk({n:t.n,fig:t.fig,yt:t.yt})+'<span class="err">Ок: '+t.ok+'</span></div>'+
-        (z.sides?grp(0,'Ляво')+grp(1,'Дясно'):grp(0,'Резултат'))+numBox(z);}
+        (z.sides?grp(0,'Ляво')+grp(1,'Дясно'):grp(0,'Резултат'))+numBox(z)+'<div class="sub" style="margin-top:10px">Ако боли истински (не просто опъва), спри и избери „много ограничено“.</div>';}
     else{const e=st.e;
       h='<div class="label">Упражнение · '+(S.i+1)+' от '+n+'<span class="mtag">'+z.n+'</span></div>'+
         '<div class="now-name" style="margin-top:8px">'+e.n+'</div><div class="mdose">'+e.dose+'</div>'+
@@ -2068,14 +2159,172 @@ const MZ=[
   function open(){clearT();S.plan=plan();S.res={};S.num={};S.i=-1;
     const lv=load(LIVE,null);
     if(lv&&lv.date===localISO()&&lv.key===S.plan.key){S.res=lv.res||{};S.num=lv.num||{};S.i=Math.max(-1,Math.min(lv.i,S.plan.steps.length-1));}
+    $('ma-wrap').classList.toggle('first',kindNow()==='assess');
+    if(window.__mobRoutineOpen)window.__mobRoutineOpen();
     render();paintZones();}
   window.__mobOpen=open;
+  window.__mobAssessDue=assessDue;
+  window.__mobZoneScore=id=>{const r=results()[id];return r?worst(r):1;}; // 0 ok · 1 limited · 2 very limited; not assessed counts as limited
   // for the home screen: zones that are ok now, and whether that is more than 4 weeks ago (only once all 16 are tested)
   window.__mobStat=()=>{const now=results(),ago=results(isoAgo(28));if(Object.keys(now).length<MZ.length)return null;
     const ok=o=>MZ.filter(z=>o[z.id]&&worst(o[z.id])===0).length,a=ok(now),b=Object.keys(ago).length>=MZ.length?ok(ago):null;
     return {ok:a,n:MZ.length,up:b!=null&&a>b,down:b!=null&&a<b};};
-  window.__mobInfo=()=>{const p=plan();return {sub:p.sub,min:p.min};};
+  window.__mobInfo=()=>{const p=plan(),r=window.__mobRoutineInfo?window.__mobRoutineInfo():{n:10,min:12};
+    if(kindNow()==='assess')return {sub:p.sub,min:p.min,kind:'assess'};
+    const un=untested();
+    return {sub:'Рутина · '+r.n+' упражнения · около '+r.min+' мин'+(un?' · остава оценка на '+un+' '+zw(un):''),min:r.min,kind:'routine'};};
   S.plan=plan();render();paintZones();
+})();
+
+// ================= MOBILITY ROUTINE (Wednesday) =================
+// Real mobility by timer (like the stretching): 10 exercises, about 12 minutes, different every Wednesday.
+// ~50 exercises in 8 groups. The assessment decides how many slots a group gets (very limited 2, limited 1, ok 0 -
+// "keep" fills the rest); inside a group the exercise done longest ago is taken, so nothing repeats until the pool is used up.
+// k: p passive / a active (a group with 2 slots gets one of each); s: two-sided; d: seconds per side.
+const MR_CH=5,MR_SLOTS=10; // seconds to move into the next position; exercises per Wednesday
+const MPOOL={
+ham:[
+{id:'ham-strap',k:'p',n:'Задно бедро с кърпа',s:1,d:45,fig:'Задно бедро с кърпа',yt:'supine hamstring stretch with strap',t:'По гръб, кърпа около стъпалото. Изпъваш крака нагоре и леко го придърпваш, другият крак лежи изпънат.',e:'Коляното е почти право. Усещането е опън, не болка.'},
+{id:'ham-door',k:'p',n:'Крак по рамка на врата',s:1,d:45,fig:'Крак по рамка на врата',yt:'doorway hamstring stretch',t:'По гръб до рамка на врата. Единият крак е изпънат нагоре по рамката, другият минава през отвора и лежи на пода. Приближаваш таза към рамката.',e:'Кръстът остава на пода. Колкото по-близо е тазът, толкова по-силен е опънът.'},
+{id:'ham-chair',k:'p',n:'Задно бедро: пета на стол',s:1,d:45,fig:'Пета на стол',yt:'standing hamstring stretch heel on chair',t:'Стоиш, петата на единия крак е на стол пред теб, коляното е изпънато. Накланяш се напред от таза с прав гръб, докато усетиш задното бедро.',e:'Гърбът е прав, не го закръглявай. Ръцете плъзгат по крака.'},
+{id:'ham-seat',k:'p',n:'Седнал, наклон напред',s:1,d:45,fig:'Седнал, наклон напред',yt:'seated single leg hamstring stretch',t:'Седнал на пода, единият крак е изпънат, другият е свит встрани. Накланяш се напред над изпънатия крак с прав гръб.',e:'Водиш с гърдите, не с главата.'},
+{id:'ham-hinge',k:'a',n:'Наклон с прав гръб',d:40,fig:'Наклон с прав гръб',yt:'hip hinge bodyweight',t:'Стоиш, леко свити колене. Бавно избутваш таза назад и накланяш тялото напред с прав гръб, после се изправяш. Около 8 повторения.',e:'Движението е от таза. Спираш там, където усетиш опъване.'},
+{id:'ham-slr',k:'a',n:'Вдигане на изпънат крак по гръб',s:1,d:40,fig:'Вдигане на крак по гръб',yt:'active straight leg raise',t:'По гръб, другият крак е свит. Вдигаш изпънатия крак бавно нагоре, колкото можеш, без да свиваш коляното, и го спускаш бавно. Около 8 повторения.',e:'Кръстът остава на пода.'},
+{id:'ham-rdl1',k:'a',n:'Румънска тяга на един крак',s:1,d:40,fig:'Мъртва тяга на един крак',yt:'single leg romanian deadlift bodyweight',t:'На един крак, накланяш се напред от таза, а другият крак се вдига назад. Връщаш се бавно. Около 6 повторения, може с ръка на стена.',e:'Тазът е равен, гърбът е прав.'},
+{id:'ham-glide',k:'a',n:'Нервно плъзгане седнал',s:1,d:40,fig:'Нервно плъзгане седнал',yt:'sciatic nerve glide seated',t:'Седнал на стол, изправен. Изпъваш коляното и едновременно навеждаш главата надолу, после свиваш коляното и вдигаш поглед. Леко, около 8 повторения.',e:'Само леко. Ако изтръпва, спри.'}],
+add:[
+{id:'add-frog',k:'p',n:'Жаба',d:45,fig:'Жаба',yt:'frog stretch adductors',t:'На четири опори разтваряш коленете широко встрани, вътрешната страна на стъпалата е на пода. Пращаш таза назад над петите и леко се люлееш.',e:'Без заобляне на кръста. Ако е силно, намали разтварянето.'},
+{id:'add-butter',k:'p',n:'Пеперуда седнал',d:45,fig:'Пеперуда',yt:'butterfly stretch',t:'Седнал, стъпалата са допрени, коленете падат навън. Държиш глезените и с лактите леко натискаш коленете надолу.',e:'Гърбът е прав. Седни върху възглавница, ако коленете са много високо.'},
+{id:'add-strad',k:'p',n:'Седнал разкрачен, наклон напред',d:45,fig:'Седнал разкрачен',yt:'seated straddle stretch',t:'Седнал, краката са разкрачени широко и изпънати. Накланяш се напред с прав гръб, ръцете са напред на пода.',e:'Коленете сочат нагоре. Не се форсира.'},
+{id:'add-wall',k:'p',n:'Разкрачен по гръб на стената',d:45,fig:'Разкрачен на стената',yt:'wall straddle stretch legs up the wall',t:'По гръб с таз близо до стена. Краката са нагоре по стената и бавно ги разкрачваш встрани, тежестта им те дърпа.',e:'Спираш там, където усетиш опън вътре в бедрата.'},
+{id:'add-side',k:'p',n:'Разкрачен седнал, наклон към крака',s:1,d:45,fig:'Седнал разкрачен',yt:'seated straddle side reach',t:'Седнал, краката са разкрачени широко. Накланяш се към единия крак с ръка към стъпалото, другата ръка е над главата. После сменяш страната.',e:'Коленете сочат нагоре. Не се форсира.'},
+{id:'add-supine',k:'p',n:'Пеперуда по гръб',d:45,fig:'Пеперуда',yt:'supine butterfly stretch',t:'По гръб, стъпалата са допрени, коленете падат навън. Ръцете са отпуснати. Дишаш бавно и оставяш тежестта на краката да ги отпусне.',e:'Без натискане с ръце. Колкото се отпуснеш, толкова.'},
+{id:'add-coss',k:'a',n:'Козашки клек',d:40,fig:'Казашки клек',yt:'cossack squat',t:'Широк стоеж. Слизаш в клек върху единия крак, другият е изпънат встрани с пета на пода. Сменяш страните. Около 8 повторения.',e:'Петата на огънатия крак е на пода. Гърдите са високо.'},
+{id:'add-rock',k:'a',n:'Люлеене на колене с крак встрани',s:1,d:40,fig:'Люлеене встрани',yt:'adductor rock back',t:'На четири опори, единият крак е изпънат встрани със стъпало на пода. Люлееш таза назад към петата на свития крак и се връщаш. Около 8 повторения.',e:'Гърбът е прав. Изпънатият крак е прав.'}],
+ank:[
+{id:'ank-wall',n:'Коляно към стената',s:1,d:30,fig:'Коляно до стената',yt:'ankle mobility knee to wall drill',t:'Стъпало на 10 см от стената, цялата пета е на пода. Буташ коляното напред към стената и го връщаш, плавно. Ако докосваш лесно, отдалечи стъпалото.',e:'Петата не се вдига. Ахилесът се опъва леко, без болка.'},
+{id:'ank-soleus',n:'Прасец със свито коляно',s:1,d:30,fig:'Прасец със свито коляно',yt:'soleus stretch bent knee wall',t:'Ръце на стена, единият крак назад със леко свито коляно и пета на пода. Накланяш се към стената, докато усетиш ахилеса.',e:'Петата на задния крак остава на пода.'},
+{id:'ank-gastro',n:'Прасец с изправено коляно',s:1,d:30,fig:'Прасец с кърпа',yt:'seated calf stretch with towel',t:'Седнал, единият крак е изпънат, кърпа около предната част на стъпалото. Придърпваш пръстите към себе си.',e:'Гърбът е прав, коляното е право.'},
+{id:'ank-drop',n:'Бавно спускане на петата',d:30,fig:'Бавно спускане на петата',yt:'eccentric heel drop achilles',t:'На пръсти на стъпало; на 3-4 броя се спускаш бавно с петата под нивото на стъпалото. Около 8 повторения.',e:'Ако ахилесът боли (не просто опъва), спри.'},
+{id:'ank-rock',n:'Люлеене в дълбок клек',d:30,fig:'Клек с пауза',yt:'deep squat rock ankle',t:'В дълбок клек с пети на пода. Люлееш коленете напред и назад, като държиш петите на пода и се подпираш с ръце, ако трябва.',e:'Петите са на пода през цялото време.'}],
+squat:[
+{id:'sq-pry',n:'Дълбок клек с разтваряне',d:40,fig:'Клек с пауза',yt:'deep squat prying hip mobility',t:'Слизаш в най-дълбокия клек, който можеш. Дланите са заедно пред гърдите, с лактите буташ коленете навън. Леко се люлееш наляво и надясно.',e:'Петите са на пода. Ако се вдигат, сложи книга под тях.'},
+{id:'sq-goblet',n:'Клек с чаша, задържане',d:40,fig:'Клек с пауза',yt:'goblet squat hold',t:'Дълбок клек с лек товар (лост или раница) пред гърдите. Задържаш долу и разтваряш коленете с лактите.',e:'Гърдите са високо. Петите са на пода.'},
+{id:'sq-book',n:'Клек с книга под петите',d:40,fig:'Клек с плоча под петите',yt:'heel elevated squat',t:'Дълбок клек с книга или плоча под петите. Задържаш долу. Намаляваш височината, когато глезенът се отпусне.',e:'Коленете следват пръстите.'},
+{id:'sq-door',n:'Клек с опора на врата',d:40,fig:'Клек с пауза',yt:'supported deep squat holding door frame',t:'Хванат за дръжките на врата, слизаш в дълбок клек, като опората ти позволява да седнеш по-ниско и с изправен гръб. Задържаш.',e:'Дръж се леко, не увисвай. Петите са на пода.'},
+{id:'sq-worm',n:'Червей до клек',d:40,fig:'Планк с ходене',yt:'inchworm to squat',t:'Навеждаш се и с ръце ходиш напред до планк, после с ръце се връщаш до краката и слизаш в дълбок клек. Повтаряш бавно.',e:'Бавно. Дишаш равномерно.'},
+{id:'sq-pause',n:'Клек с пауза',d:40,fig:'Клек с пауза',yt:'pause squat bodyweight',t:'Бавен клек до дъното, пауза 3 секунди долу, после се изправяш. Около 6 повторения.',e:'Коленете са над пръстите.'}],
+hipf:[
+{id:'hf-kneel',n:'Бедрен флексор на колене',s:1,d:45,fig:'Бедрен флексор на колене',yt:'kneeling hip flexor stretch glute squeeze',t:'На коляно, другият крак е напред на 90°. Стягаш седалището на задния крак и избутваш таза напред, докато усетиш предната част на бедрото и таза.',e:'Гърбът е неутрален, коремът е леко стегнат. Без извит гръб.'},
+{id:'hf-couch',n:'Диван или стена',s:1,d:45,fig:'Бедрен флексор на диван',yt:'couch stretch',t:'На коляно пред диван или стена, стъпалото на задния крак е на дивана или по стената. Другият крак е напред. Избутваш таза напред и изправяш тялото.',e:'Коремът е стегнат, без извит кръст. Ако е силно, отдалечи коляното от стената.'},
+{id:'hf-bed',n:'Бедрен флексор на леглото',s:1,d:45,fig:'Таз на ръба на леглото',yt:'thomas stretch bed',t:'По гръб на ръба на леглото. Прегръщаш едното коляно към гърдите, а другият крак виси свободно от ръба.',e:'Кръстът остава на леглото.'},
+{id:'hf-spider',n:'Спайдърмен с ротация',s:1,d:40,fig:'Спайдърмен напад с ротация',yt:'worlds greatest stretch spiderman lunge rotation',t:'От планк излизаш с единия крак до ръката, после въртиш гърдите нагоре и вдигаш ръката към тавана. Връщаш се и сменяш.',e:'Бавно. Погледът следва ръката.'},
+{id:'hf-reach',n:'Напад с ръце нагоре',s:1,d:40,fig:'Напад с ръце нагоре',yt:'half kneeling hip flexor stretch overhead reach',t:'На коляно, другият крак е напред. Вдигаш ръцете нагоре и леко се накланяш назад, като избутваш таза напред.',e:'Седалището на задния крак е стегнато.'},
+{id:'hf-bridge',n:'Мост с пауза горе',d:40,fig:'Мост за седалище',yt:'glute bridge pause',t:'Мост за седалището с пауза 2 секунди горе. Около 8 повторения.',e:'Тласъкът е от петите, не от кръста.'},
+{id:'hf-lunge',n:'Ходещ напад със задържане',d:40,fig:'Ходещи напади',yt:'walking lunge hold',t:'Ходещ напад, като във всяка стъпка задържаш долу 3 секунди. Около 6 стъпки.',e:'Гърдите са високо, коленете над пръстите.'}],
+foot:[
+{id:'ft-short',n:'Къс крак',s:1,d:30,fig:'Къс крак',yt:'short foot exercise arch',t:'На един крак повдигаш арката, без да свиваш пръстите. Задържаш 5 сек.',e:'Пръстите са отпуснати.'},
+{id:'ft-toe',n:'Повдигане на палеца',s:1,d:30,fig:'Повдигане на палеца',yt:'big toe lift exercise',t:'Петата и другите пръсти са на пода. Повдигаш само палеца, после само другите пръсти.',e:'Палецът се вдига сам.'},
+{id:'ft-walk',n:'Ходене на пръсти и на пети',d:40,fig:'Ходене на пръсти и на пети',yt:'toe walk heel walk',t:'Няколко крачки на пръсти, после няколко на пети.',e:'Бавно, изправен.'},
+{id:'ft-ball',n:'Търкаляне на топка под стъпалото',s:1,d:30,fig:'Търкаляне на топка',yt:'foot roll lacrosse ball',t:'Стоиш или седиш, под стъпалото е малка твърда топка. Търкаляш я бавно от петата към пръстите.',e:'Натискаш леко, без болка.'},
+{id:'ft-short1',n:'Къс крак на един крак',s:1,d:30,fig:'Стоене на един крак',yt:'single leg stance short foot',t:'Стоиш на един крак с активна арка (къс крак).',e:'Коляното е леко свито.'}],
+bal:[
+{id:'bl-one',n:'Стоене на един крак',s:1,d:30,fig:'Стоене на един крак',yt:'single leg balance exercise',t:'Стоиш на един крак с отворени очи. Тазът е прав.',e:'Може да докосваш леко с пръст.'},
+{id:'bl-reach',n:'Докосване с крак във всички посоки',s:1,d:30,fig:'Докосване с крак във всички посоки',yt:'single leg reach balance star excursion',t:'На един крак докосваш с другия пода напред, встрани и назад.',e:'Опорният крак е леко свит.'},
+{id:'bl-tandem',n:'Ходене пета-пръст',d:40,fig:'Ходене пета-пръст',yt:'tandem walk heel to toe',t:'Ходиш по права линия, като петата докосва пръстите на другия крак.',e:'Погледът е напред. Ръцете са встрани.'},
+{id:'bl-up',n:'Стоене на един крак с поглед нагоре',s:1,d:30,fig:'Стоене на един крак',yt:'single leg stance head turn',t:'На един крак, после бавно вдигаш поглед нагоре и въртиш главата наляво и надясно.',e:'Опората е близо.'},
+{id:'bl-step',n:'Качване на стол',s:1,d:30,fig:'Качване на стол',yt:'step up exercise',t:'Качваш се бавно с един крак на стол и слизаш контролирано. Около 6 повторения.',e:'Коляното следва пръстите.'}],
+keep:[
+{id:'k-9090',n:'Бедра 90/90',s:1,d:30,fig:'Бедра 90/90',yt:'90/90 hip switches',t:'Седнал на пода, двете колена са на 90°. Накланяш се напред над предния крак, после завърташ коленете на другата страна без ръце.',e:'Без болка в коленете. Ако е много трудно, седни върху възглавница.'},
+{id:'k-book',n:'Отваряне на книга',s:1,d:30,fig:'Отваряне на книга',yt:'open book thoracic rotation',t:'Легнал на една страна, коленете са свити. Горната ръка се отваря на другата страна, погледът я следва.',e:'Коленете остават заедно.'},
+{id:'k-pigeon',n:'Гълъб',s:1,d:45,fig:'Фигура 4',yt:'supine pigeon figure 4 stretch',t:'По гръб, глезенът на единия крак е върху коляното на другия. Придърпваш долния крак към гърдите, докато усетиш седалището.',e:'Главата е на възглавницата. Дишай бавно.'},
+{id:'k-thread',n:'Конец през иглата',s:1,d:30,fig:'Конец през иглата',yt:'thread the needle thoracic rotation',t:'На четири опори. Ръката минава под тялото, после се отваря нагоре, погледът я следва.',e:'Бавно, без да люлееш кръста.'},
+{id:'k-shift',n:'Изместване на таза',s:1,d:40,fig:'Изместване на таза',yt:'hip shift quadruped hip capsule mobility',t:'На четири опори, коленете са под таза. Преместваш цялата тежест на едното коляно. После изместваш таза на около 10 см встрани и навън от опорното коляно, другият крак е леко завъртян навътре.',e:'Задържаш позицията, без болка в тазобедрената става.'},
+{id:'k-cat',n:'Котка-крава',d:40,fig:'Котка-крава',yt:'cat cow stretch',t:'На четири опори. Бавно изкривяваш гърба нагоре, после надолу.',e:'Дишаш с движението.'},
+{id:'k-bridge1',n:'Мост на един крак',s:1,d:30,fig:'Мост на един крак',yt:'single leg glute bridge',t:'По гръб, едното стъпало е на пода, другият крак е изпънат нагоре. Повдигаш таза с усилие от седалището. Около 8 повторения.',e:'Тазът не се накланя.'},
+{id:'k-bird',n:'Птица-куче',s:1,d:30,fig:'Птица-куче',yt:'bird dog exercise',t:'На четири опори. Изпъваш едната ръка напред и срещуположния крак назад, без да люлееш таза. Пауза 5 сек.',e:'Гърбът е прав.'},
+{id:'k-side',n:'Страничен планк',s:1,d:30,fig:'Страничен планк',yt:'side plank',t:'На лакът, тялото е в права линия, тазът е високо.',e:'Тазът не пада.'},
+{id:'k-angel',n:'Стена-ангели',d:40,fig:'Стена-ангели',yt:'wall angels',t:'Гръб, глава и седалище до стената. Плъзгаш ръцете нагоре и надолу, лактите остават на стената.',e:'Кръстът не се извива.'}]
+};
+const MR_ZONE={ham:'ham',add:'add',ank:'ank',squat:'knee',hipf:'hipf',foot:'foot',bal:'bal'}; // group -> the assessed zone that decides its slots
+const MR_ORDER=['ank','foot','bal','squat','hipf','add','ham','keep']; // standing first, the floor last
+const MR_GL={ham:'задно бедро',add:'вътрешна страна',ank:'глезен',squat:'клек',hipf:'бедрен флексор',foot:'стъпала',bal:'баланс',keep:'поддръжка'};
+function mrSelect(){
+  const score=z=>window.__mobZoneScore?window.__mobZoneScore(z):1;
+  const used={};load('wt_log',[]).forEach(x=>{if(x.type==='mob'&&x.detail&&Array.isArray(x.detail.ids))x.detail.ids.forEach(id=>{if(!used[id]||x.date>used[id])used[id]=x.date;});});
+  const days=id=>used[id]?Math.round((Date.now()-new Date(used[id]+'T12:00').getTime())/864e5):1e9; // never done = first
+  // very limited 2 slots, limited 1 (not assessed counts as limited); the weakest first, at most MR_SLOTS; the rest is "keep"
+  const slots=[];Object.keys(MR_ZONE).map(p=>({p,s:score(MR_ZONE[p])})).filter(o=>o.s>0).sort((a,b)=>b.s-a.s).forEach(o=>{for(let k=0;k<(o.s>=2?2:1);k++)slots.push(o.p);});
+  const top=slots.slice(0,MR_SLOTS);while(top.length<MR_SLOTS)top.push('keep');
+  // a zone that is ok also lends its exercises to "keep", so a good result never shrinks the choice
+  const keepPool=MPOOL.keep.concat(...Object.keys(MR_ZONE).filter(p=>score(MR_ZONE[p])===0).map(p=>MPOOL[p]));
+  const chosen=[],ids=new Set(),cnt={};
+  top.forEach(p=>{cnt[p]=(cnt[p]||0)+1;const pool=p==='keep'?keepPool:MPOOL[p],want=cnt[p]===2?'a':'p';
+    // longest ago first; the kind (passive / active) only decides between equally old ones, so nothing repeats while a fresh one is left
+    const m=x=>(x.k||'p')===want?1:0,c=pool.filter(x=>!ids.has(x.id)).sort((a,b)=>days(b.id)-days(a.id)||m(b)-m(a)||pool.indexOf(a)-pool.indexOf(b));
+    const f=c[0];if(f){ids.add(f.id);chosen.push(Object.assign({},f,{p}));}});
+  return chosen.sort((a,b)=>MR_ORDER.indexOf(a.p)-MR_ORDER.indexOf(b.p));
+}
+(function(){
+  const $=id=>document.getElementById(id);
+  const ring=$('mr-ring'),num=$('mr-num'),nm=$('mr-name'),phs=$('mr-phase'),nxt=$('mr-next'),cue=$('mr-cue'),dots=$('mr-dots'),start=$('mr-start'),reset=$('mr-reset'),list=$('mr-list');
+  const LIVE='wt_live_mob';
+  let items=[],ph=[],total=0,idx=-1,end=0,paused=0,run=false,h=null,lastSec=99,liveT=0;
+  const rpic=x=>{const f=FIGX.svg(x.fig||x.n);return f?'<span class="pic fig">'+f+'</span>':'';};
+  const rvid=x=>'<a class="vid" style="display:block;margin:10px 0 0" href="https://www.youtube.com/results?search_query='+encodeURIComponent(x.yt)+'" target="_blank" rel="noopener">Как се прави (видео)</a>';
+  const detail=x=>rpic(x)+x.t+rvid(x)+'<span class="err">'+x.e+'</span>';
+  function build(){items=mrSelect();ph=[];
+    items.forEach(x=>{(x.s?[' · ляво',' · дясно']:['']).forEach(sd=>{ph.push({t:'move',l:x.n+sd,d:MR_CH,x});ph.push({t:'hold',l:x.n+sd,d:x.d,x});});});
+    total=ph.reduce((a,p)=>a+p.d,0);idx=-1;paused=0;run=false;clearInterval(h);start.textContent='Старт';renderList();buildDots();paint(0);}
+  function saveLive(){if(idx<0||idx>=ph.length)return;liveT=Date.now();store(LIVE,{date:localISO(),idx,left:run?Math.max(0,end-Date.now()):paused,ids:items.map(x=>x.id)});}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&run)saveLive();});
+  function renderList(){list.innerHTML='';items.forEach((x,i)=>{
+    const row=document.createElement('div');row.className='exrow';
+    row.innerHTML='<div><div class="n">'+(i+1)+'. '+x.n+'</div><div class="c">'+MR_GL[x.p]+(x.s?' · всяка страна':'')+'</div></div><div class="v">'+(x.s?'2 × ':'')+x.d+'с</div><div class="detail">'+detail(x)+'</div>';
+    row.addEventListener('click',()=>row.classList.toggle('open'));list.appendChild(row);});}
+  function buildDots(){dots.innerHTML='';ph.forEach(p=>{if(p.t!=='hold')return;const d=document.createElement('div');d.className='pd';dots.appendChild(d);});}
+  function paint(rem){const p=idx>=0&&idx<ph.length?ph[idx]:null;
+    if(!p){num.textContent=fmt(total);ring.setAttribute('stroke-dashoffset','0');phs.textContent=Math.round(total/60)+' минути';
+      nm.textContent='Подвижност';nxt.textContent=items.length+' упражнения';
+      setCue(cue,items.length?'Първо: <b>'+items[0].n+'</b>. Бавно, без пружиниране. Опъването е лесно, не болка.':'');return;}
+    num.textContent=fmt(rem);ring.setAttribute('stroke-dashoffset',String(C*(1-Math.max(0,rem)/p.d)));
+    ring.style.stroke=p.t==='hold'?'var(--work)':'var(--rest)';
+    phs.textContent=p.t==='hold'?'задръж':'смени позицията';nm.textContent=p.l;
+    const nh=ph.slice(idx+1).find(q=>q.t==='hold'&&q.l!==p.l);nxt.textContent=nh?'след: '+nh.l:'последно';
+    setCue(cue,detail(p.x));
+    num.classList.toggle('urgent',p.t==='hold'&&rem<=3);
+    let hi=-1;for(let k=0;k<=idx;k++)if(ph[k].t==='hold')hi++;
+    document.querySelectorAll('#mr-dots .pd').forEach((d,i)=>{d.classList.toggle('done',i<hi||(i===hi&&p.t!=='hold'));d.classList.toggle('cur',i===hi&&p.t==='hold');});}
+  function next(){idx++;
+    if(idx>=ph.length){run=false;clearInterval(h);keepAwake(false);phs.textContent='готово';nm.textContent='Рутината приключи';
+      num.textContent='00:00';nxt.textContent='';cue.textContent='Добре свършено. Следващата сряда е различна.';start.textContent='Отначало';
+      cueEnd();dropLive(LIVE);
+      const ids=items.map(x=>x.id),min=Math.round(total/60),line='рутина · '+items.length+' упражнения · '+min+' мин';
+      logSession('mob',{routine:1,ids,n:items.length,min,line});showDone('mob',{line});return;}
+    end=Date.now()+ph[idx].d*1000;lastSec=99;const p=ph[idx];
+    if(p.t==='hold'){cueWork();}else{cueRest();say(p.l);}
+    paint(p.d);saveLive();}
+  function tick(){if(!run)return;const rem=(end-Date.now())/1000,s=Math.ceil(rem);
+    if(s<=3&&s>0&&s!==lastSec&&ph[idx].t==='hold'){lastSec=s;tickBeep();}
+    if(rem<=0){next();return;}paint(rem);if(Date.now()-liveT>3000)saveLive();}
+  function phaseStart(i){let t=0;for(let k=0;k<i;k++)t+=ph[k].d;return t;}
+  function track(){const ev=[];let t=0;ph.forEach(p=>{ev.push([t,p.t==='hold'?'work':'rest']);if(p.t==='hold')tickEvents(t,p.d,ev);t+=p.d;});
+    ev.push([t,'end']);startTrack(t+0.8,ev,'mob');}
+  start.addEventListener('click',()=>{
+    if(idx>=ph.length){build();}
+    if(run){run=false;clearInterval(h);keepAwake(false);paused=end-Date.now();stopTrack();start.textContent='Продължи';saveLive();return;}
+    run=true;keepAwake(true);start.textContent='Пауза';
+    if(idx<0){track();next();}
+    else{const left=paused>0?paused:0;end=Date.now()+left;if(trackOwner!=='mob')track();resumeTrack(phaseStart(idx)+ph[idx].d-left/1000);paused=0;saveLive();}
+    h=setInterval(tick,150);});
+  reset.addEventListener('click',()=>{run=false;clearInterval(h);keepAwake(false);stopTrack();dropLive(LIVE);build();});
+  window.__mobRoutineOpen=()=>{if(run)return;if(idx<0||idx>=ph.length)build();}; // a paused session stays as it is
+  window.__mobRoutineInfo=()=>{const it=mrSelect();return {n:it.length,min:Math.round(it.reduce((a,x)=>a+(x.s?2:1)*(x.d+MR_CH),0)/60)};};
+  window.__mobRoutineList=()=>mrSelect();
+  build();
+  const sv=liveOf(LIVE);
+  if(sv&&sv.idx>=0&&sv.idx<ph.length&&Array.isArray(sv.ids)&&sv.ids.join()===items.map(x=>x.id).join()){idx=sv.idx;paused=Math.max(1000,sv.left||0);start.textContent='Продължи';paint(paused/1000);
+    window.__resume=window.__resume||'mob';}
 })();
 
 // "How am I doing": three numbers computed from the log on the phone, nothing to enter
@@ -2181,7 +2430,7 @@ document.getElementById('home').addEventListener('click',e=>{const b=e.target.cl
   if(b.dataset.go==='mob'&&window.__mobOpen)window.__mobOpen();
   switchTab(b.dataset.go);if(b.dataset.go==='strength'&&window.__strActive&&window.__strActive())keepAwake(true);if(b.dataset.start){const st=document.getElementById(b.dataset.go==='func'?'f-start':'c-start');if(st.textContent==='Старт')st.click();}});
 document.getElementById('back').addEventListener('click',()=>{
-  ['c-start','r-start','x-start','f-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
+  ['c-start','r-start','x-start','f-start','mr-start'].forEach(id=>{const b=document.getElementById(id);if(b&&b.textContent==='Пауза')b.click();});
   if(document.getElementById('panel-run').classList.contains('active')&&window.__runAutoSave)window.__runAutoSave();
   keepAwake(false); // nothing runs on the home screen
   document.body.classList.remove('in-work');renderHome();window.scrollTo(0,0);});
@@ -2250,8 +2499,8 @@ initCloud();
 // ---- updates arrive by themselves ----
 // The home-screen app can keep an old copy for a while. When the app is opened or comes back to the front,
 // it quietly asks the site for the newest version and reloads — but never in the middle of a workout.
-const BUILD='20261117065527';
-function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
+const BUILD='20261118073449';
+function busy(){return document.body.classList.contains('in-work')||['c-start','r-start','x-start','f-start','mr-start'].some(id=>{const b=document.getElementById(id);return b&&/Пауза|Продължи/.test(b.textContent);})||(load('wt_str_live',{}).date===localISO());}
 async function checkUpdate(){
   try{if(busy()||!navigator.onLine)return;
     const r=await fetch('./?u='+Date.now(),{cache:'no-store'});if(!r.ok)return;

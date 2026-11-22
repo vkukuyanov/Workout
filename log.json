@@ -1,6 +1,21 @@
 {
  "sessions": [
   {
+   "id": "mwrx5fx4wbmr",
+   "ts": 1795356912856,
+   "date": "2026-11-22",
+   "type": "run",
+   "detail": {
+    "min": 9,
+    "km": 1.12,
+    "pace": 476,
+    "splits": [
+     465
+    ],
+    "intervals": false
+   }
+  },
+  {
    "id": "mwrlto7zdb5a",
    "ts": 1795337887967,
    "date": "2026-11-22",
@@ -640,5 +655,5 @@
    "type": "core"
   }
  ],
- "updated": "2026-11-22T14:06:15.969Z"
+ "updated": "2026-11-22T14:15:16.036Z"
 }

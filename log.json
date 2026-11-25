@@ -1,6 +1,30 @@
 {
  "sessions": [
   {
+   "id": "mwwcqj5qg76y",
+   "ts": 1795624955774,
+   "date": "2026-11-25",
+   "type": "mob",
+   "detail": {
+    "routine": 1,
+    "ids": [
+     "ank-wall",
+     "ft-short",
+     "bl-one",
+     "sq-pry",
+     "hf-kneel",
+     "add-frog",
+     "add-coss",
+     "ham-strap",
+     "ham-hinge",
+     "k-9090"
+    ],
+    "n": 10,
+    "min": 11,
+    "line": "рутина · 10 упражнения · 11 мин"
+   }
+  },
+  {
    "id": "mwrx5fx4wbmr",
    "ts": 1795356912856,
    "date": "2026-11-22",
@@ -655,5 +679,5 @@
    "type": "core"
   }
  ],
- "updated": "2026-11-25T16:33:30.189Z"
+ "updated": "2026-11-25T16:42:38.548Z"
 }
